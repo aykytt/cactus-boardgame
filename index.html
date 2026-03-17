@@ -11,14 +11,14 @@
     --bg: #0a0b09;
     --surface: #131509;
     --border: #3a3f2a;
-    --text: #f0f2e6;        /* #f0f2e6 on #0a0b09 → ~17:1 AAA */
-    --text-muted: #a8ad94;  /* #a8ad94 on #0a0b09 → ~7.2:1 AAA */
+    --text: #f0f2e6;
+    --text-muted: #b8bda8;  /* AA 4.5:1+ on #0a0b09 */
     --green-dark: #2d5a27;
     --green-light: #8fba3c;
     --green-glow: #c8f060;
-    --p1: #ffb830;          /* #ffb830 on #131509 → ~8.5:1 AAA */
-    --p2: #ff6b4a;          /* #ff6b4a on #131509 → ~7.1:1 AAA */
-    --accent: #c8f060;      /* #c8f060 on #0a0b09 → ~13:1 AAA */
+    --p1: #ffb830;
+    --p2: #ff6b4a;
+    --accent: #c8f060;
   }
 
   body {
@@ -208,7 +208,7 @@
     transform: translateY(-1px);
   }
 
-  /* Info panel - left side */
+  /* Info panel - left side — MASAÜSTÜ */
   #info-panel {
     position: absolute;
     left: 20px;
@@ -217,7 +217,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    pointer-events: none;
+    pointer-events: all;
   }
 
   .info-chip {
@@ -239,6 +239,219 @@
     margin-bottom: 3px;
     letter-spacing: 0.05em;
   }
+
+  /* ── MOBİL GENEL ── */
+  @media (max-width: 768px) {
+    /* Info panel tamamen gizle */
+    #info-panel { display: none !important; }
+
+    /* Last move toggle gizle */
+    #last-move-toggle { display: none !important; }
+
+    /* Rotation hint gizle */
+    #rotation-hint { display: none !important; }
+
+    /* Controls hint gizle */
+    #controls-hint { display: none !important; }
+
+    /* Topbar kompakt */
+    #topbar { padding: 10px 12px; }
+
+    .game-title { font-size: 12px; letter-spacing: 0.2em; }
+
+    .score-card { padding: 7px 10px; min-width: 62px; }
+    .score-card .score-value { font-size: 22px; }
+    .score-card .player-label { font-size: 9px; }
+    .score-card .pieces-left { font-size: 9px; }
+
+    /* Bottombar kompakt */
+    #bottombar { padding: 10px 12px; }
+    .turn-name { font-size: 16px; }
+    .turn-label { font-size: 9px; }
+
+    #phase-btn { padding: 10px 16px; font-size: 11px; }
+
+    /* Preview label yukarı taşı */
+    #preview-label { bottom: 160px; font-size: 11px; }
+  }
+
+  /* ── MOBİL KONTROL PANELİ ── */
+  #mobile-controls {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    pointer-events: all;
+  }
+
+  @media (max-width: 768px) {
+    #mobile-controls { display: block; }
+    #bottombar { display: none; }
+  }
+
+  .mobile-ctrl-bar {
+    background: rgba(10,11,9,0.96);
+    border-top: 1px solid var(--border);
+    padding: 10px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Gövde döndür + sıra satırı */
+  .mobile-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .mobile-turn-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .mobile-turn-label { font-size: 9px; letter-spacing: 0.2em; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+  .mobile-turn-name { font-size: 15px; font-weight: 700; }
+  .mobile-turn-name.p1 { color: var(--p1); }
+  .mobile-turn-name.p2 { color: var(--p2); }
+
+  /* Gövdeyi döndür butonu */
+  #mobile-orbit-btn {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    padding: 9px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  #mobile-orbit-btn.active {
+    background: rgba(200,240,96,0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Taş seç / yerleştir butonları */
+  .mobile-action-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  #mobile-phase-btn {
+    flex: 1;
+    background: var(--accent);
+    color: #0a0b09;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #mobile-phase-btn:disabled {
+    background: var(--border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
+
+  #mobile-cancel-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    padding: 12px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    display: none;
+  }
+
+  /* Döndürme butonları grid */
+  #mobile-rotate-grid {
+    display: none;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  #mobile-rotate-grid.visible { display: grid; }
+
+  .rot-btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .rot-label {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    text-align: center;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .rot-btn-pair {
+    display: flex;
+    gap: 4px;
+  }
+  .rot-btn {
+    flex: 1;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 10px 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .rot-btn:active {
+    background: rgba(200,240,96,0.2);
+    border-color: var(--accent);
+    transform: scale(0.96);
+  }
+
+  /* Yerleştir butonu — mobil */
+  #mobile-place-btn {
+    width: 100%;
+    background: var(--border);
+    color: var(--text-muted);
+    border: none;
+    border-radius: 8px;
+    padding: 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: not-allowed;
+    transition: all 0.2s;
+    display: none;
+  }
+  #mobile-place-btn.enabled {
+    background: var(--accent);
+    color: #0a0b09;
+    cursor: pointer;
+  }
+  #mobile-place-btn.visible { display: block; }
 
   /* Loading overlay */
   #loading {
@@ -439,8 +652,8 @@
 <body>
 
 <div id="loading">
-  <div class="logo">KAKTÜS</div>
-  <div class="sub">Strateji Oyunu</div>
+  <div class="logo">CACTUS</div>
+  <div class="sub">Strategy Game</div>
   <div class="loader-bar"><div class="loader-fill"></div></div>
 </div>
 
@@ -476,7 +689,7 @@
 
     <div style="display:flex;align-items:center;gap:8px;">
       <!-- TR/EN toggle -->
-      <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+      <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-left:6px;">
         <button id="lang-tr" onclick="setLang('tr')" style="
           background:var(--accent);color:#0a0b09;border:none;
           padding:5px 10px;font-family:monospace;font-size:11px;font-weight:700;
@@ -488,7 +701,8 @@
           cursor:pointer;letter-spacing:0.1em;transition:all 0.2s;
         ">EN</button>
       </div>
-      <div class="game-title" id="game-phase">HAZIRLIK</div>
+      <!-- game-phase gizli ama JS için tutuluyor -->
+      <div class="game-title" id="game-phase" style="display:none;">HAZIRLIK</div>
     </div>
   </div>
 
@@ -1066,14 +1280,14 @@ boardCubes.forEach(cube => {
 let orbit = {
   isDragging: false,
   lastX: 0, lastY: 0,
-  rotX: 0.3,  // başlangıç açısı
+  rotX: 0.3,
   rotY: -0.5,
-  distance: 18,
+  distance: 28,
   minDist: 6,
   maxDist: 35,
   targetRotX: 0.3,
   targetRotY: -0.5,
-  targetDist: 18,
+  targetDist: 28,
 };
 
 function updateCamera() {
@@ -1109,17 +1323,27 @@ container.addEventListener('wheel', (e) => {
   orbit.targetDist = Math.max(orbit.minDist, Math.min(orbit.maxDist, orbit.targetDist));
 }, { passive: true });
 
-// Touch events
+// Touch events — unified (orbit + pinch zoom; mobil ghost touchmove ayrıca)
 let lastTouchDist = 0;
 let lastTouchX = 0;
 let lastTouchY = 0;
 let touchDragging = false;
+let lastTwoFingerCx = null;
+let lastTwoFingerCy = null;
 
 container.addEventListener('touchstart', (e) => {
   if (e.touches.length === 1) {
     touchDragging = true;
+    lastTwoFingerCx = null; lastTwoFingerCy = null;
     lastTouchX = e.touches[0].clientX;
     lastTouchY = e.touches[0].clientY;
+    // Mobil: parça seçiliyse ghost güncelle
+    if (typeof isMobile === 'function' && isMobile() &&
+        GameState.selectedPieceIndex >= 0 && GameState.phase === 'place' && !mobileOrbitActive) {
+      lastMobileTouchX = e.touches[0].clientX;
+      lastMobileTouchY = e.touches[0].clientY;
+      if (typeof updateMobileGhost === 'function') updateMobileGhost(lastMobileTouchX, lastMobileTouchY);
+    }
   } else if (e.touches.length === 2) {
     touchDragging = false;
     const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -1129,25 +1353,64 @@ container.addEventListener('touchstart', (e) => {
 }, { passive: true });
 
 container.addEventListener('touchmove', (e) => {
-  if (e.touches.length === 1 && touchDragging) {
-    const dx = e.touches[0].clientX - lastTouchX;
-    const dy = e.touches[0].clientY - lastTouchY;
-    orbit.targetRotY -= dx * 0.01;
-    orbit.targetRotX -= dy * 0.01;
-    orbit.targetRotX = Math.max(-1.4, Math.min(1.4, orbit.targetRotX));
-    lastTouchX = e.touches[0].clientX;
-    lastTouchY = e.touches[0].clientY;
-  } else if (e.touches.length === 2) {
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    orbit.targetDist -= (dist - lastTouchDist) * 0.05;
+  const oneFinger = e.touches.length === 1;
+  const twoFinger = e.touches.length === 2;
+
+  if (oneFinger && touchDragging) {
+    const x = e.touches[0].clientX;
+    const y = e.touches[0].clientY;
+    const dx = x - lastTouchX;
+    const dy = y - lastTouchY;
+
+    if (isMobile() && GameState.selectedPieceIndex >= 0 && GameState.phase === 'place') {
+      // Taş seçili + 1 parmak = ghost kaydır
+      lastMobileTouchX = x;
+      lastMobileTouchY = y;
+      if (typeof updateMobileGhost === 'function') updateMobileGhost(x, y);
+    } else {
+      // Normal orbit — 1 parmak
+      orbit.targetRotY -= dx * 0.008;
+      orbit.targetRotX -= dy * 0.008;
+      orbit.targetRotX = Math.max(-1.4, Math.min(1.4, orbit.targetRotX));
+    }
+    lastTouchX = x;
+    lastTouchY = y;
+
+  } else if (twoFinger) {
+    const t0x = e.touches[0].clientX, t0y = e.touches[0].clientY;
+    const t1x = e.touches[1].clientX, t1y = e.touches[1].clientY;
+
+    // Pinch zoom — her zaman
+    const dist = Math.sqrt((t0x-t1x)**2 + (t0y-t1y)**2);
+    orbit.targetDist -= (dist - lastTouchDist) * 0.04;
     orbit.targetDist = Math.max(orbit.minDist, Math.min(orbit.maxDist, orbit.targetDist));
     lastTouchDist = dist;
+
+    // 2 parmak centroid orbit — taş seçiliyken gövde döndür
+    if (isMobile() && GameState.selectedPieceIndex >= 0 && GameState.phase === 'place') {
+      const cx = (t0x + t1x) / 2;
+      const cy = (t0y + t1y) / 2;
+      // lastTwoFingerCx/Cy ile delta hesapla
+      if (lastTwoFingerCx !== null) {
+        const ddx = cx - lastTwoFingerCx;
+        const ddy = cy - lastTwoFingerCy;
+        // Duyarlılık: ekran genişliğine oranla normalize et
+        const sensitivity = 2.5 / Math.min(window.innerWidth, window.innerHeight);
+        orbit.targetRotY -= ddx * sensitivity;
+        orbit.targetRotX -= ddy * sensitivity;
+        orbit.targetRotX = Math.max(-1.4, Math.min(1.4, orbit.targetRotX));
+      }
+      lastTwoFingerCx = cx;
+      lastTwoFingerCy = cy;
+    }
   }
 }, { passive: true });
 
-container.addEventListener('touchend', () => { touchDragging = false; });
+container.addEventListener('touchend', () => {
+  touchDragging = false;
+  lastTwoFingerCx = null;
+  lastTwoFingerCy = null;
+});
 
 // ─── AMBIENT PARTICLES ───────────────────────────────────────────────────────
 const particleCount = 80;
@@ -1185,6 +1448,14 @@ function animate() {
   orbit.distance += (orbit.targetDist - orbit.distance) * 0.08;
 
   // Auto-rotate kapalı — sabit durur
+  // Mobile orbit: basılı tutunca 4 yönde döner
+  if (typeof mobileOrbitActive !== 'undefined' && mobileOrbitActive) {
+    const speed = 0.025;
+    if (mobileOrbitDir === 'left')  orbit.targetRotY -= speed;
+    if (mobileOrbitDir === 'right') orbit.targetRotY += speed;
+    if (mobileOrbitDir === 'up')    orbit.targetRotX = Math.min(1.4, orbit.targetRotX + speed);
+    if (mobileOrbitDir === 'down')  orbit.targetRotX = Math.max(-1.4, orbit.targetRotX - speed);
+  }
   updateCamera();
 
   // Particle drift
@@ -1209,13 +1480,16 @@ function animate() {
     }
   });
 
-  // Floating preview döndürme (smooth)
+  // Floating preview döndürme (smooth — mobilde daha yavaş)
   if (selectedPieceGroup) {
-    selectedPieceGroup.rotation.x += (previewRotation.x - selectedPieceGroup.rotation.x) * 0.12;
-    selectedPieceGroup.rotation.y += (previewRotation.y - selectedPieceGroup.rotation.y) * 0.12;
-    selectedPieceGroup.rotation.z += (previewRotation.z - selectedPieceGroup.rotation.z) * 0.12;
-    // Hafif yüzme animasyonu
-    selectedPieceGroup.position.y = 3 + Math.sin(t * 1.4) * 0.12;
+    const smoothFactor = isMobile() ? 0.06 : 0.12;
+    selectedPieceGroup.rotation.x += (previewRotation.x - selectedPieceGroup.rotation.x) * smoothFactor;
+    selectedPieceGroup.rotation.y += (previewRotation.y - selectedPieceGroup.rotation.y) * smoothFactor;
+    selectedPieceGroup.rotation.z += (previewRotation.z - selectedPieceGroup.rotation.z) * smoothFactor;
+    const previewX = isMobile() ? 2.8 : 5.5;
+    const previewY = isMobile() ? 5.5 : 3;
+    selectedPieceGroup.position.x = previewX;
+    selectedPieceGroup.position.y = previewY + Math.sin(t * 1.4) * 0.12;
   }
 
   // Son hamle vurgulama pulse
@@ -1414,7 +1688,10 @@ function selectPiece(index, player) {
   const center = new THREE.Vector3();
   box3.getCenter(center);
   group.position.sub(center);
-  group.position.set(5.5, 3, 0);
+  // Floating preview pozisyonu: mobilde gövdenin sağ üstüne yakın, masaüstünde uzakta
+  const previewX = isMobile() ? 2.8 : 5.5;
+  const previewY = isMobile() ? 5.5 : 3;
+  group.position.set(previewX, previewY, 0);
   group.userData.isPreview = true;
 
   scene.add(group);
@@ -1709,6 +1986,12 @@ container.addEventListener('mousemove', (e) => {
 container.addEventListener('click',(e)=>{
   if(GameState.selectedPieceIndex<0||GameState.phase!=='place')return;
   if(!snapValid||!currentSnapOffset)return;
+
+  // Mobilde click ile yerleştirme YOK — sadece "Yerleştir" butonu
+  // Ghost yeşil = buton aktif, oradan yerleştir
+  if (isMobile()) return;
+
+  // Masaüstünde onay dialogu
   const piece=PIECE_DEFS[GameState.selectedPieceIndex];
   pendingRotated=getRotatedCubes(piece,previewRotation);
   GameState.phase='confirm';
@@ -2216,6 +2499,139 @@ document.getElementById('phase-btn').addEventListener('click',()=>{
   }
 });
 
+// ─── MOBİL SİSTEM ─────────────────────────────────────────────────────────────
+const isMobile = () => window.innerWidth <= 768;
+let mobileOrbitActive = false;
+let mobileOrbitDir = 'left'; // left|right|up|down
+
+// 4 yön orbit
+function startMobileOrbitDir(dir) {
+  mobileOrbitActive = true;
+  mobileOrbitDir = dir;
+}
+function startMobileOrbit() { startMobileOrbitDir('left'); }
+function stopMobileOrbit() { mobileOrbitActive = false; }
+
+// Döndürme — sadece touchstart'tan çağır, çift tetiklemeyi önle
+let lastRotateTime = 0;
+function mobileRotateSafe(e, axis, dir) {
+  e.preventDefault();
+  const now = Date.now();
+  if (now - lastRotateTime < 200) return; // debounce 200ms
+  lastRotateTime = now;
+  mobileRotate(axis, dir);
+}
+
+function mobileRotate(axis, dir) {
+  const step = Math.PI / 2;
+  if (axis === 'x') previewRotation.x += dir * step;
+  if (axis === 'y') previewRotation.y += dir * step;
+  if (axis === 'z') previewRotation.z += dir * step;
+  // Ghost'u son bilinen pozisyonda anlık güncelle
+  if (lastMobileTouchX !== null) {
+    updateMobileGhost(lastMobileTouchX, lastMobileTouchY);
+  }
+}
+
+// Son dokunma pozisyonu — rotate sonrası ghost güncellemek için
+let lastMobileTouchX = null;
+let lastMobileTouchY = null;
+
+function mobileOpenPanel() {
+  openPiecePanel();
+  GameState.phase = 'select';
+}
+
+function setMobilePlaceMode(active) {
+  if (!isMobile()) return;
+  document.getElementById('mob-inspect-mode').style.display = active ? 'none' : 'block';
+  document.getElementById('mob-place-mode').style.display = active ? 'block' : 'none';
+  if (!active) {
+    const btn = document.getElementById('mobile-place-btn');
+    if (btn) { btn.classList.remove('enabled'); btn.textContent = currentLang === 'tr' ? 'Yerleştir' : 'Place'; }
+  }
+}
+
+function mobileCancelPlace() {
+  deselectPiece(); removeGhost();
+  GameState.phase = 'inspect';
+  setMobilePlaceMode(false);
+  updateMobileTurnUI();
+}
+
+function mobilePlacePiece() {
+  if (!snapValid || !currentSnapOffset) return; // ghost kırmızıysa çalışmaz
+  const piece = PIECE_DEFS[GameState.selectedPieceIndex];
+  pendingRotated = getRotatedCubes(piece, previewRotation);
+  placePiece(pendingRotated, { ...currentSnapOffset }, GameState.currentPlayer, GameState.selectedPieceIndex);
+  setMobilePlaceMode(false);
+}
+
+function updateMobileTurnUI() {
+  if (!isMobile()) return;
+  const p = GameState.currentPlayer;
+  const el = document.getElementById('mob-turn-name');
+  if (el) { el.textContent = t('player' + p); el.className = `mobile-turn-name p${p}`; }
+}
+
+function updateMobilePlaceBtn(valid) {
+  if (!isMobile()) return;
+  const btn = document.getElementById('mobile-place-btn');
+  if (!btn) return;
+  if (valid) { btn.classList.add('enabled'); btn.textContent = currentLang === 'tr' ? 'Yerleştir ✓' : 'Place ✓'; }
+  else { btn.classList.remove('enabled'); btn.textContent = currentLang === 'tr' ? 'Yerleştir' : 'Place'; }
+}
+
+function updateMobileGhost(clientX, clientY) {
+  if (GameState.selectedPieceIndex < 0) return;
+  const mx = (clientX / W()) * 2 - 1;
+  const my = -(clientY / H()) * 2 + 1;
+  raycaster.setFromCamera({ x: mx, y: my }, camera);
+  const hits = raycaster.intersectObjects([...boardCubes, ...placedMeshes], false);
+  const piece = PIECE_DEFS[GameState.selectedPieceIndex];
+  const rotated = getRotatedCubes(piece, previewRotation);
+  if (!hits.length) { removeGhost(); updateMobilePlaceBtn(false); return; }
+  const hit = hits[0];
+  const fn = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
+  fn.x = Math.round(fn.x); fn.y = Math.round(fn.y); fn.z = Math.round(fn.z);
+  const ud = hit.object.userData;
+  if (ud.gx === undefined) { removeGhost(); updateMobilePlaceBtn(false); return; }
+  const attachX = ud.gx + fn.x, attachY = ud.gy + fn.y, attachZ = ud.gz + fn.z;
+  const adjs = [{x:0,y:0,z:0},{x:1,y:0,z:0},{x:-1,y:0,z:0},{x:0,y:1,z:0},{x:0,y:-1,z:0},{x:0,y:0,z:1},{x:0,y:0,z:-1}];
+  let bestValid = null, bestInvalid = null, bestDist = Infinity;
+  for (const adj of adjs) {
+    const off = { x: attachX - rotated[0].x + adj.x, y: attachY - rotated[0].y + adj.y, z: attachZ - rotated[0].z + adj.z };
+    if (isValidPlacement(rotated, off)) { if (!bestValid) bestValid = off; break; }
+    else if (!hasCollision(rotated, off)) {
+      const d = Math.abs(adj.x)+Math.abs(adj.y)+Math.abs(adj.z);
+      if (d < bestDist) { bestDist = d; bestInvalid = off; }
+    }
+  }
+  if (bestValid) { showGhost(rotated, bestValid, true); updateMobilePlaceBtn(true); }
+  else if (bestInvalid) { showGhost(rotated, bestInvalid, false); updateMobilePlaceBtn(false); }
+  else { removeGhost(); updateMobilePlaceBtn(false); }
+}
+
+// selectPiece mobil mod geçişi — mevcut selectPiece fonksiyonuna ek
+const _origSelectPieceMobile = selectPiece;
+selectPiece = function(index, player) {
+  _origSelectPieceMobile(index, player);
+  if (isMobile()) {
+    setMobilePlaceMode(true);
+    GameState.phase = 'place';
+  }
+};
+
+// finalizePlacement sonrası mobil UI güncelle
+const _origFinalize = finalizePlacement;
+finalizePlacement = function(targets, animMeshes, player, pieceIndex) {
+  _origFinalize(targets, animMeshes, player, pieceIndex);
+  if (isMobile()) {
+    setMobilePlaceMode(false);
+    updateMobileTurnUI();
+  }
+};
+
 setTimeout(()=>{
   const loading=document.getElementById('loading');
   loading.style.opacity='0';
@@ -2409,7 +2825,77 @@ setTimeout(()=>{
     font-size:12px;letter-spacing:0.1em;
   }
 </style>
-  <!-- Son hamle vurgulama -->
+  <!-- MOBİL KONTROL PANELİ -->
+<div id="mobile-controls">
+  <div class="mobile-ctrl-bar">
+
+    <!-- Mod: İnceleme (taş seçilmemiş) -->
+    <div id="mob-inspect-mode">
+      <div class="mobile-top-row">
+        <div class="mobile-turn-info">
+          <div class="mobile-turn-label" data-i18n="turn_label">Sıra</div>
+          <div class="mobile-turn-name p1" id="mob-turn-name">Oyuncu 1</div>
+        </div>
+        <button id="mobile-phase-btn" onclick="mobileOpenPanel()">Taş Seç →</button>
+      </div>
+      <!-- Son hamle + ipucu satırı -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px;">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="mob-last-move-chk"
+            onchange="toggleLastMoveHighlight(this.checked);document.getElementById('last-move-chk').checked=this.checked;"
+            style="width:13px;height:13px;accent-color:var(--accent);">
+          <span style="font-size:10px;color:var(--text-muted);letter-spacing:0.08em;" data-i18n="highlight_last">Son hamleyi vurgula</span>
+        </label>
+        <span style="font-size:10px;color:var(--text-muted);letter-spacing:0.08em;">1 parmak döndür · 2 parmak zoom</span>
+      </div>
+    </div>
+
+    <!-- Mod: Yerleştirme (taş seçildi) -->
+    <div id="mob-place-mode" style="display:none;">
+
+      <!-- Döndürme grid -->
+      <div id="mobile-rotate-grid" class="visible" style="margin-bottom:8px;">
+        <div class="rot-btn-group">
+          <div class="rot-label">X</div>
+          <div class="rot-btn-pair">
+            <button class="rot-btn" ontouchstart="mobileRotateSafe(event,'x',-1)">−</button>
+            <button class="rot-btn" ontouchstart="mobileRotateSafe(event,'x',1)">+</button>
+          </div>
+        </div>
+        <div class="rot-btn-group">
+          <div class="rot-label">Y</div>
+          <div class="rot-btn-pair">
+            <button class="rot-btn" ontouchstart="mobileRotateSafe(event,'y',-1)">−</button>
+            <button class="rot-btn" ontouchstart="mobileRotateSafe(event,'y',1)">+</button>
+          </div>
+        </div>
+        <div class="rot-btn-group">
+          <div class="rot-label">Z</div>
+          <div class="rot-btn-pair">
+            <button class="rot-btn" ontouchstart="mobileRotateSafe(event,'z',-1)">−</button>
+            <button class="rot-btn" ontouchstart="mobileRotateSafe(event,'z',1)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alt satır: Yerleştir + Vazgeç -->
+      <div style="display:flex;gap:8px;">
+        <button id="mobile-place-btn" class="visible" style="flex:3;" ontouchstart="mobilePlacePiece()">
+          Yerleştir
+        </button>
+        <button id="mobile-cancel-btn" style="display:block;flex:1;" ontouchstart="mobileCancelPlace()">✕</button>
+      </div>
+
+      <!-- İpucu -->
+      <div style="font-size:10px;color:var(--text-muted);text-align:center;margin-top:6px;letter-spacing:0.08em;">
+        1 parmak kaydır · 2 parmak gövde döndür · Yeşil = hazır
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Son hamle vurgulama -->
 <div id="last-move-toggle">
   <input type="checkbox" id="last-move-chk" onchange="toggleLastMoveHighlight(this.checked)">
   <label for="last-move-chk" data-i18n="highlight_last">Son hamleyi vurgula</label>
