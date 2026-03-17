@@ -1,0 +1,2419 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>KAKTÜS — Strateji Oyunu</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0b09;
+    --surface: #131509;
+    --border: #3a3f2a;
+    --text: #f0f2e6;        /* #f0f2e6 on #0a0b09 → ~17:1 AAA */
+    --text-muted: #a8ad94;  /* #a8ad94 on #0a0b09 → ~7.2:1 AAA */
+    --green-dark: #2d5a27;
+    --green-light: #8fba3c;
+    --green-glow: #c8f060;
+    --p1: #ffb830;          /* #ffb830 on #131509 → ~8.5:1 AAA */
+    --p2: #ff6b4a;          /* #ff6b4a on #131509 → ~7.1:1 AAA */
+    --accent: #c8f060;      /* #c8f060 on #0a0b09 → ~13:1 AAA */
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+    height: 100dvh;
+    width: 100vw;
+  }
+
+  #canvas-container {
+    position: absolute;
+    inset: 0;
+  }
+
+  canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* HUD */
+  #hud {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Top bar */
+  #topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(to bottom, rgba(14,15,12,0.95), transparent);
+    pointer-events: all;
+  }
+
+  .game-title {
+    font-size: 15px;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  /* Score panels */
+  .score-panels {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .score-card {
+    background: rgba(19,21,9,0.95);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    text-align: center;
+    min-width: 80px;
+    transition: border-color 0.3s;
+  }
+
+  .score-card.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 14px rgba(200,240,96,0.2);
+  }
+
+  .score-card .player-label {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    font-weight: 700;
+  }
+
+  .score-card.p1 .player-label { color: var(--p1); }
+  .score-card.p2 .player-label { color: var(--p2); }
+
+  .score-card .score-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .score-card .pieces-left {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-weight: 600;
+  }
+
+  .turn-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* Bottom bar */
+  #bottombar {
+    margin-top: auto;
+    padding: 16px 20px;
+    background: linear-gradient(to top, rgba(14,15,12,0.95), transparent);
+    pointer-events: all;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  /* Turn display */
+  #turn-display {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .turn-label {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .turn-name {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .turn-name.p1 { color: var(--p1); }
+  .turn-name.p2 { color: var(--p2); }
+
+  /* Controls hint */
+  #controls-hint {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-align: right;
+    line-height: 2.0;
+    font-weight: 600;
+  }
+
+  #controls-hint span {
+    display: inline-block;
+    background: rgba(255,255,255,0.09);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 2px 6px;
+    margin: 0 1px;
+    font-size: 10px;
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  /* Phase button */
+  #phase-btn {
+    pointer-events: all;
+    background: var(--accent);
+    color: #0a0b09;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  #phase-btn:hover {
+    background: var(--green-glow);
+    transform: translateY(-1px);
+  }
+
+  /* Info panel - left side */
+  #info-panel {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+  }
+
+  .info-chip {
+    background: rgba(19,21,9,0.92);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .info-chip strong {
+    color: var(--accent);
+    display: block;
+    font-size: 18px;
+    margin-bottom: 3px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Loading overlay */
+  #loading {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 100;
+    transition: opacity 0.5s;
+  }
+
+  #loading .logo {
+    font-size: 48px;
+    font-weight: 900;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+  }
+
+  #loading .sub {
+    font-size: 13px;
+    letter-spacing: 0.4em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .loader-bar {
+    width: 120px;
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+
+  .loader-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    animation: load 1.2s ease forwards;
+  }
+
+  @keyframes load {
+    to { width: 100%; }
+  }
+
+  /* ── PIECE PANEL (sağ taraf) ────────────────────────────────── */
+  #piece-panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 210px;
+    background: rgba(10,11,9,0.97);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    pointer-events: all;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    z-index: 10;
+  }
+  #piece-panel.open { transform: translateX(0); }
+
+  /* Panel tab'ları */
+  .panel-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-tab {
+    flex: 1;
+    padding: 10px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-align: center;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    transition: all 0.18s;
+    font-family: 'Courier New', monospace;
+  }
+  .panel-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .panel-tab.p1-tab.active { border-bottom-color: var(--p1); color: var(--p1); }
+  .panel-tab.p2-tab.active { border-bottom-color: var(--p2); color: var(--p2); }
+  .panel-tab:hover:not(.active) { color: var(--text); }
+
+  .panel-player-label {
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-player-label.p1 { color: var(--p1); }
+  .panel-player-label.p2 { color: var(--p2); }
+
+  #piece-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .piece-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .piece-item:hover { background: rgba(255,255,255,0.07); border-color: rgba(200,240,96,0.4); }
+  .piece-item.selected { border-color: var(--accent); background: rgba(200,240,96,0.08); box-shadow: 0 0 10px rgba(200,240,96,0.12); }
+  .piece-item.used { opacity: 0.28; pointer-events: none; }
+
+  .piece-preview {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 5px;
+    background: rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .piece-preview svg { display: block; }
+  .piece-info { flex: 1; min-width: 0; }
+  .piece-name { font-size: 11px; font-weight: 700; color: var(--text); letter-spacing: 0.04em; margin-bottom: 3px; }
+  .piece-units { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+  .piece-pts { font-size: 14px; font-weight: 900; flex-shrink: 0; }
+
+  /* Floating piece in main scene */
+  #preview-label {
+    position: absolute;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10,11,9,0.92);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+  }
+  #preview-label.visible { opacity: 1; }
+
+  #rotation-hint {
+    position: absolute;
+    bottom: 90px;
+    right: 210px;
+    background: rgba(10,11,9,0.92);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+    line-height: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  #rotation-hint.visible { opacity: 1; }
+  #rotation-hint span {
+    display: inline-block;
+    background: rgba(255,255,255,0.09);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 10px;
+    color: var(--text);
+    font-weight: 700;
+    margin: 0 1px;
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="logo">KAKTÜS</div>
+  <div class="sub">Strateji Oyunu</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<div id="canvas-container"></div>
+
+<div id="hud">
+  <!-- Top bar -->
+  <div id="topbar">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="game-title">⬡ Kaktüs</div>
+      <button id="rules-btn" onclick="openRulesModal()" style="
+        background:rgba(255,255,255,0.07);border:1px solid var(--border);
+        color:var(--text-muted);width:26px;height:26px;border-radius:50%;
+        font-family:monospace;font-size:13px;font-weight:700;cursor:pointer;
+        display:flex;align-items:center;justify-content:center;
+        transition:all 0.2s;flex-shrink:0;
+      ">?</button>
+    </div>
+
+    <div class="score-panels">
+      <div class="score-card p1 active" id="score-p1">
+        <div class="player-label" data-i18n="player1">Oyuncu 1</div>
+        <div class="score-value" id="val-p1">0</div>
+        <div class="pieces-left" id="pieces-p1" data-i18n-tpl="pieces">10 taş</div>
+      </div>
+      <div class="turn-indicator" id="turn-dot"></div>
+      <div class="score-card p2" id="score-p2">
+        <div class="player-label" data-i18n="player2">Oyuncu 2</div>
+        <div class="score-value" id="val-p2">0</div>
+        <div class="pieces-left" id="pieces-p2" data-i18n-tpl="pieces">10 taş</div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;">
+      <!-- TR/EN toggle -->
+      <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+        <button id="lang-tr" onclick="setLang('tr')" style="
+          background:var(--accent);color:#0a0b09;border:none;
+          padding:5px 10px;font-family:monospace;font-size:11px;font-weight:700;
+          cursor:pointer;letter-spacing:0.1em;transition:all 0.2s;
+        ">TR</button>
+        <button id="lang-en" onclick="setLang('en')" style="
+          background:transparent;color:var(--text-muted);border:none;
+          padding:5px 10px;font-family:monospace;font-size:11px;font-weight:700;
+          cursor:pointer;letter-spacing:0.1em;transition:all 0.2s;
+        ">EN</button>
+      </div>
+      <div class="game-title" id="game-phase">HAZIRLIK</div>
+    </div>
+  </div>
+
+  <!-- Info panel -->
+  <div id="info-panel">
+    <div class="info-chip">
+      <strong>32</strong>
+      Tahta Birimi
+    </div>
+    <div class="info-chip">
+      <strong id="turn-round">1</strong>
+      Hamle
+    </div>
+
+    <!-- Son hamle puan özeti -->
+    <div class="info-chip" id="last-score-chip" style="display:none;min-width:130px;">
+      <strong id="last-score-pts" style="font-size:15px;">+0</strong>
+      <div id="last-score-desc" style="font-size:10px;line-height:1.5;color:var(--text-muted);font-weight:600;margin-top:2px;"></div>
+    </div>
+
+    <!-- İnceleme modu: Oyunu Bitir -->
+    <div id="inspect-end-btn" style="display:none;">
+      <button onclick="endGameNow()" id="inspect-end-label" style="
+        background:#c8f060;color:#0a0b09;border:none;
+        border-radius:8px;padding:10px 14px;cursor:pointer;
+        font-family:'Courier New',monospace;font-size:12px;
+        font-weight:700;letter-spacing:0.12em;width:100%;
+        pointer-events:all;
+      ">Oyunu Bitir</button>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div id="bottombar">
+    <div id="turn-display">
+      <div class="turn-label">Sıra</div>
+      <div class="turn-name p1" id="turn-name">Oyuncu 1</div>
+    </div>
+
+    <button id="phase-btn" onclick="openPiecePanel()">Taş Seç →</button>
+
+    <div id="controls-hint">
+      <span>Sürükle</span> döndür &nbsp;
+      <span>Scroll</span> zoom<br>
+      <span>Q/E</span> X &nbsp; <span>W/S</span> Y &nbsp; <span>A/D</span> Z
+    </div>
+  </div>
+<!-- Piece Panel -->
+<div id="piece-panel">
+  <!-- Tab bar -->
+  <div class="panel-tabs">
+    <button class="panel-tab p1-tab active" id="tab-p1" onclick="switchPanelTab(1)">● O1 Taşları</button>
+    <button class="panel-tab p2-tab" id="tab-p2" onclick="switchPanelTab(2)">● O2 Taşları</button>
+    <button class="panel-tab" style="flex:0;padding:10px 10px;" onclick="closePiecePanel()">✕</button>
+  </div>
+  <div class="panel-player-label p1" id="panel-player-label">Seçim: Oyuncu 1</div>
+  <div id="piece-list"></div>
+</div>
+
+<!-- Floating labels -->
+<div id="preview-label">Taş Seçildi — Döndür & Yerleştir</div>
+<div id="rotation-hint">
+  <span>Q</span>/<span>E</span> X ekseni &nbsp;
+  <span>W</span>/<span>S</span> Y ekseni &nbsp;
+  <span>A</span>/<span>D</span> Z ekseni
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+// ─── DİL SİSTEMİ ─────────────────────────────────────────────────────────────
+let currentLang = 'tr';
+
+const I18N = {
+  tr: {
+    player1: 'Oyuncu 1', player2: 'Oyuncu 2',
+    pieces: (n) => `${n} taş`,
+    turn_label: 'Sıra',
+    phase_inspect: 'HAZIRLIK', phase_select: 'TAŞ SEÇ',
+    phase_place: 'YERLEŞTİR', phase_turn: 'DÖNDÜR',
+    btn_select: 'Taş Seç →', btn_place: 'Yerleştir →', btn_cancel: '✕ İptal',
+    board_units: 'Tahta Birimi', move: 'Hamle',
+    highlight_last: 'Son hamleyi vurgula',
+    confirm_title: 'Yerleştir?', confirm_msg: 'Taşı bu konuma koy',
+    confirm_ok: '✓ Onayla', confirm_cancel: 'İptal',
+    win_kilit: '🔒 Kilit Oyun!', win_skor: '🏆 Skor Oyun!', win_kaktus: '🌵 Kaktüs Oyun!',
+    win_draw: 'Berabere!', win_player: (p) => `Oyuncu ${p} Kazandı!`,
+    replay: 'Yeniden Oyna',
+    rules_title: 'KAKTÜS — KURALLAR',
+    tab_rules: 'KURALLAR', tab_example: 'ÖRNEK OYUN',
+    no_moves: (p) => `Oyuncu ${p} — Yerleştirilebilecek alan kalmadı`,
+    end_game: 'Oyunu Bitir', inspect: 'İncele',
+    preview_label: 'Taş Seçildi — Döndür & Yerleştir',
+  },
+  en: {
+    player1: 'Player 1', player2: 'Player 2',
+    pieces: (n) => `${n} pieces`,
+    turn_label: 'Turn',
+    phase_inspect: 'READY', phase_select: 'SELECT',
+    phase_place: 'PLACE', phase_turn: 'ROTATE',
+    btn_select: 'Select Piece →', btn_place: 'Place →', btn_cancel: '✕ Cancel',
+    board_units: 'Board Units', move: 'Move',
+    highlight_last: 'Highlight last move',
+    confirm_title: 'Place here?', confirm_msg: 'Place the piece at this position',
+    confirm_ok: '✓ Confirm', confirm_cancel: 'Cancel',
+    win_kilit: '🔒 Lock Win!', win_skor: '🏆 Score Win!', win_kaktus: '🌵 Cactus Win!',
+    win_draw: 'Draw!', win_player: (p) => `Player ${p} Wins!`,
+    replay: 'Play Again',
+    rules_title: 'KAKTÜS — RULES',
+    tab_rules: 'RULES', tab_example: 'EXAMPLE',
+    no_moves: (p) => `Player ${p} — No valid moves remaining`,
+    end_game: 'End Game', inspect: 'Inspect',
+    preview_label: 'Piece Selected — Rotate & Place',
+  }
+};
+
+function t(key, ...args) {
+  const val = I18N[currentLang][key];
+  return typeof val === 'function' ? val(...args) : (val || key);
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById('lang-tr').style.background = lang === 'tr' ? 'var(--accent)' : 'transparent';
+  document.getElementById('lang-tr').style.color = lang === 'tr' ? '#0a0b09' : 'var(--text-muted)';
+  document.getElementById('lang-en').style.background = lang === 'en' ? 'var(--accent)' : 'transparent';
+  document.getElementById('lang-en').style.color = lang === 'en' ? '#0a0b09' : 'var(--text-muted)';
+
+  // Static UI güncelle
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (I18N[lang][key]) el.textContent = I18N[lang][key];
+  });
+  document.querySelector('.turn-label').textContent = t('turn_label');
+  document.getElementById('game-phase').textContent = t('phase_inspect');
+  document.getElementById('phase-btn').textContent = t('btn_select');
+  document.querySelector('[data-i18n="highlight_last"]').textContent = t('highlight_last');
+  document.querySelector('[data-i18n="board_units"]')?.setAttribute('data-i18n-val', t('board_units'));
+
+  // Info chip labels
+  const chips = document.querySelectorAll('.info-chip');
+  if (chips[0]) chips[0].lastChild.textContent = ' ' + t('board_units');
+  if (chips[1]) chips[1].lastChild.textContent = ' ' + t('move');
+
+  // Confirm dialog
+  const cd = document.getElementById('confirm-dialog');
+  if (cd) {
+    cd.querySelector('.confirm-title')?.textContent && (cd.querySelector('.confirm-title').textContent = t('confirm_title'));
+    cd.querySelector('.confirm-msg')?.textContent && (cd.querySelector('.confirm-msg').textContent = t('confirm_msg'));
+  }
+
+  // Kural modalı içeriğini güncelle
+  renderRulesContent();
+  updateInspectBtn();
+}
+
+function updateInspectBtn() {
+  const label = document.getElementById('inspect-end-label');
+  if (label) label.textContent = t('end_game');
+}
+
+// ─── KURAL MODALI ─────────────────────────────────────────────────────────────
+const RULES_CONTENT = {
+  tr: {
+    sections: [
+      {
+        title: 'Temel Kurallar',
+        items: [
+          'Oyun 2 kişilik, sıra tabanlıdır. Her oyuncunun 10 taşı vardır.',
+          'İlk taş, gövdenin üst veya alt koyu bölgesine temas edecek şekilde yerleştirilir.',
+          'Sonraki her taş, bir önceki rakip taşına en az 1 birimden temas etmelidir.',
+          'Taşlar gövdenin dışına yapışır — içine giremez.',
+          'Kuşbakışı bakıldığında taş gövdeden en fazla 1 kademe dışarı taşabilir.',
+        ]
+      },
+      {
+        title: 'Puanlama',
+        items: [
+          '📦 Her taş, birim sayısı kadar temel puan getirir.',
+          '🤝 Temas ettiğiniz rakip birim başına +1 ekstra puan kazanırsınız.',
+          '⚡ Tek bir biriminiz aynı anda 2+ rakip birime temas ederse +5 Yerleşim Bonusu.',
+          '⭐ Herhangi bir yönde 8+ birim aralıksız devamlılık → +10 Devamlılık Bonusu.',
+          '🎉 Aynı devamlılık 16 birime ulaşırsa → +20 Devamlılık Bonusu.',
+        ]
+      },
+      {
+        title: 'Oyun Sonu',
+        items: [
+          '🏆 Skor Oyun: Tüm taşlar bitince en yüksek puan kazanır.',
+          '🌵 Kaktüs Oyun: Yerleştirilemez hale gelinince, elde kalan taş puanları düşülür.',
+          '🔒 Kilit Oyun: Gövdeyi yatayda (12 birim) veya dikeyde (20 birim) aralıksız sararsanız anında kazanırsınız.',
+        ]
+      },
+    ]
+  },
+  en: {
+    sections: [
+      {
+        title: 'Basic Rules',
+        items: [
+          'The game is 2-player, turn-based. Each player has 10 pieces.',
+          'The first piece must touch the dark zone at the top or bottom of the board.',
+          'Each subsequent piece must touch at least 1 unit of the opponent\'s last piece.',
+          'Pieces attach to the outside of the board — they cannot enter it.',
+          'When viewed from above, a piece may extend at most 1 step beyond the board edge.',
+        ]
+      },
+      {
+        title: 'Scoring',
+        items: [
+          '📦 Each piece scores points equal to its number of units.',
+          '🤝 Earn +1 extra point for each opponent unit you touch.',
+          '⚡ If a single unit touches 2+ opponent units at once → +5 Placement Bonus.',
+          '⭐ 8+ units of your color in unbroken sequence (any direction) → +10 Continuity Bonus.',
+          '🎉 Same sequence reaching 16 units → +20 Continuity Bonus.',
+        ]
+      },
+      {
+        title: 'Game End',
+        items: [
+          '🏆 Score Win: When all pieces are placed, highest score wins.',
+          '🌵 Cactus Win: When no moves remain, leftover piece values are deducted.',
+          '🔒 Lock Win: Complete an unbroken loop around the board — 12 units horizontal or 20 vertical — to win instantly.',
+        ]
+      },
+    ]
+  }
+};
+
+const EXAMPLE_CONTENT = {
+  tr: [
+    { num: '1. HAMLE', text: 'İlk oyuncu taşını seçer ve gövdenin üst ya da alt koyu bölgesine temas edecek şekilde yerleştirir. 4 birimlik taş → 4 puan.' },
+    { num: '2. HAMLE', text: 'İkinci oyuncu taşını, ilk oyuncunun taşına temas ettirecek şekilde yerleştirmek zorundadır. Temas ettiği birim kadar ekstra puan kazanır.' },
+    { num: 'YERLEŞİM BONUSU', text: 'Tek bir biriminiz aynı anda rakibin 2 veya daha fazla birimine temas ederse +5 bonus puan kazanırsınız.' },
+    { num: 'DEVAMLlLIK BONUSU', text: 'Kendi renginizdeki taşlar herhangi bir yönde 8 birim aralıksız sıralanırsa +10 bonus. 16 birime ulaşınca +20 bonus.' },
+    { num: 'KİLİT OYUN', text: 'Gövdenin etrafını yatayda 12 birim veya dikeyde 20 birim aralıksız sararsan, skor ne olursa olsun anında kazanırsın.' },
+  ],
+  en: [
+    { num: 'MOVE 1', text: 'The first player selects a piece and places it touching the dark zone at the top or bottom. A 4-unit piece → 4 points.' },
+    { num: 'MOVE 2', text: 'The second player must place their piece touching the first player\'s last piece. They earn extra points for each unit touched.' },
+    { num: 'PLACEMENT BONUS', text: 'If a single unit of yours touches 2 or more opponent units at once, you earn +5 bonus points.' },
+    { num: 'CONTINUITY BONUS', text: 'If your pieces form an unbroken line of 8+ units in any direction → +10 bonus. Reaching 16 units → +20 bonus.' },
+    { num: 'LOCK WIN', text: 'Surround the board with an unbroken loop — 12 units horizontally or 20 vertically — to win instantly regardless of score.' },
+  ]
+};
+
+let currentRulesTab = 'rules';
+
+function openRulesModal() {
+  renderRulesContent();
+  document.getElementById('rules-modal').classList.add('visible');
+}
+
+function closeRulesModal() {
+  document.getElementById('rules-modal').classList.remove('visible');
+}
+
+function switchRulesTab(tab) {
+  currentRulesTab = tab;
+  document.getElementById('rules-content').style.display = tab === 'rules' ? 'block' : 'none';
+  document.getElementById('example-content').style.display = tab === 'example' ? 'block' : 'none';
+  document.getElementById('rtab-rules').style.borderBottomColor = tab === 'rules' ? '#c8f060' : 'transparent';
+  document.getElementById('rtab-rules').style.color = tab === 'rules' ? '#f0f2e6' : '#a8ad94';
+  document.getElementById('rtab-example').style.borderBottomColor = tab === 'example' ? '#c8f060' : 'transparent';
+  document.getElementById('rtab-example').style.color = tab === 'example' ? '#f0f2e6' : '#a8ad94';
+}
+
+function renderRulesContent() {
+  const lang = currentLang;
+
+  // Kurallar tab başlıkları
+  document.getElementById('rtab-rules').textContent = t('tab_rules');
+  document.getElementById('rtab-example').textContent = t('tab_example');
+  document.querySelector('[data-i18n="rules_title"]').textContent = t('rules_title');
+
+  // Kurallar içeriği
+  const rulesData = RULES_CONTENT[lang];
+  let html = '';
+  rulesData.sections.forEach(sec => {
+    html += `<div class="rules-section"><h3>${sec.title}</h3><ul>`;
+    sec.items.forEach(item => { html += `<li>${item}</li>`; });
+    html += `</ul></div>`;
+  });
+  document.getElementById('rules-text').innerHTML = html;
+
+  // Örnek oyun içeriği
+  const exData = EXAMPLE_CONTENT[lang];
+  let exHtml = '';
+  exData.forEach(step => {
+    exHtml += `<div class="example-step"><div class="step-num">${step.num}</div><p>${step.text}</p></div>`;
+  });
+  exHtml += `<div class="coming-soon">🎬 ${lang === 'tr' ? 'Animasyonlu örnek oyun yakında eklenecek.' : 'Animated example coming soon.'}</div>`;
+  document.getElementById('example-text').innerHTML = exHtml;
+}
+
+
+const GameState = {
+  currentPlayer: 1,
+  scores: [0, 0],
+  piecesLeft: [10, 10],
+  round: 1,
+  phase: 'inspect',
+  lastPlacedCubes: [],
+  selectedPieceIndex: -1,
+  usedPieces: [[], []],
+  inspectMode: false,
+};
+
+// ─── PIECE DEFINITIONS ────────────────────────────────────────────────────────
+// Her parça: küp koordinatları dizisi [x, y, z]
+// Orijin (0,0,0) parçanın referans noktası
+
+const PIECE_DEFS = [
+  {
+    id: 0,
+    name: '2\'li Çubuk',
+    units: 2,
+    // 2 yan yana (X ekseninde)
+    cubes: [[0,0,0],[1,0,0]],
+  },
+  {
+    id: 1,
+    name: '3\'lü Köşe',
+    units: 3,
+    // 2 üst üste + alttakinin yanında 1
+    cubes: [[0,0,0],[0,1,0],[1,0,0]],
+  },
+  {
+    id: 2,
+    name: '4\'lü L',
+    units: 4,
+    // 3 üst üste + alttakinin yanında 1
+    cubes: [[0,0,0],[0,1,0],[0,2,0],[1,0,0]],
+  },
+  {
+    id: 3,
+    name: '4\'lü Kare',
+    units: 4,
+    // 2x2 kare (XZ düzleminde)
+    cubes: [[0,0,0],[1,0,0],[0,0,1],[1,0,1]],
+  },
+  {
+    id: 4,
+    name: '5\'li Büyük L',
+    units: 5,
+    // 4 üst üste + alttakinin yanında 1
+    cubes: [[0,0,0],[0,1,0],[0,2,0],[0,3,0],[1,0,0]],
+  },
+  {
+    id: 5,
+    name: '5\'li Merdiven',
+    units: 5,
+    // 3 yüksek sütun + yanında 2 yüksek sütun
+    cubes: [[0,0,0],[0,1,0],[0,2,0],[1,0,0],[1,1,0]],
+  },
+  {
+    id: 6,
+    name: '6\'lı Duvar',
+    units: 6,
+    // 3x2 düz dikdörtgen (3 geniş, 2 yüksek → XY)
+    cubes: [[0,0,0],[1,0,0],[2,0,0],[0,1,0],[1,1,0],[2,1,0]],
+  },
+  {
+    id: 7,
+    name: '6\'lı Merdiven',
+    units: 6,
+    // 4 yüksek + yanında 2 yüksek
+    cubes: [[0,0,0],[0,1,0],[0,2,0],[0,3,0],[1,0,0],[1,1,0]],
+  },
+  {
+    id: 8,
+    name: '7\'li Merdiven',
+    units: 7,
+    // 4 yüksek + yanında 3 yüksek
+    cubes: [[0,0,0],[0,1,0],[0,2,0],[0,3,0],[1,0,0],[1,1,0],[1,2,0]],
+  },
+  {
+    id: 9,
+    name: '8\'li Duvar',
+    units: 8,
+    // 4 yüksek + yanında 4 yüksek (2x4 duvar)
+    cubes: [[0,0,0],[0,1,0],[0,2,0],[0,3,0],[1,0,0],[1,1,0],[1,2,0],[1,3,0]],
+  },
+];
+
+// ─── RENK SİSTEMİ ────────────────────────────────────────────────────────────
+// P1 (soğuk): sarı-yeşilden koyu yeşile — doygun, net yeşil skalası
+const P1_COLORS = [
+  0xd4f04a, // 2 birim - çok açık sarı-yeşil
+  0xb8dc28, // 3 birim - açık yeşil-sarı
+  0x8fc820, // 4 birim - orta-açık yeşil
+  0x70b018, // 4 birim (kare)
+  0x529a10, // 5 birim - orta yeşil
+  0x3d8410, // 5 birim (merdiven)
+  0x2d6c0c, // 6 birim - koyu yeşil
+  0x205808, // 6 birim (merdiven)
+  0x164806, // 7 birim - çok koyu
+  0x0e3804, // 8 birim - en koyu
+];
+
+// P2 (sıcak): açık sarıdan koyu kırmızıya — poster'daki sıcak palet
+const P2_COLORS = [
+  0xffe838, // 2 birim - parlak sarı
+  0xffcc20, // 3 birim - sarı
+  0xffaa00, // 4 birim - amber
+  0xff8c00, // 4 birim (kare) - koyu amber
+  0xf06800, // 5 birim - turuncu
+  0xe05000, // 5 birim (merdiven)
+  0xcc3800, // 6 birim - koyu turuncu
+  0xb82800, // 6 birim (merdiven)
+  0xa01800, // 7 birim - kırmızı-turuncu
+  0x881000, // 8 birim - koyu kırmızı
+];
+
+// ─── SCENE SETUP ─────────────────────────────────────────────────────────────
+const container = document.getElementById('canvas-container');
+const W = () => container.clientWidth;
+const H = () => container.clientHeight;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
+renderer.setSize(W(), H());
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setClearColor(0x0a0b09, 1);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.25;
+container.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0a0b09, 0.012);
+
+const camera = new THREE.PerspectiveCamera(42, W() / H(), 0.1, 200);
+camera.position.set(8, 10, 16);
+camera.lookAt(0, 0, 0);
+
+// ─── LIGHTING — yüksek kalite ────────────────────────────────────────────────
+const ambientLight = new THREE.AmbientLight(0x8899aa, 0.45);
+scene.add(ambientLight);
+
+const mainLight = new THREE.DirectionalLight(0xfff8f0, 1.8);
+mainLight.position.set(6, 16, 10);
+mainLight.castShadow = true;
+mainLight.shadow.mapSize.set(2048, 2048);
+mainLight.shadow.camera.near = 0.5;
+mainLight.shadow.camera.far = 60;
+mainLight.shadow.camera.left = -15;
+mainLight.shadow.camera.right = 15;
+mainLight.shadow.camera.top = 22;
+mainLight.shadow.camera.bottom = -22;
+mainLight.shadow.bias = -0.001;
+scene.add(mainLight);
+
+const fillLight = new THREE.DirectionalLight(0xaaccff, 0.4);
+fillLight.position.set(-8, 2, -6);
+scene.add(fillLight);
+
+const rimLight = new THREE.DirectionalLight(0xffeebb, 0.35);
+rimLight.position.set(2, -6, -10);
+scene.add(rimLight);
+
+// Nokta ışık — küplere derinlik katar
+const pointLight = new THREE.PointLight(0xfff0cc, 0.6, 25);
+pointLight.position.set(3, 5, 8);
+scene.add(pointLight);
+
+// ─── BOARD GEOMETRY ──────────────────────────────────────────────────────────
+const UNIT = 1.0;       // küp boyutu
+const GAP  = 0.04;      // küpler arası boşluk
+const BEVEL = 0.06;     // köşe yumuşatma
+
+// Renkler
+const MAT_DARK_GREEN = new THREE.MeshStandardMaterial({
+  color: 0x7a5c38,
+  roughness: 0.7,
+  metalness: 0.04,
+});
+const MAT_LIGHT_GREEN = new THREE.MeshStandardMaterial({
+  color: 0xc4a46e,
+  roughness: 0.65,
+  metalness: 0.02,
+});
+
+// Parça materyali - doygun renkler, net yüzey
+function getPieceMaterial(player, units) {
+  const idx = units - 2;
+  const colors = player === 1 ? P1_COLORS : P2_COLORS;
+  const color = colors[Math.min(idx, colors.length - 1)];
+  return new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.45,
+    metalness: 0.08,
+    envMapIntensity: 0.5,
+  });
+}
+
+// Chamfered (yumuşatılmış köşeli) küp geometrisi
+function createRoundedBoxGeometry(size, radius) {
+  // BoxGeometry + subdivision yaklaşımı yerine THREE.js r128'de
+  // basit bir chamfer simüle ediyoruz: küçük scale trick
+  const geo = new THREE.BoxGeometry(size, size, size, 2, 2, 2);
+  // Köşeleri içeri çekiyoruz
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    let x = pos.getX(i);
+    let y = pos.getY(i);
+    let z = pos.getZ(i);
+    const half = size / 2;
+    const clamp = (v) => Math.max(-half + radius, Math.min(half - radius, v));
+    // normalize + bevel
+    const len = Math.sqrt(x*x + y*y + z*z);
+    const factor = 1 - (radius / len) * 0.15;
+    pos.setXYZ(i, x * factor, y * factor, z * factor);
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
+// Board group — merkez orijinde
+const boardGroup = new THREE.Group();
+scene.add(boardGroup);
+
+// Grid: x: 0,1  y: 0..7  z: 0,1
+// Yükseklik 8, genişlik 2x2
+const boardCubes = [];
+
+function isBoardDark(x, y, z) {
+  return y <= 0 || y >= 7; // alt ve üst 1 kat (toplam 4 küp her katman 2x2=4 → 2 kat × 4 = 8 küp = koyu)
+  // Ancak kural: üstteki 4 birim + alttaki 4 birim koyu
+  // 2x2 grid → 1 kat = 4 küp → y=0,1 alt iki kat olabilir ama kural 4 birim
+  // Yani sadece y=0 (alt kat, 4 küp) ve y=7 (üst kat, 4 küp) koyu
+}
+
+const cubeGeo = createRoundedBoxGeometry(UNIT - GAP * 2, BEVEL);
+
+for (let y = 0; y < 8; y++) {
+  for (let x = 0; x < 2; x++) {
+    for (let z = 0; z < 2; z++) {
+      const isDark = (y === 0 || y === 7);
+      const mat = isDark ? MAT_DARK_GREEN.clone() : MAT_LIGHT_GREEN.clone();
+      const mesh = new THREE.Mesh(cubeGeo, mat);
+
+      // Merkez: x: -0.5..0.5, y: -3.5..3.5, z: -0.5..0.5
+      mesh.position.set(
+        (x - 0.5) * UNIT,
+        (y - 3.5) * UNIT,
+        (z - 0.5) * UNIT
+      );
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+
+      mesh.userData = {
+        type: 'board',
+        gx: x, gy: y, gz: z,
+        isDark,
+        baseMat: mat,
+      };
+
+      boardGroup.add(mesh);
+      boardCubes.push(mesh);
+    }
+  }
+}
+
+// Subtle edge lines — grid outline
+const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(UNIT - GAP*2, UNIT - GAP*2, UNIT - GAP*2));
+const edgeMat = new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25 });
+
+boardCubes.forEach(cube => {
+  const edges = new THREE.LineSegments(edgeGeo, edgeMat);
+  edges.position.copy(cube.position);
+  boardGroup.add(edges);
+});
+
+// ─── ORBIT CONTROLS (Manuel) ─────────────────────────────────────────────────
+let orbit = {
+  isDragging: false,
+  lastX: 0, lastY: 0,
+  rotX: 0.3,  // başlangıç açısı
+  rotY: -0.5,
+  distance: 18,
+  minDist: 6,
+  maxDist: 35,
+  targetRotX: 0.3,
+  targetRotY: -0.5,
+  targetDist: 18,
+};
+
+function updateCamera() {
+  const x = orbit.distance * Math.sin(orbit.rotY) * Math.cos(orbit.rotX);
+  const y = orbit.distance * Math.sin(orbit.rotX);
+  const z = orbit.distance * Math.cos(orbit.rotY) * Math.cos(orbit.rotX);
+  camera.position.set(x, y, z);
+  camera.lookAt(0, 0, 0);
+}
+
+// Mouse events
+container.addEventListener('mousedown', (e) => {
+  orbit.isDragging = true;
+  orbit.lastX = e.clientX;
+  orbit.lastY = e.clientY;
+});
+
+document.addEventListener('mouseup', () => { orbit.isDragging = false; });
+
+document.addEventListener('mousemove', (e) => {
+  if (!orbit.isDragging) return;
+  const dx = e.clientX - orbit.lastX;
+  const dy = e.clientY - orbit.lastY;
+  orbit.targetRotY -= dx * 0.008;
+  orbit.targetRotX -= dy * 0.008;
+  orbit.targetRotX = Math.max(-1.4, Math.min(1.4, orbit.targetRotX));
+  orbit.lastX = e.clientX;
+  orbit.lastY = e.clientY;
+});
+
+container.addEventListener('wheel', (e) => {
+  orbit.targetDist += e.deltaY * 0.025;
+  orbit.targetDist = Math.max(orbit.minDist, Math.min(orbit.maxDist, orbit.targetDist));
+}, { passive: true });
+
+// Touch events
+let lastTouchDist = 0;
+let lastTouchX = 0;
+let lastTouchY = 0;
+let touchDragging = false;
+
+container.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 1) {
+    touchDragging = true;
+    lastTouchX = e.touches[0].clientX;
+    lastTouchY = e.touches[0].clientY;
+  } else if (e.touches.length === 2) {
+    touchDragging = false;
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    lastTouchDist = Math.sqrt(dx*dx + dy*dy);
+  }
+}, { passive: true });
+
+container.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 1 && touchDragging) {
+    const dx = e.touches[0].clientX - lastTouchX;
+    const dy = e.touches[0].clientY - lastTouchY;
+    orbit.targetRotY -= dx * 0.01;
+    orbit.targetRotX -= dy * 0.01;
+    orbit.targetRotX = Math.max(-1.4, Math.min(1.4, orbit.targetRotX));
+    lastTouchX = e.touches[0].clientX;
+    lastTouchY = e.touches[0].clientY;
+  } else if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    orbit.targetDist -= (dist - lastTouchDist) * 0.05;
+    orbit.targetDist = Math.max(orbit.minDist, Math.min(orbit.maxDist, orbit.targetDist));
+    lastTouchDist = dist;
+  }
+}, { passive: true });
+
+container.addEventListener('touchend', () => { touchDragging = false; });
+
+// ─── AMBIENT PARTICLES ───────────────────────────────────────────────────────
+const particleCount = 80;
+const particleGeo = new THREE.BufferGeometry();
+const positions = new Float32Array(particleCount * 3);
+const particleSpeeds = [];
+
+for (let i = 0; i < particleCount; i++) {
+  positions[i * 3]     = (Math.random() - 0.5) * 40;
+  positions[i * 3 + 1] = (Math.random() - 0.5) * 25;
+  positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
+  particleSpeeds.push({ vx: (Math.random()-0.5)*0.003, vy: (Math.random()-0.5)*0.002, vz: (Math.random()-0.5)*0.003 });
+}
+
+particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+const particleMat = new THREE.PointsMaterial({ color: 0xC8A97A, size: 0.06, transparent: true, opacity: 0.25 });
+const particles = new THREE.Points(particleGeo, particleMat);
+scene.add(particles);
+
+// ─── BOARD AUTO-ROTATE — KALDIRILDI (test sırasında zorlaştırıyor)
+// İleride opsiyonel toggle olarak geri eklenebilir
+const autoRotate = false;
+
+
+// ─── ANIMATE ─────────────────────────────────────────────────────────────────
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  // Smooth orbit interpolation
+  orbit.rotX += (orbit.targetRotX - orbit.rotX) * 0.08;
+  orbit.rotY += (orbit.targetRotY - orbit.rotY) * 0.08;
+  orbit.distance += (orbit.targetDist - orbit.distance) * 0.08;
+
+  // Auto-rotate kapalı — sabit durur
+  updateCamera();
+
+  // Particle drift
+  const pos = particles.geometry.attributes.position;
+  for (let i = 0; i < particleCount; i++) {
+    pos.array[i*3]   += particleSpeeds[i].vx;
+    pos.array[i*3+1] += particleSpeeds[i].vy;
+    pos.array[i*3+2] += particleSpeeds[i].vz;
+    // Boundary wrap
+    if (Math.abs(pos.array[i*3])   > 20) particleSpeeds[i].vx *= -1;
+    if (Math.abs(pos.array[i*3+1]) > 12) particleSpeeds[i].vy *= -1;
+    if (Math.abs(pos.array[i*3+2]) > 20) particleSpeeds[i].vz *= -1;
+  }
+  pos.needsUpdate = true;
+
+  // Pulsing glow on dark (start zone) cubes
+  boardCubes.forEach(cube => {
+    if (cube.userData.isDark) {
+      const pulse = 0.5 + 0.5 * Math.sin(t * 1.8 + cube.position.x + cube.position.z);
+      cube.material.emissive = new THREE.Color(0x3d2010);
+      cube.material.emissiveIntensity = pulse * 0.2;
+    }
+  });
+
+  // Floating preview döndürme (smooth)
+  if (selectedPieceGroup) {
+    selectedPieceGroup.rotation.x += (previewRotation.x - selectedPieceGroup.rotation.x) * 0.12;
+    selectedPieceGroup.rotation.y += (previewRotation.y - selectedPieceGroup.rotation.y) * 0.12;
+    selectedPieceGroup.rotation.z += (previewRotation.z - selectedPieceGroup.rotation.z) * 0.12;
+    // Hafif yüzme animasyonu
+    selectedPieceGroup.position.y = 3 + Math.sin(t * 1.4) * 0.12;
+  }
+
+  // Son hamle vurgulama pulse
+  updateHighlightPulse(t);
+
+  // Mini preview renderer'lar — SVG'ye geçildi, artık yok
+  // miniScenes boş array, döngü yapmıyor
+
+  renderer.render(scene, camera);
+}
+
+// ─── RESIZE ──────────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  camera.aspect = W() / H();
+  camera.updateProjectionMatrix();
+  renderer.setSize(W(), H());
+});
+
+// ─── PIECE PANEL ─────────────────────────────────────────────────────────────
+// SVG ikon sistemi — WebGL renderer yok, beyaz ekran yok
+const miniScenes = []; // boş — animate loop için uyumluluk
+
+function getPieceSVG(piece, player) {
+  const cols = player === 1 ? P1_COLORS : P2_COLORS;
+  const idx = Math.min(piece.units - 2, cols.length - 1);
+  const hex = '#' + cols[idx].toString(16).padStart(6,'0');
+  const dark = '#' + Math.max(0, cols[idx] - 0x303030).toString(16).padStart(6,'0');
+
+  // İzometrik projeksiyon — her küp için 3 yüzey çiz
+  const ISO = { sx: 7, sy: 4 }; // birim boyut
+  const cubes = piece.cubes;
+
+  // Bounds hesapla
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  cubes.forEach(([cx,cy,cz]) => {
+    const px = (cx - cz) * ISO.sx;
+    const py = -(cy * ISO.sy * 2) + (cx + cz) * ISO.sy;
+    if(px < minX) minX=px; if(px > maxX) maxX=px;
+    if(py < minY) minY=py; if(py > maxY) maxY=py;
+  });
+  const W = maxX - minX + ISO.sx*2 + 4;
+  const H = maxY - minY + ISO.sy*2 + 8;
+  const ox = -minX + ISO.sx + 2;
+  const oy = -minY + ISO.sy*2 + 2;
+
+  // Y'ye göre sırala (painter's algorithm)
+  const sorted = [...cubes].sort(([ax,ay,az],[bx,by,bz]) => (ay - by) || (az + ax) - (bz + bx));
+
+  let paths = '';
+  sorted.forEach(([cx,cy,cz]) => {
+    const px = (cx - cz) * ISO.sx + ox;
+    const py = -(cy * ISO.sy * 2) + (cx + cz) * ISO.sy + oy;
+    const sx = ISO.sx, sy = ISO.sy;
+    // Üst yüzey
+    paths += `<polygon points="${px},${py} ${px+sx},${py+sy} ${px},${py+sy*2} ${px-sx},${py+sy}" fill="${hex}" stroke="#00000033" stroke-width="0.5"/>`;
+    // Sol yüzey
+    paths += `<polygon points="${px-sx},${py+sy} ${px},${py+sy*2} ${px},${py+sy*4} ${px-sx},${py+sy*3}" fill="${dark}" stroke="#00000033" stroke-width="0.5"/>`;
+    // Sağ yüzey
+    paths += `<polygon points="${px},${py+sy*2} ${px+sx},${py+sy} ${px+sx},${py+sy*3} ${px},${py+sy*4}" fill="${hex}cc" stroke="#00000033" stroke-width="0.5"/>`;
+  });
+
+  return `<svg viewBox="0 0 ${W} ${H+8}" width="40" height="40" xmlns="http://www.w3.org/2000/svg">${paths}</svg>`;
+}
+
+let panelBuilt = false;
+let panelPlayer = -1;
+let panelViewingPlayer = 1; // şuan hangi oyuncunun taşları gösteriliyor
+
+function switchPanelTab(player) {
+  panelViewingPlayer = player;
+  // Tab aktif durumu
+  document.getElementById('tab-p1').classList.toggle('active', player===1);
+  document.getElementById('tab-p2').classList.toggle('active', player===2);
+  // Label
+  const label = document.getElementById('panel-player-label');
+  const isCurrent = player === GameState.currentPlayer;
+  label.textContent = isCurrent ? `Seçim: Oyuncu ${player}` : `📋 Oyuncu ${player} — İnceleme`;
+  label.className = `panel-player-label p${player}`;
+  // Listeyi yeniden oluştur
+  panelBuilt = false; // force rebuild
+  buildPiecePanel(player);
+}
+
+function buildPiecePanel(player) {
+  if (panelBuilt && panelPlayer === player) {
+    document.querySelectorAll('.piece-item').forEach(el => {
+      const idx = parseInt(el.dataset.index);
+      el.classList.toggle('used', GameState.usedPieces[player-1].includes(idx));
+    });
+    return;
+  }
+
+  const list = document.getElementById('piece-list');
+  list.innerHTML = '';
+  const isCurrent = player === GameState.currentPlayer;
+
+  PIECE_DEFS.forEach((piece, i) => {
+    const used = GameState.usedPieces[player-1].includes(i);
+    const item = document.createElement('div');
+    item.className = 'piece-item' + (used ? ' used' : '');
+    item.dataset.index = i;
+
+    // Rakip taşlarını inceleme modunda seçilemez
+    if (!isCurrent) {
+      item.style.cursor = 'default';
+      item.style.opacity = used ? '0.25' : '0.75';
+    }
+
+    const previewDiv = document.createElement('div');
+    previewDiv.className = 'piece-preview';
+    previewDiv.innerHTML = getPieceSVG(piece, player);
+
+    const info = document.createElement('div');
+    info.className = 'piece-info';
+    const usedLabel = used ? ' <span style="color:var(--text-muted);font-size:9px;">kullanıldı</span>' : '';
+    info.innerHTML = `<div class="piece-name">${piece.name}${usedLabel}</div><div class="piece-units">${piece.units} birim</div>`;
+
+    const pts = document.createElement('div');
+    pts.className = 'piece-pts';
+    pts.style.color = player === 1 ? 'var(--p1)' : 'var(--p2)';
+    pts.textContent = piece.units;
+
+    item.appendChild(previewDiv);
+    item.appendChild(info);
+    item.appendChild(pts);
+
+    // Sadece mevcut oyuncunun kendi sırasında seçebilir
+    if (isCurrent) {
+      item.addEventListener('click', () => {
+        if (GameState.usedPieces[player-1].includes(i)) return;
+        selectPiece(i, player);
+        closePiecePanel();
+        GameState.phase = 'place';
+        document.getElementById('phase-btn').textContent = '✕ İptal';
+        document.getElementById('game-phase').textContent = 'YERLEŞTİR';
+      });
+    }
+
+    list.appendChild(item);
+  });
+
+  panelBuilt = true;
+  panelPlayer = player;
+}
+
+function openPiecePanel() {
+  const p = GameState.currentPlayer;
+  panelViewingPlayer = p;
+  // Tab durumunu güncelle
+  document.getElementById('tab-p1').classList.toggle('active', p===1);
+  document.getElementById('tab-p2').classList.toggle('active', p===2);
+  const label = document.getElementById('panel-player-label');
+  label.textContent = `Seçim: Oyuncu ${p}`;
+  label.className = `panel-player-label p${p}`;
+  panelBuilt = false; // her açılışta fresh build (used durumu için)
+  buildPiecePanel(p);
+  document.getElementById('piece-panel').classList.add('open');
+}
+
+function closePiecePanel() {
+  document.getElementById('piece-panel').classList.remove('open');
+}
+
+// ─── FLOATING PREVIEW (seçili parça sahnede) ─────────────────────────────────
+let selectedPieceGroup = null;
+let previewRotation = { x:0, y:0, z:0 };
+
+function selectPiece(index, player) {
+  document.querySelectorAll('.piece-item').forEach(el => el.classList.remove('selected'));
+  document.querySelector(`.piece-item[data-index="${index}"]`)?.classList.add('selected');
+  GameState.selectedPieceIndex = index;
+
+  if (selectedPieceGroup) { scene.remove(selectedPieceGroup); selectedPieceGroup = null; }
+
+  const piece = PIECE_DEFS[index];
+  previewRotation = { x:0, y:0, z:0 };
+
+  const group = new THREE.Group();
+  const mat = getPieceMaterial(player, piece.units);
+  const geo = createRoundedBoxGeometry(UNIT - GAP*2, BEVEL);
+  const edgeG = new THREE.EdgesGeometry(new THREE.BoxGeometry(UNIT-GAP*2,UNIT-GAP*2,UNIT-GAP*2));
+  const edgeM = new THREE.LineBasicMaterial({ color:0x000000, transparent:true, opacity:0.25 });
+
+  piece.cubes.forEach(([cx,cy,cz]) => {
+    const mesh = new THREE.Mesh(geo, mat.clone());
+    mesh.material.transparent = true;
+    mesh.material.opacity = 0.85;
+    mesh.position.set(cx*UNIT, cy*UNIT, cz*UNIT);
+    group.add(mesh);
+    const el = new THREE.LineSegments(edgeG, edgeM.clone());
+    el.position.set(cx*UNIT, cy*UNIT, cz*UNIT);
+    group.add(el);
+  });
+
+  const box3 = new THREE.Box3().setFromObject(group);
+  const center = new THREE.Vector3();
+  box3.getCenter(center);
+  group.position.sub(center);
+  group.position.set(5.5, 3, 0);
+  group.userData.isPreview = true;
+
+  scene.add(group);
+  selectedPieceGroup = group;
+
+  document.getElementById('preview-label').classList.add('visible');
+  document.getElementById('rotation-hint').classList.add('visible');
+}
+
+function deselectPiece() {
+  GameState.selectedPieceIndex = -1;
+  if (selectedPieceGroup) { scene.remove(selectedPieceGroup); selectedPieceGroup = null; }
+  document.querySelectorAll('.piece-item').forEach(el => el.classList.remove('selected'));
+  document.getElementById('preview-label').classList.remove('visible');
+  document.getElementById('rotation-hint').classList.remove('visible');
+}
+
+// ─── KLAVYE — PARÇA DÖNDÜRME ─────────────────────────────────────────────────
+const ROT_STEP = Math.PI / 2;
+
+document.addEventListener('keydown', (e) => {
+  if (!selectedPieceGroup) return;
+  const k = e.key.toLowerCase();
+  if (k==='q') previewRotation.x -= ROT_STEP;
+  if (k==='e') previewRotation.x += ROT_STEP;
+  if (k==='w') previewRotation.y += ROT_STEP;
+  if (k==='s') previewRotation.y -= ROT_STEP;
+  if (k==='a') previewRotation.z -= ROT_STEP;
+  if (k==='d') previewRotation.z += ROT_STEP;
+  if (k==='escape') {
+    deselectPiece(); removeGhost();
+    GameState.phase = 'inspect';
+    document.getElementById('phase-btn').textContent = 'Taş Seç →';
+    document.getElementById('game-phase').textContent = 'HAZIRLIK';
+  }
+});
+
+
+// ─── MODÜL 3: SNAP & YERLEŞTİRME SİSTEMİ ────────────────────────────────────
+
+const placedCubes = [];
+const placedMeshes = [];
+const BOARD = { minX:0, maxX:1, minY:0, maxY:7, minZ:0, maxZ:1 };
+
+function isBoardOccupied(gx,gy,gz) {
+  return gx>=BOARD.minX&&gx<=BOARD.maxX&&gy>=BOARD.minY&&gy<=BOARD.maxY&&gz>=BOARD.minZ&&gz<=BOARD.maxZ;
+}
+function isPlacedOccupied(gx,gy,gz) {
+  return placedCubes.some(c=>c.gx===gx&&c.gy===gy&&c.gz===gz);
+}
+function getRotatedCubes(pieceDef,rotation) {
+  const mat=new THREE.Matrix4();
+  const euler=new THREE.Euler(
+    Math.round(rotation.x/(Math.PI/2))*(Math.PI/2),
+    Math.round(rotation.y/(Math.PI/2))*(Math.PI/2),
+    Math.round(rotation.z/(Math.PI/2))*(Math.PI/2)
+  );
+  mat.makeRotationFromEuler(euler);
+  return pieceDef.cubes.map(([cx,cy,cz])=>{
+    const v=new THREE.Vector3(cx,cy,cz).applyMatrix4(mat);
+    return {x:Math.round(v.x),y:Math.round(v.y),z:Math.round(v.z)};
+  });
+}
+const DIRS6=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+// Koyu bölge (başlangıç zonu): y=0 veya y=7
+function isDarkZone(gy) { return gy===0||gy===7; }
+
+// İlk hamle: parçanın en az 1 küpü koyu bölgeye (y=0 veya y=7 KATMANI) BİTİŞİK olmalı
+// Parça gövdenin dışında, dolayısıyla komşu gövde küpü y=0 ya da y=7 ise geçerli
+function touchesStartZone(cubes,offset){
+  for(const c of cubes){
+    const wx=c.x+offset.x, wy=c.y+offset.y, wz=c.z+offset.z;
+    for(const[dx,dy,dz]of DIRS6){
+      const nx=wx+dx, ny=wy+dy, nz=wz+dz;
+      // Komşu gövde içinde mi?
+      if(isBoardOccupied(nx,ny,nz)){
+        // O gövde küpü koyu zona (y=0 veya y=7) mı?
+        if(ny===0||ny===7) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function touchesBoard(cubes,offset){
+  for(const c of cubes)for(const[dx,dy,dz]of DIRS6){
+    if(isBoardOccupied(c.x+offset.x+dx,c.y+offset.y+dy,c.z+offset.z+dz))return true;
+  }return false;
+}
+function touchesLastOpponent(cubes,offset){
+  if(GameState.lastPlacedCubes.length===0)return true;
+  for(const c of cubes)for(const[dx,dy,dz]of DIRS6){
+    const nx=c.x+offset.x+dx,ny=c.y+offset.y+dy,nz=c.z+offset.z+dz;
+    if(GameState.lastPlacedCubes.some(lc=>lc.gx===nx&&lc.gy===ny&&lc.gz===nz))return true;
+  }return false;
+}
+function hasCollision(cubes,offset){
+  for(const c of cubes){
+    const wx=c.x+offset.x,wy=c.y+offset.y,wz=c.z+offset.z;
+    if(isBoardOccupied(wx,wy,wz)||isPlacedOccupied(wx,wy,wz))return true;
+  }return false;
+}
+function withinReach(cubes, offset) {
+  for (const c of cubes) {
+    const wx = c.x + offset.x;
+    const wy = c.y + offset.y;
+    const wz = c.z + offset.z;
+    if (wx < BOARD.minX - 1 || wx > BOARD.maxX + 1) return false;
+    if (wy < BOARD.minY - 1 || wy > BOARD.maxY + 1) return false;
+    if (wz < BOARD.minZ - 1 || wz > BOARD.maxZ + 1) return false;
+  }
+  return true;
+}
+
+function isValidPlacement(cubes, offset) {
+  if (hasCollision(cubes, offset)) return false;
+  if (!withinReach(cubes, offset)) return false;
+  if (!touchesBoard(cubes, offset)) return false;
+  const isFirstMove = placedCubes.length === 0;
+  if (isFirstMove) {
+    if (!touchesStartZone(cubes, offset)) return false;
+  } else {
+    if (!touchesLastOpponent(cubes, offset)) return false;
+  }
+  return true;
+}
+
+function gridToWorld(gx, gy, gz) {
+  return new THREE.Vector3((gx - 0.5) * UNIT, (gy - 3.5) * UNIT, (gz - 0.5) * UNIT);
+}
+
+// ─── GHOST & SNAP ─────────────────────────────────────────────────────────────
+let ghostGroup = null, currentSnapOffset = null, snapValid = false;
+const GHOST_VALID = new THREE.MeshStandardMaterial({
+  color: 0x88ff44, transparent: true, opacity: 0.45, roughness: 0.5, depthWrite: false
+});
+const GHOST_INVALID = new THREE.MeshStandardMaterial({
+  color: 0xff3322, transparent: true, opacity: 0.35, roughness: 0.5, depthWrite: false
+});
+
+function showGhost(rotatedCubes, offset, valid) {
+  removeGhost();
+  ghostGroup = new THREE.Group();
+  const mat = valid ? GHOST_VALID : GHOST_INVALID;
+  const geo = createRoundedBoxGeometry(UNIT - GAP * 2, BEVEL);
+  rotatedCubes.forEach(c => {
+    const mesh = new THREE.Mesh(geo, mat.clone());
+    mesh.position.copy(gridToWorld(c.x + offset.x, c.y + offset.y, c.z + offset.z));
+    ghostGroup.add(mesh);
+  });
+  scene.add(ghostGroup);
+  snapValid = valid;
+  currentSnapOffset = { ...offset };
+}
+
+function removeGhost() {
+  if (ghostGroup) { scene.remove(ghostGroup); ghostGroup = null; }
+  snapValid = false;
+  currentSnapOffset = null;
+}
+
+// Parçanın merkezini world koordinatına çevir
+function getPieceCenter(cubes, offset) {
+  let sx = 0, sy = 0, sz = 0;
+  for (const c of cubes) { sx += c.x + offset.x; sy += c.y + offset.y; sz += c.z + offset.z; }
+  return new THREE.Vector3(sx / cubes.length, sy / cubes.length, sz / cubes.length);
+}
+
+// Mouse ray'ini bir plane'le kesiştir
+function raycastToPlane(mouseX, mouseY, planeNormal, planePoint) {
+  const ray = new THREE.Ray();
+  const ndcMouse = new THREE.Vector3(mouseX, mouseY, 0.5);
+  ndcMouse.unproject(camera);
+  ray.origin.copy(camera.position);
+  ray.direction.copy(ndcMouse.sub(camera.position).normalize());
+  const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(planeNormal, planePoint);
+  const target = new THREE.Vector3();
+  ray.intersectPlane(plane, target);
+  return target;
+}
+
+// World pozisyonundan en yakın geçerli grid offset'i bul
+function worldToSnapOffset(worldPos, rotatedCubes) {
+  // Parça merkezini world pos'a yerleştir, grid'e yuvarla
+  // Parçanın kendi merkezi
+  let cx = 0, cy = 0, cz = 0;
+  for (const c of rotatedCubes) { cx += c.x; cy += c.y; cz += c.z; }
+  cx /= rotatedCubes.length; cy /= rotatedCubes.length; cz /= rotatedCubes.length;
+
+  // worldPos'u grid'e çevir
+  const gx = Math.round(worldPos.x / UNIT + 0.5);
+  const gy = Math.round(worldPos.y / UNIT + 3.5);
+  const gz = Math.round(worldPos.z / UNIT + 0.5);
+
+  // Offset: grid pozisyonu - parça merkezi (yuvarlanmış)
+  const baseOffset = {
+    x: Math.round(gx - cx),
+    y: Math.round(gy - cy),
+    z: Math.round(gz - cz),
+  };
+
+  return baseOffset;
+}
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+// Aktif snap plane — mouse hangi yüzeye girince o yüzeyin normali ve pozisyonu
+let activePlaneNormal = null;
+let activePlanePoint = null;
+
+container.addEventListener('mousemove', (e) => {
+  if (GameState.selectedPieceIndex < 0 || GameState.phase !== 'place') return;
+
+  const mx = (e.clientX / W()) * 2 - 1;
+  const my = -(e.clientY / H()) * 2 + 1;
+  mouse.x = mx; mouse.y = my;
+
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects([...boardCubes, ...placedMeshes], false);
+
+  const piece = PIECE_DEFS[GameState.selectedPieceIndex];
+  const rotated = getRotatedCubes(piece, previewRotation);
+
+  if (hits.length > 0) {
+    const hit = hits[0];
+    const fn = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
+    fn.x = Math.round(fn.x); fn.y = Math.round(fn.y); fn.z = Math.round(fn.z);
+
+    const ud = hit.object.userData;
+    if (ud.gx === undefined) { removeGhost(); return; }
+
+    // Snap plane: hit yüzeyinin dış tarafından geçen düzlem
+    const hitWorldPos = gridToWorld(ud.gx, ud.gy, ud.gz);
+    const planePoint = hitWorldPos.clone().add(
+      new THREE.Vector3(fn.x * UNIT, fn.y * UNIT, fn.z * UNIT)
+    );
+    activePlaneNormal = fn.clone();
+    activePlanePoint = planePoint.clone();
+  }
+
+  if (!activePlaneNormal || !activePlanePoint) { removeGhost(); return; }
+
+  // Mouse ray'ini aktif plane ile kesiştir
+  const worldPos = raycastToPlane(mx, my, activePlaneNormal, activePlanePoint);
+  if (!worldPos || worldPos.length() > 100) { removeGhost(); return; }
+
+  // Grid offset hesapla
+  const baseOffset = worldToSnapOffset(worldPos, rotated);
+
+  // Geçerli offset'i ara — base + küçük ayarlamalar
+  // Gövdeye temas sağlamak için ±1 aralığında ara
+  const adjustments = [
+    {x:0,y:0,z:0},
+    {x:1,y:0,z:0},{x:-1,y:0,z:0},
+    {x:0,y:1,z:0},{x:0,y:-1,z:0},
+    {x:0,y:0,z:1},{x:0,y:0,z:-1},
+  ];
+
+  let bestValid = null;
+  let bestInvalid = null;
+  let bestInvalidDist = Infinity;
+
+  for (const adj of adjustments) {
+    const offset = {
+      x: baseOffset.x + adj.x,
+      y: baseOffset.y + adj.y,
+      z: baseOffset.z + adj.z,
+    };
+    if (isValidPlacement(rotated, offset)) {
+      if (!bestValid) bestValid = offset;
+      break;
+    } else if (!hasCollision(rotated, offset)) {
+      // Gövdeye en yakın geçersizi bul
+      const dist = Math.abs(adj.x) + Math.abs(adj.y) + Math.abs(adj.z);
+      if (dist < bestInvalidDist) {
+        bestInvalidDist = dist;
+        bestInvalid = offset;
+      }
+    }
+  }
+
+  if (bestValid) {
+    showGhost(rotated, bestValid, true);
+  } else if (bestInvalid) {
+    showGhost(rotated, bestInvalid, false);
+  } else {
+    removeGhost();
+  }
+});
+
+container.addEventListener('click',(e)=>{
+  if(GameState.selectedPieceIndex<0||GameState.phase!=='place')return;
+  if(!snapValid||!currentSnapOffset)return;
+  const piece=PIECE_DEFS[GameState.selectedPieceIndex];
+  pendingRotated=getRotatedCubes(piece,previewRotation);
+  GameState.phase='confirm';
+  document.getElementById('confirm-dialog').classList.add('visible');
+  document.getElementById('phase-btn').textContent='...';
+});
+
+let pendingRotated=null;
+function confirmPlacement(){
+  document.getElementById('confirm-dialog').classList.remove('visible');
+  if(!pendingRotated||!currentSnapOffset)return;
+  const snap={...currentSnapOffset};
+  const rot=[...pendingRotated];
+  placePiece(rot,snap,GameState.currentPlayer,GameState.selectedPieceIndex);
+}
+function cancelPlacement(){
+  document.getElementById('confirm-dialog').classList.remove('visible');
+  GameState.phase='place';
+  document.getElementById('phase-btn').textContent='✕ İptal';
+}
+
+function placePiece(rotated,offset,player,pieceIndex){
+  const piece=PIECE_DEFS[pieceIndex];
+  removeGhost();
+  const targets=rotated.map(c=>({gx:c.x+offset.x,gy:c.y+offset.y,gz:c.z+offset.z}));
+  const group=new THREE.Group();
+  const mat=getPieceMaterial(player,piece.units);
+  const geo=createRoundedBoxGeometry(UNIT-GAP*2,BEVEL);
+  const edgeG=new THREE.EdgesGeometry(new THREE.BoxGeometry(UNIT-GAP*2,UNIT-GAP*2,UNIT-GAP*2));
+  const edgeM=new THREE.LineBasicMaterial({color:0x000000,transparent:true,opacity:0.28});
+  const animMeshes=[];
+  targets.forEach(t=>{
+    const tp=gridToWorld(t.gx,t.gy,t.gz);
+    const mesh=new THREE.Mesh(geo,mat.clone());
+    const sp=selectedPieceGroup?selectedPieceGroup.position.clone():tp.clone().add(new THREE.Vector3(0,5,0));
+    mesh.position.copy(sp);
+    mesh.userData={type:'placed',gx:t.gx,gy:t.gy,gz:t.gz,player};
+    group.add(mesh);
+    const el=new THREE.LineSegments(edgeG,edgeM.clone());
+    el.position.copy(sp);
+    group.add(el);
+    animMeshes.push({mesh,el,tp});
+  });
+  scene.add(group);
+  if(selectedPieceGroup){scene.remove(selectedPieceGroup);selectedPieceGroup=null;}
+  const t0=performance.now(),DUR=400;
+  function step(){
+    const p=Math.min((performance.now()-t0)/DUR,1);
+    const ease=1-Math.pow(1-p,4);
+    animMeshes.forEach(({mesh,el,tp})=>{mesh.position.lerp(tp,ease);el.position.copy(mesh.position);});
+    if(p<1)requestAnimationFrame(step);
+    else finalizePlacement(targets,animMeshes,player,pieceIndex);
+  }
+  requestAnimationFrame(step);
+}
+
+function finalizePlacement(targets,animMeshes,player,pieceIndex){
+  targets.forEach(t=>placedCubes.push({gx:t.gx,gy:t.gy,gz:t.gz,player}));
+  animMeshes.forEach(({mesh})=>placedMeshes.push(mesh));
+  GameState.lastPlacedCubes=targets.map(t=>({gx:t.gx,gy:t.gy,gz:t.gz}));
+  GameState.usedPieces[player-1].push(pieceIndex);
+  const pts=calculateScore(targets,player,pieceIndex);
+  GameState.scores[player-1]+=pts;
+  document.getElementById('val-p1').textContent=GameState.scores[0];
+  document.getElementById('val-p2').textContent=GameState.scores[1];
+  const rem=10-GameState.usedPieces[player-1].length;
+  document.getElementById(`pieces-p${player}`).textContent=`${rem} taş`;
+  GameState.currentPlayer=player===1?2:1;
+  GameState.selectedPieceIndex=-1;GameState.phase='inspect';GameState.round++;
+  document.getElementById('turn-round').textContent=GameState.round;
+  const np=GameState.currentPlayer;
+  const n=document.getElementById('turn-name');n.textContent=`Oyuncu ${np}`;n.className=`turn-name p${np}`;
+  document.getElementById('score-p1').classList.toggle('active',np===1);
+  document.getElementById('score-p2').classList.toggle('active',np===2);
+  document.getElementById('preview-label').classList.remove('visible');
+  document.getElementById('rotation-hint').classList.remove('visible');
+  document.getElementById('phase-btn').textContent='Taş Seç →';
+  document.getElementById('game-phase').textContent='HAZIRLIK';
+  checkWinCondition();
+  // Son hamle vurgulama
+  if (lastMoveHighlightEnabled) drawLastMoveHighlight();
+}
+
+function calculateScore(targets, player, pieceIndex) {
+  const opp = player === 1 ? 2 : 1;
+  const basePoints = targets.length;
+  let totalContact = 0;
+  let maxContactSingle = 0;
+
+  for (const t of targets) {
+    let contactHere = 0;
+    for (const [dx, dy, dz] of DIRS6) {
+      const nx = t.gx + dx, ny = t.gy + dy, nz = t.gz + dz;
+      if (placedCubes.some(c => c.gx === nx && c.gy === ny && c.gz === nz && c.player === opp)) {
+        totalContact++;
+        contactHere++;
+      }
+    }
+    if (contactHere > maxContactSingle) maxContactSingle = contactHere;
+  }
+
+  let contactBonus = 0;
+  if (maxContactSingle >= 2) {
+    contactBonus = 5;
+    showBonusToast('Yerleşim Bonusu +5 ⚡');
+  }
+
+  const tempAdded = targets.map(t => ({ gx: t.gx, gy: t.gy, gz: t.gz, player }));
+  const tempAll = [...placedCubes, ...tempAdded];
+  const contBonus = checkContinuityWith(tempAll, player);
+
+  const total = basePoints + totalContact + contactBonus + contBonus;
+
+  // Hamle özeti kartı güncelle
+  showMoveScore(targets, player, basePoints, totalContact, contactBonus, contBonus);
+
+  return total;
+}
+
+function showMoveScore(targets, player, basePoints, contactCount, contactBonus, contBonus) {
+  const chip = document.getElementById('last-score-chip');
+  const ptsEl = document.getElementById('last-score-pts');
+  const descEl = document.getElementById('last-score-desc');
+  if (!chip || !ptsEl || !descEl) return;
+
+  const total = basePoints + contactCount + contactBonus + contBonus;
+  const playerColor = player === 1 ? 'var(--p1)' : 'var(--p2)';
+
+  ptsEl.textContent = `+${total}`;
+  ptsEl.style.color = playerColor;
+
+  // Açıklama metni
+  const isT = currentLang === 'tr';
+  let lines = [];
+  lines.push(isT
+    ? `${basePoints} birimlik taş yerleştirildi`
+    : `${basePoints}-unit piece placed`);
+
+  if (contactCount > 0) {
+    lines.push(isT
+      ? `Rakibin ${contactCount} birimine değdi · +${contactCount}`
+      : `Touched ${contactCount} opponent unit${contactCount>1?'s':''} · +${contactCount}`);
+  }
+  if (contactBonus > 0) {
+    lines.push(isT
+      ? `Yerleşim Bonusu · +${contactBonus}`
+      : `Placement Bonus · +${contactBonus}`);
+  }
+  if (contBonus > 0) {
+    lines.push(isT
+      ? `Devamlılık Bonusu · +${contBonus}`
+      : `Continuity Bonus · +${contBonus}`);
+  }
+
+  // Formül
+  const parts = [basePoints];
+  if (contactCount) parts.push(contactCount);
+  if (contactBonus) parts.push(contactBonus);
+  if (contBonus) parts.push(contBonus);
+  const formula = parts.join(' + ') + ` = ${total}`;
+  lines.push(`<span style="color:${playerColor};font-weight:800;">${formula}</span>`);
+
+  descEl.innerHTML = lines.join('<br>');
+  chip.style.display = 'block';
+}
+
+function checkContinuityWith(allCubes, player) {
+  const pc = allCubes.filter(c => c.player === player);
+  let maxLen = 0;
+  for (const ax of [[1,0,0],[0,1,0],[0,0,1]]) {
+    for (const s of pc) {
+      let len = 1, cx = s.gx, cy = s.gy, cz = s.gz;
+      while (pc.some(c => c.gx===cx+ax[0]&&c.gy===cy+ax[1]&&c.gz===cz+ax[2])) {
+        len++; cx+=ax[0]; cy+=ax[1]; cz+=ax[2];
+      }
+      if (len > maxLen) maxLen = len;
+    }
+  }
+  if (maxLen >= 16) { showBonusToast('Devamlılık Bonusu +20 🎉'); return 20; }
+  if (maxLen >= 8)  { showBonusToast('Devamlılık Bonusu +10 ⭐'); return 10; }
+  return 0;
+}
+
+function checkWinCondition() {
+  // Kilit oyun kontrolü
+  for (let p = 1; p <= 2; p++) {
+    if (checkLockWin(p)) { showWinScreen(p, 'kilit'); return; }
+  }
+  // Her iki oyuncu tüm taşlarını kullandı
+  if (GameState.usedPieces[0].length === 10 && GameState.usedPieces[1].length === 10) {
+    showWinScreen(GameState.scores[0] > GameState.scores[1] ? 1 : 2, 'skor');
+    return;
+  }
+  // Mevcut oyuncunun yerleştirebileceği taşı kalmadı mı?
+  checkNoMovesLeft();
+}
+
+function canPlayerMove(player) {
+  const remaining = PIECE_DEFS.filter((_, i) => !GameState.usedPieces[player-1].includes(i));
+  if (remaining.length === 0) return false;
+
+  // Her kalan parça için tüm oryantasyonları dene — herhangi biri geçerliyse true
+  const rotations = [
+    {x:0,y:0,z:0}, {x:Math.PI/2,y:0,z:0}, {x:Math.PI,y:0,z:0}, {x:-Math.PI/2,y:0,z:0},
+    {x:0,y:Math.PI/2,z:0}, {x:0,y:Math.PI,z:0}, {x:0,y:-Math.PI/2,z:0},
+    {x:0,y:0,z:Math.PI/2}, {x:0,y:0,z:Math.PI}, {x:0,y:0,z:-Math.PI/2},
+    {x:Math.PI/2,y:Math.PI/2,z:0}, {x:Math.PI/2,y:-Math.PI/2,z:0},
+  ];
+
+  // Olası tüm dış pozisyonlar (gövde etrafı)
+  const candidates = [];
+  for (let x = -1; x <= 2; x++)
+    for (let y = -1; y <= 8; y++)
+      for (let z = -1; z <= 2; z++)
+        if (!isBoardOccupied(x,y,z) && !isPlacedOccupied(x,y,z))
+          candidates.push({x,y,z});
+
+  for (const piece of remaining) {
+    for (const rot of rotations) {
+      const rotated = getRotatedCubes(piece, rot);
+      for (const pos of candidates) {
+        // Parçanın her küpünü bu pozisyona referans al
+        for (const refCube of rotated) {
+          const offset = { x: pos.x - refCube.x, y: pos.y - refCube.y, z: pos.z - refCube.z };
+          if (isValidPlacement(rotated, offset)) return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function checkNoMovesLeft() {
+  const current = GameState.currentPlayer;
+  if (!canPlayerMove(current)) {
+    GameState.inspectMode = true;
+    showNoMovesToast(current);
+  }
+}
+
+function showNoMovesToast(player) {
+  // Eski bar varsa kaldır
+  const old = document.getElementById('no-moves-bar');
+  if (old) old.remove();
+
+  const bar = document.createElement('div');
+  bar.id = 'no-moves-bar';
+  bar.style.cssText = `
+    position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+    background:#131509;border:1px solid #c8f060;border-radius:10px;
+    padding:14px 20px;display:flex;align-items:center;gap:14px;
+    z-index:40;box-shadow:0 4px 24px rgba(0,0,0,0.6);
+    font-family:'Courier New',monospace;
+  `;
+
+  const msg = currentLang === 'tr'
+    ? `Oyuncu ${player} — Yerleştirilebilecek alan kalmadı`
+    : `Player ${player} — No valid moves remaining`;
+  const endLabel = currentLang === 'tr' ? 'Oyunu Bitir' : 'End Game';
+  const inspectLabel = currentLang === 'tr' ? 'İncele' : 'Inspect';
+
+  bar.innerHTML = `
+    <span style="font-size:12px;color:#a8ad94;letter-spacing:0.12em;">${msg}</span>
+    <button onclick="endGameNow()" style="
+      background:#c8f060;color:#0a0b09;border:none;
+      padding:8px 16px;border-radius:6px;cursor:pointer;
+      font-family:'Courier New',monospace;font-size:12px;
+      font-weight:700;letter-spacing:0.15em;white-space:nowrap;
+    ">${endLabel}</button>
+    <button onclick="enterInspectMode()" style="
+      background:transparent;color:#a8ad94;border:1px solid #3a3f2a;
+      padding:8px 12px;border-radius:6px;cursor:pointer;
+      font-family:'Courier New',monospace;font-size:12px;
+      font-weight:700;letter-spacing:0.1em;white-space:nowrap;
+    ">${inspectLabel}</button>
+  `;
+  document.body.appendChild(bar);
+}
+
+function enterInspectMode() {
+  const bar = document.getElementById('no-moves-bar');
+  if (bar) bar.remove();
+  GameState.inspectMode = true;
+
+  // Sol paneldeki kalıcı bitir butonunu göster
+  const btn = document.getElementById('inspect-end-btn');
+  if (btn) btn.style.display = 'block';
+  updateInspectBtn();
+}
+
+function updateInspectBtn() {
+  const label = document.getElementById('inspect-end-label');
+  if (label) label.textContent = t('end_game');
+}
+
+function endGameNow() {
+  const bar = document.getElementById('no-moves-bar');
+  if (bar) bar.remove();
+  const btn = document.getElementById('inspect-end-btn');
+  if (btn) btn.style.display = 'none';
+  GameState.inspectMode = false;
+
+  // Elde kalan taşların puanını düş
+  let scores = [...GameState.scores];
+  for (let p = 0; p < 2; p++) {
+    const remaining = PIECE_DEFS.filter((_, i) => !GameState.usedPieces[p].includes(i));
+    const penalty = remaining.reduce((sum, piece) => sum + piece.units, 0);
+    scores[p] = Math.max(0, scores[p] - penalty);
+  }
+  GameState.scores = scores;
+  document.getElementById('val-p1').textContent = scores[0];
+  document.getElementById('val-p2').textContent = scores[1];
+  document.getElementById('final-p1').textContent = scores[0];
+  document.getElementById('final-p2').textContent = scores[1];
+  const winner = scores[0] > scores[1] ? 1 : scores[1] > scores[0] ? 2 : 0;
+  showWinScreen(winner, 'kaktus');
+}
+
+// KİLİT OYUN: Gövdenin etrafında kapalı döngü tespiti
+// Yatay tur: aynı Y seviyesinde gövdeyi çevreleyen kapalı zincir (min 12 birim)
+// Dikey tur: aynı X veya Z kolonunda gövdeyi baştan sona kaplayan zincir (min 20 birim)
+function checkLockWin(player) {
+  const pc = placedCubes.filter(c => c.player === player);
+  if (pc.length < 12) return false;
+
+  // ── YATAY TUR: Her Y seviyesinde gövdeyi çevreleyen halka var mı? ──
+  // Gövdenin 4 yüzeyindeki dış pozisyonlar:
+  // x=-1 (sol yüzey, z=0..1), x=2 (sağ yüzey, z=0..1)
+  // z=-1 (ön yüzey, x=0..1), z=2 (arka yüzey, x=0..1)
+  // Bunlar bağlı mı kontrol et (BFS kapalı döngü)
+  for (let y = 0; y <= 7; y++) {
+    // Bu Y seviyesindeki oyuncu küplerini al
+    const layer = pc.filter(c => c.gy === y);
+    if (layer.length < 4) continue;
+
+    // Gövdenin bu Y'de dış yüzeylerini çevreleyen küpler
+    // Döngü: x=-1,z=0 → x=-1,z=1 → z=2,x=0 → z=2,x=1 → x=2,z=1 → x=2,z=0 → z=-1,x=1 → z=-1,x=0 → geri
+    const ring = [
+      {gx:-1,gz:0},{gx:-1,gz:1},
+      {gx:0,gz:2},{gx:1,gz:2},
+      {gx:2,gz:1},{gx:2,gz:0},
+      {gx:1,gz:-1},{gx:0,gz:-1},
+    ];
+    const filled = ring.filter(r => layer.some(c => c.gx===r.gx && c.gz===r.gz));
+    // Tüm 8 pozisyon doluysa tam tur
+    if (filled.length === 8) return true;
+    // Alternatif: bitişik zincir kapalı döngü oluşturuyor mu?
+    if (hasClosedHorizontalLoop(pc, y)) return true;
+  }
+
+  // ── DİKEY TUR: Y=0'dan Y=7'ye kadar aynı kolon tamamen kaplı mı? ──
+  // Gövdenin herhangi bir dış kolonunda (x=-1 veya x=2, z=0..1) ya da
+  // (z=-1 veya z=2, x=0..1) tüm Y seviyeleri dolu mu?
+  const vertCols = [
+    {gx:-1,gz:0},{gx:-1,gz:1},{gx:2,gz:0},{gx:2,gz:1},
+    {gx:0,gz:-1},{gx:1,gz:-1},{gx:0,gz:2},{gx:1,gz:2},
+  ];
+  for (const col of vertCols) {
+    let consecutive = 0, maxConsec = 0;
+    for (let y = 0; y <= 7; y++) {
+      if (pc.some(c => c.gx===col.gx && c.gz===col.gz && c.gy===y)) {
+        consecutive++;
+        if (consecutive > maxConsec) maxConsec = consecutive;
+      } else { consecutive = 0; }
+    }
+    if (maxConsec >= 8) return true; // tüm dikey yüz kaplı
+  }
+
+  // Genel devamlılık (herhangi yönde 12+ yatay veya 20+ dikey)
+  const axes = [[1,0,0],[0,0,1]];
+  for (const ax of axes) {
+    for (const s of pc) {
+      let len=1,cx=s.gx,cy=s.gy,cz=s.gz;
+      while(pc.some(c=>c.gx===cx+ax[0]&&c.gy===cy&&c.gz===cz+ax[2])){len++;cx+=ax[0];cz+=ax[2];}
+      if(len>=12) return true;
+    }
+  }
+  for (const s of pc) {
+    let len=1,cy=s.gy,cx=s.gx,cz=s.gz;
+    while(pc.some(c=>c.gx===cx&&c.gy===cy+1&&c.gz===cz)){len++;cy++;}
+    if(len>=20) return true;
+  }
+
+  return false;
+}
+
+function hasClosedHorizontalLoop(pc, y) {
+  // BFS: bu Y seviyesindeki küplerden başla, komşuları takip et
+  // Başlangıç noktasına geri dönebiliyor musun ve en az 8 küp var mı?
+  const layer = pc.filter(c => c.gy === y);
+  if (layer.length < 8) return false;
+
+  const key = c => `${c.gx},${c.gz}`;
+  const set = new Set(layer.map(key));
+
+  for (const start of layer) {
+    // DFS ile kapalı döngü ara
+    const visited = new Set();
+    const stack = [{gx:start.gx, gz:start.gz, steps:0}];
+    while (stack.length) {
+      const {gx, gz, steps} = stack.pop();
+      const k = `${gx},${gz}`;
+      if (visited.has(k)) {
+        if (steps >= 12 && gx===start.gx && gz===start.gz) return true;
+        continue;
+      }
+      visited.add(k);
+      for (const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+        const nk = `${gx+dx},${gz+dz}`;
+        if (set.has(nk)) stack.push({gx:gx+dx,gz:gz+dz,steps:steps+1});
+      }
+    }
+  }
+  return false;
+}
+
+// ─── SON HAMLE VURGULAMA ─────────────────────────────────────────────────────
+let lastMoveHighlightMeshes = [];
+let lastMoveHighlightEnabled = false;
+
+function toggleLastMoveHighlight(enabled) {
+  lastMoveHighlightEnabled = enabled;
+  if (enabled) {
+    drawLastMoveHighlight();
+  } else {
+    clearLastMoveHighlight();
+  }
+}
+
+function clearLastMoveHighlight() {
+  lastMoveHighlightMeshes.forEach(m => scene.remove(m));
+  lastMoveHighlightMeshes = [];
+}
+
+function drawLastMoveHighlight() {
+  clearLastMoveHighlight();
+  if (!lastMoveHighlightEnabled) return;
+  if (GameState.lastPlacedCubes.length === 0) return;
+
+  // Kimin hamlesi? Sıra değişti, önceki oyuncu
+  const prevPlayer = GameState.currentPlayer === 1 ? 2 : 1;
+  const hlColor = prevPlayer === 1 ? 0xffb830 : 0xff6b4a;
+
+  const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(UNIT+0.02, UNIT+0.02, UNIT+0.02));
+  const hlMat = new THREE.LineBasicMaterial({
+    color: hlColor,
+    transparent: true,
+    opacity: 0.9,
+    linewidth: 2,
+  });
+
+  GameState.lastPlacedCubes.forEach(c => {
+    const lines = new THREE.LineSegments(edgeGeo, hlMat.clone());
+    lines.position.copy(gridToWorld(c.gx, c.gy, c.gz));
+    lines.userData.isHighlight = true;
+    scene.add(lines);
+    lastMoveHighlightMeshes.push(lines);
+  });
+}
+
+// Animate loop'ta highlight pulse
+function updateHighlightPulse(t) {
+  if (!lastMoveHighlightEnabled || lastMoveHighlightMeshes.length === 0) return;
+  const pulse = 0.5 + 0.5 * Math.sin(t * 3);
+  lastMoveHighlightMeshes.forEach(m => {
+    if (m.material) m.material.opacity = 0.4 + pulse * 0.55;
+  });
+}
+
+function showBonusToast(msg){
+  const t=document.getElementById('bonus-toast');
+  t.textContent=msg;t.classList.add('visible');
+  clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('visible'),2400);
+}
+
+function showWinScreen(player, type) {
+  const types = { kilit:'🔒 Kilit Oyun!', skor:'🏆 Skor Oyun!', kaktus:'🌵 Kaktüs Oyun!' };
+  document.getElementById('win-type').textContent = types[type] || '';
+  const wp = document.getElementById('win-player');
+  if (player === 0) {
+    wp.textContent = 'Berabere!';
+    wp.style.color = 'var(--accent)';
+  } else {
+    wp.textContent = `Oyuncu ${player} Kazandı!`;
+    wp.className = `win-player p${player}`;
+  }
+  document.getElementById('final-p1').textContent = GameState.scores[0];
+  document.getElementById('final-p2').textContent = GameState.scores[1];
+  document.getElementById('win-screen').classList.add('visible');
+}
+
+// Phase button — TEK listener, tüm akış burada
+document.getElementById('phase-btn').addEventListener('click',()=>{
+  if(GameState.phase==='inspect'){
+    openPiecePanel();
+    GameState.phase='select';
+    document.getElementById('phase-btn').textContent='Parça Seç';
+    document.getElementById('game-phase').textContent='TAŞ SEÇ';
+  } else if(GameState.phase==='place'||GameState.phase==='select'){
+    // İptal
+    deselectPiece(); removeGhost(); closePiecePanel();
+    GameState.phase='inspect';
+    document.getElementById('phase-btn').textContent='Taş Seç →';
+    document.getElementById('game-phase').textContent='HAZIRLIK';
+  }
+});
+
+setTimeout(()=>{
+  const loading=document.getElementById('loading');
+  loading.style.opacity='0';
+  setTimeout(()=>loading.style.display='none',500);
+  animate();
+},1400);
+
+</script>
+
+<!-- Confirm Dialog -->
+<div id="confirm-dialog" style="
+  display:none;position:absolute;inset:0;background:rgba(0,0,0,0.65);
+  z-index:50;align-items:center;justify-content:center;
+">
+  <div style="
+    background:#131509;border:1px solid #3a3f2a;border-radius:14px;
+    padding:28px 32px;text-align:center;max-width:280px;
+    box-shadow:0 0 40px rgba(0,0,0,0.8);
+  ">
+    <div style="font-size:13px;letter-spacing:0.2em;color:#a8ad94;text-transform:uppercase;margin-bottom:10px;">Yerleştir?</div>
+    <div style="font-size:16px;font-weight:700;color:#f0f2e6;margin-bottom:22px;">Taşı bu konuma koy</div>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button onclick="cancelPlacement()" style="
+        background:rgba(255,255,255,0.06);border:1px solid #3a3f2a;
+        color:#a8ad94;padding:10px 22px;border-radius:8px;cursor:pointer;
+        font-family:monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;
+      ">İptal</button>
+      <button onclick="confirmPlacement()" style="
+        background:#c8f060;border:none;color:#0a0b09;
+        padding:10px 22px;border-radius:8px;cursor:pointer;
+        font-family:monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;
+      ">✓ Onayla</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bonus Toast -->
+<div id="bonus-toast" style="
+  position:absolute;top:90px;left:50%;transform:translateX(-50%);
+  background:#131509;border:1px solid #c8f060;border-radius:8px;
+  padding:10px 20px;font-size:14px;font-weight:700;color:#c8f060;
+  letter-spacing:0.12em;pointer-events:none;
+  opacity:0;transition:opacity 0.3s;white-space:nowrap;z-index:30;
+"></div>
+
+<!-- Win Screen -->
+<div id="win-screen" style="
+  display:none;position:absolute;inset:0;background:rgba(0,0,0,0.8);
+  z-index:60;align-items:center;justify-content:center;
+">
+  <div style="
+    background:#131509;border:1px solid #3a3f2a;border-radius:16px;
+    padding:40px 48px;text-align:center;
+    box-shadow:0 0 60px rgba(0,0,0,0.9);
+  ">
+    <div id="win-type" style="font-size:28px;margin-bottom:12px;"></div>
+    <div id="win-player" style="font-size:24px;font-weight:900;letter-spacing:0.05em;margin-bottom:8px;"></div>
+    <div style="font-size:13px;color:#a8ad94;margin-bottom:24px;">
+      Oyuncu 1: <span id="final-p1">0</span> puan &nbsp;|&nbsp; Oyuncu 2: <span id="final-p2">0</span> puan
+    </div>
+    <button onclick="location.reload()" style="
+      background:#c8f060;border:none;color:#0a0b09;
+      padding:12px 28px;border-radius:8px;cursor:pointer;
+      font-family:monospace;font-size:14px;font-weight:700;letter-spacing:0.15em;
+    ">Yeniden Oyna</button>
+  </div>
+</div>
+
+<style>
+  /* Son hamle vurgulama */
+  #last-move-toggle {
+    position: absolute;
+    left: 20px;
+    bottom: 90px;
+    background: rgba(10,11,9,0.88);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: all;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.2s;
+  }
+  #last-move-toggle:hover { border-color: var(--accent); }
+  #last-move-chk {
+    width: 14px; height: 14px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  #last-move-toggle label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+  #confirm-dialog { display:flex!important; opacity:0; pointer-events:none; transition:opacity 0.2s; }
+  #confirm-dialog.visible { opacity:1; pointer-events:all; }
+  #bonus-toast.visible { opacity:1!important; }
+  #win-screen { display:flex!important; opacity:0; pointer-events:none; transition:opacity 0.3s; }
+  #win-screen.visible { opacity:1; pointer-events:all; }
+  .win-player.p1 { color:var(--p1); }
+  .win-player.p2 { color:var(--p2); }
+</style>
+
+<!-- Kural Modalı -->
+<div id="rules-modal" style="
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);
+  z-index:80;align-items:center;justify-content:center;
+">
+  <div style="
+    background:#131509;border:1px solid #3a3f2a;border-radius:16px;
+    width:min(540px,92vw);max-height:85vh;overflow-y:auto;
+    box-shadow:0 8px 48px rgba(0,0,0,0.8);
+    scrollbar-width:thin;scrollbar-color:#3a3f2a transparent;
+  ">
+    <!-- Modal Header -->
+    <div style="
+      display:flex;align-items:center;justify-content:space-between;
+      padding:20px 24px 16px;border-bottom:1px solid #3a3f2a;
+      position:sticky;top:0;background:#131509;z-index:1;
+    ">
+      <div style="font-size:16px;font-weight:900;color:#c8f060;letter-spacing:0.15em;" data-i18n="rules_title">KAKTÜS — KURALLAR</div>
+      <button onclick="closeRulesModal()" style="
+        background:none;border:none;color:#a8ad94;font-size:20px;
+        cursor:pointer;font-family:monospace;padding:2px 8px;
+      ">✕</button>
+    </div>
+
+    <!-- Sekmeler -->
+    <div style="display:flex;border-bottom:1px solid #3a3f2a;">
+      <button class="rules-tab active" id="rtab-rules" onclick="switchRulesTab('rules')" style="
+        flex:1;padding:12px;background:none;border:none;border-bottom:2px solid #c8f060;
+        color:#f0f2e6;font-family:'Courier New',monospace;font-size:11px;font-weight:700;
+        letter-spacing:0.15em;cursor:pointer;
+      " data-i18n="tab_rules">KURALLAR</button>
+      <button class="rules-tab" id="rtab-example" onclick="switchRulesTab('example')" style="
+        flex:1;padding:12px;background:none;border:none;border-bottom:2px solid transparent;
+        color:#a8ad94;font-family:'Courier New',monospace;font-size:11px;font-weight:700;
+        letter-spacing:0.15em;cursor:pointer;
+      " data-i18n="tab_example">ÖRNEK OYUN</button>
+    </div>
+
+    <!-- Kurallar içeriği -->
+    <div id="rules-content" style="padding:20px 24px;">
+      <div id="rules-text"></div>
+    </div>
+
+    <!-- Örnek oyun içeriği -->
+    <div id="example-content" style="padding:20px 24px;display:none;">
+      <div id="example-text"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #rules-modal { display:flex!important; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+  #rules-modal.visible { opacity:1; pointer-events:all; }
+  .rules-section { margin-bottom:20px; }
+  .rules-section h3 {
+    font-size:11px;letter-spacing:0.2em;text-transform:uppercase;
+    color:#c8f060;margin-bottom:10px;font-weight:700;
+  }
+  .rules-section p, .rules-section li {
+    font-size:12px;color:#a8ad94;line-height:1.8;font-weight:600;
+    margin-bottom:6px;
+  }
+  .rules-section ul { padding-left:16px; }
+  .rules-badge {
+    display:inline-block;background:rgba(200,240,96,0.12);
+    border:1px solid rgba(200,240,96,0.3);border-radius:4px;
+    padding:2px 8px;color:#c8f060;font-size:11px;font-weight:700;
+    margin-right:6px;letter-spacing:0.1em;
+  }
+  .example-step {
+    background:rgba(255,255,255,0.03);border:1px solid #3a3f2a;
+    border-radius:8px;padding:14px 16px;margin-bottom:12px;
+  }
+  .example-step .step-num {
+    font-size:10px;letter-spacing:0.2em;color:#c8f060;
+    text-transform:uppercase;margin-bottom:6px;font-weight:700;
+  }
+  .example-step p { font-size:12px;color:#a8ad94;line-height:1.7;font-weight:600; }
+  .coming-soon {
+    text-align:center;padding:32px 20px;color:#a8ad94;
+    font-size:12px;letter-spacing:0.1em;
+  }
+</style>
+  <!-- Son hamle vurgulama -->
+<div id="last-move-toggle">
+  <input type="checkbox" id="last-move-chk" onchange="toggleLastMoveHighlight(this.checked)">
+  <label for="last-move-chk" data-i18n="highlight_last">Son hamleyi vurgula</label>
+</div>
+
+</body>
+</html>
