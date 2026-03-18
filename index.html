@@ -752,15 +752,37 @@
       <div id="last-score-desc" style="font-size:10px;line-height:1.5;color:var(--text-muted);font-weight:600;margin-top:2px;"></div>
     </div>
 
-    <!-- İnceleme modu: Oyunu Bitir -->
-    <div id="inspect-end-btn" style="display:none;">
-      <button onclick="endGameNow()" id="inspect-end-label" style="
+    <!-- İnceleme modu: Skor kartı + Yeni Oyun -->
+    <div id="inspect-end-btn" style="display:none;pointer-events:all;">
+      <!-- Oyun bitti başlık -->
+      <div style="
+        background:rgba(255,255,255,0.04);border:1px solid var(--border);
+        border-radius:8px;padding:10px 12px;margin-bottom:6px;
+      ">
+        <div id="inspect-win-type" style="font-size:11px;font-weight:700;letter-spacing:0.1em;color:var(--accent);margin-bottom:6px;text-align:center;"></div>
+        <div id="inspect-win-player" style="font-size:13px;font-weight:900;letter-spacing:0.05em;text-align:center;margin-bottom:8px;"></div>
+        <!-- Skor satırı -->
+        <div style="display:flex;justify-content:space-between;gap:8px;">
+          <div style="text-align:center;flex:1;">
+            <div style="font-size:9px;letter-spacing:0.15em;color:var(--p1);font-weight:700;margin-bottom:2px;">O1</div>
+            <div id="inspect-score-p1" style="font-size:20px;font-weight:900;color:#f0f2e6;line-height:1;">0</div>
+            <div style="font-size:8px;color:var(--text-muted);">puan</div>
+          </div>
+          <div style="width:1px;background:var(--border);"></div>
+          <div style="text-align:center;flex:1;">
+            <div style="font-size:9px;letter-spacing:0.15em;color:var(--p2);font-weight:700;margin-bottom:2px;">O2</div>
+            <div id="inspect-score-p2" style="font-size:20px;font-weight:900;color:#f0f2e6;line-height:1;">0</div>
+            <div style="font-size:8px;color:var(--text-muted);">puan</div>
+          </div>
+        </div>
+      </div>
+      <!-- Yeni Oyun butonu -->
+      <button onclick="location.reload()" style="
         background:#c8f060;color:#0a0b09;border:none;
         border-radius:8px;padding:10px 14px;cursor:pointer;
         font-family:'Courier New',monospace;font-size:12px;
         font-weight:700;letter-spacing:0.12em;width:100%;
-        pointer-events:all;
-      ">Oyunu Bitir</button>
+      " id="inspect-end-label">Yeni Oyun</button>
     </div>
   </div>
 
@@ -1128,8 +1150,8 @@ const P1_COLORS = [
   0x3d8410, // 5 birim (merdiven)
   0x2d6c0c, // 6 birim - koyu yeşil
   0x205808, // 6 birim (merdiven)
-  0x164806, // 7 birim - çok koyu
-  0x0e3804, // 8 birim - en koyu
+  0x1a5206, // 7 birim - koyu ama görünür
+  0x163e04, // 8 birim - en koyu, görünür koyu yeşil
 ];
 
 // P2 (sıcak): açık sarıdan koyu kırmızıya — poster'daki sıcak palet
@@ -1143,7 +1165,7 @@ const P2_COLORS = [
   0xcc3800, // 6 birim - koyu turuncu
   0xb82800, // 6 birim (merdiven)
   0xa01800, // 7 birim - kırmızı-turuncu
-  0x881000, // 8 birim - koyu kırmızı
+  0x8a1208, // 8 birim - koyu kırmızı, görünür
 ];
 
 // ─── SCENE SETUP ─────────────────────────────────────────────────────────────
@@ -1714,6 +1736,10 @@ let selectedPieceGroup = null;
 let previewRotation = { x:0, y:0, z:0 };
 
 function selectPiece(index, player) {
+  // Sadece mevcut oyuncunun taşı seçilebilir
+  if (player !== GameState.currentPlayer) return;
+  // Kullanılmış taş seçilemez
+  if (GameState.usedPieces[player-1].includes(index)) return;
   document.querySelectorAll('.piece-item').forEach(el => el.classList.remove('selected'));
   document.querySelector(`.piece-item[data-index="${index}"]`)?.classList.add('selected');
   GameState.selectedPieceIndex = index;
@@ -2129,6 +2155,16 @@ function finalizePlacement(targets,animMeshes,player,pieceIndex){
   checkWinCondition();
   // Son hamle vurgulama
   if (lastMoveHighlightEnabled) drawLastMoveHighlight();
+  // Pin açıksa paneli yeni oyuncuya güncelle
+  if (panelPinned) {
+    panelViewingPlayer = np;
+    document.getElementById('tab-p1').classList.toggle('active', np===1);
+    document.getElementById('tab-p2').classList.toggle('active', np===2);
+    const label = document.getElementById('panel-player-label');
+    label.textContent = `Seçim: ${t('player'+np)}`;
+    label.className = `panel-player-label p${np}`;
+    buildPiecePanel(np);
+  }
 }
 
 function calculateScore(targets, player, pieceIndex) {
@@ -2289,7 +2325,6 @@ function checkNoMovesLeft() {
 }
 
 function showNoMovesToast(player) {
-  // Eski bar varsa kaldır
   const old = document.getElementById('no-moves-bar');
   if (old) old.remove();
 
@@ -2302,12 +2337,10 @@ function showNoMovesToast(player) {
     z-index:40;box-shadow:0 4px 24px rgba(0,0,0,0.6);
     font-family:'Courier New',monospace;
   `;
-
-  const msg = currentLang === 'tr'
+  const isTR = currentLang === 'tr';
+  const msg = isTR
     ? `Oyuncu ${player} — Yerleştirilebilecek alan kalmadı`
     : `Player ${player} — No valid moves remaining`;
-  const endLabel = currentLang === 'tr' ? 'Oyunu Bitir' : 'End Game';
-  const inspectLabel = currentLang === 'tr' ? 'İncele' : 'Inspect';
 
   bar.innerHTML = `
     <span style="font-size:12px;color:#a8ad94;letter-spacing:0.12em;">${msg}</span>
@@ -2316,23 +2349,22 @@ function showNoMovesToast(player) {
       padding:8px 16px;border-radius:6px;cursor:pointer;
       font-family:'Courier New',monospace;font-size:12px;
       font-weight:700;letter-spacing:0.15em;white-space:nowrap;
-    ">${endLabel}</button>
+    ">${isTR ? 'Oyunu Bitir' : 'End Game'}</button>
     <button onclick="enterInspectMode()" style="
       background:transparent;color:#a8ad94;border:1px solid #3a3f2a;
       padding:8px 12px;border-radius:6px;cursor:pointer;
       font-family:'Courier New',monospace;font-size:12px;
       font-weight:700;letter-spacing:0.1em;white-space:nowrap;
-    ">${inspectLabel}</button>
+    ">${isTR ? 'İncele' : 'Inspect'}</button>
   `;
   document.body.appendChild(bar);
 }
 
+// Kaktüs bar'dan incelemeye gir (oyun henüz bitmedi, endGameNow gerekecek)
 function enterInspectMode() {
   const bar = document.getElementById('no-moves-bar');
   if (bar) bar.remove();
   GameState.inspectMode = true;
-
-  // Sol paneldeki kalıcı bitir butonunu göster
   const btn = document.getElementById('inspect-end-btn');
   if (btn) btn.style.display = 'block';
   updateInspectBtn();
@@ -2340,7 +2372,7 @@ function enterInspectMode() {
 
 function updateInspectBtn() {
   const label = document.getElementById('inspect-end-label');
-  if (label) label.textContent = t('end_game');
+  if (label) label.textContent = currentLang === 'tr' ? 'Yeni Oyun' : 'New Game';
 }
 
 function endGameNow() {
@@ -2364,6 +2396,39 @@ function endGameNow() {
   document.getElementById('final-p2').textContent = scores[1];
   const winner = scores[0] > scores[1] ? 1 : scores[1] > scores[0] ? 2 : 0;
   showWinScreen(winner, 'kaktus');
+}
+
+// Win ekranındaki "İncele" butonundan inceleme moduna gir
+function enterInspectFromWin() {
+  const ws = document.getElementById('win-screen');
+  ws.classList.remove('visible');
+  _fillInspectCard();
+  const btn = document.getElementById('inspect-end-btn');
+  if (btn) btn.style.display = 'block';
+  GameState.inspectMode = true;
+}
+
+// İnceleme kartındaki skor/başlık bilgilerini doldur
+function _fillInspectCard() {
+  const s = GameState.scores;
+  const winner = s[0] > s[1] ? 1 : s[1] > s[0] ? 2 : 0;
+
+  // Win type ve player etiketleri win screen'den kopyala
+  const winTypeEl = document.getElementById('win-type');
+  const winPlayerEl = document.getElementById('win-player');
+
+  const inspectType = document.getElementById('inspect-win-type');
+  const inspectPlayer = document.getElementById('inspect-win-player');
+  if (inspectType && winTypeEl) inspectType.textContent = winTypeEl.textContent;
+  if (inspectPlayer && winPlayerEl) {
+    inspectPlayer.textContent = winPlayerEl.textContent;
+    inspectPlayer.style.color = winner === 1 ? 'var(--p1)' : winner === 2 ? 'var(--p2)' : 'var(--accent)';
+  }
+
+  const sp1 = document.getElementById('inspect-score-p1');
+  const sp2 = document.getElementById('inspect-score-p2');
+  if (sp1) sp1.textContent = s[0];
+  if (sp2) sp2.textContent = s[1];
 }
 
 // KİLİT OYUN: Gövdenin etrafında kapalı döngü tespiti
@@ -2524,19 +2589,31 @@ function showBonusToast(msg){
 }
 
 function showWinScreen(player, type) {
-  const types = { kilit:'🔒 Kilit Oyun!', skor:'🏆 Skor Oyun!', kaktus:'🌵 Kaktüs Oyun!' };
+  const isTR = currentLang === 'tr';
+  const types = {
+    kilit: isTR ? '🔒 Kilit Oyun!' : '🔒 Lock Win!',
+    skor:  isTR ? '🏆 Skor Oyun!'  : '🏆 Score Win!',
+    kaktus:isTR ? '🌵 Kaktüs Oyun!': '🌵 Cactus Win!',
+  };
   document.getElementById('win-type').textContent = types[type] || '';
   const wp = document.getElementById('win-player');
   if (player === 0) {
-    wp.textContent = 'Berabere!';
+    wp.textContent = isTR ? 'Berabere!' : 'Draw!';
     wp.style.color = 'var(--accent)';
   } else {
-    wp.textContent = `Oyuncu ${player} Kazandı!`;
+    wp.textContent = isTR ? `Oyuncu ${player} Kazandı!` : `Player ${player} Wins!`;
     wp.className = `win-player p${player}`;
   }
   document.getElementById('final-p1').textContent = GameState.scores[0];
   document.getElementById('final-p2').textContent = GameState.scores[1];
-  document.getElementById('win-screen').classList.add('visible');
+  // İncele ve Yeni Oyun buton etiketleri
+  const inspBtn = document.getElementById('win-inspect-btn');
+  const replayBtn = document.getElementById('win-replay-btn');
+  if (inspBtn)  inspBtn.textContent  = isTR ? 'İncele' : 'Inspect';
+  if (replayBtn) replayBtn.textContent = isTR ? 'Yeni Oyun' : 'New Game';
+  // Göster
+  const ws = document.getElementById('win-screen');
+  ws.classList.add('visible');
 }
 
 // Phase button — TEK listener, tüm akış burada
@@ -2735,24 +2812,48 @@ setTimeout(()=>{
 
 <!-- Win Screen -->
 <div id="win-screen" style="
-  display:none;position:absolute;inset:0;background:rgba(0,0,0,0.8);
+  display:none;position:absolute;inset:0;background:rgba(0,0,0,0.82);
   z-index:60;align-items:center;justify-content:center;
 ">
   <div style="
     background:#131509;border:1px solid #3a3f2a;border-radius:16px;
-    padding:40px 48px;text-align:center;
+    padding:36px 44px;text-align:center;min-width:300px;
     box-shadow:0 0 60px rgba(0,0,0,0.9);
   ">
-    <div id="win-type" style="font-size:28px;margin-bottom:12px;"></div>
-    <div id="win-player" style="font-size:24px;font-weight:900;letter-spacing:0.05em;margin-bottom:8px;"></div>
-    <div style="font-size:13px;color:#a8ad94;margin-bottom:24px;">
-      Oyuncu 1: <span id="final-p1">0</span> puan &nbsp;|&nbsp; Oyuncu 2: <span id="final-p2">0</span> puan
+    <div id="win-type" style="font-size:26px;margin-bottom:10px;"></div>
+    <div id="win-player" style="font-size:22px;font-weight:900;letter-spacing:0.05em;margin-bottom:10px;"></div>
+    <div style="
+      background:rgba(255,255,255,0.04);border:1px solid #3a3f2a;border-radius:8px;
+      padding:12px 20px;margin-bottom:24px;
+    ">
+      <div style="display:flex;justify-content:space-between;gap:24px;">
+        <div style="text-align:center;">
+          <div style="font-size:10px;letter-spacing:0.2em;color:var(--p1);font-weight:700;margin-bottom:4px;">OYUNCU 1</div>
+          <div id="final-p1" style="font-size:26px;font-weight:900;color:#f0f2e6;">0</div>
+          <div style="font-size:9px;color:#b8bda8;letter-spacing:0.1em;">puan</div>
+        </div>
+        <div style="width:1px;background:#3a3f2a;"></div>
+        <div style="text-align:center;">
+          <div style="font-size:10px;letter-spacing:0.2em;color:var(--p2);font-weight:700;margin-bottom:4px;">OYUNCU 2</div>
+          <div id="final-p2" style="font-size:26px;font-weight:900;color:#f0f2e6;">0</div>
+          <div style="font-size:9px;color:#b8bda8;letter-spacing:0.1em;">puan</div>
+        </div>
+      </div>
     </div>
-    <button onclick="location.reload()" style="
-      background:#c8f060;border:none;color:#0a0b09;
-      padding:12px 28px;border-radius:8px;cursor:pointer;
-      font-family:monospace;font-size:14px;font-weight:700;letter-spacing:0.15em;
-    ">Yeniden Oyna</button>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button onclick="enterInspectFromWin()" style="
+        background:rgba(255,255,255,0.07);border:1px solid #3a3f2a;
+        color:#f0f2e6;padding:11px 22px;border-radius:8px;cursor:pointer;
+        font-family:'Courier New',monospace;font-size:12px;
+        font-weight:700;letter-spacing:0.15em;transition:all 0.2s;
+      " id="win-inspect-btn">İncele</button>
+      <button onclick="location.reload()" style="
+        background:#c8f060;border:none;color:#0a0b09;
+        padding:11px 22px;border-radius:8px;cursor:pointer;
+        font-family:'Courier New',monospace;font-size:12px;
+        font-weight:700;letter-spacing:0.15em;
+      " id="win-replay-btn">Yeni Oyun</button>
+    </div>
   </div>
 </div>
 
