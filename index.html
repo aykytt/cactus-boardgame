@@ -520,10 +520,10 @@
   #piece-panel.open { transform: translateX(0); }
   #piece-panel.pinned { transform: translateX(0) !important; }
 
-  /* Mobilde panel bottom bar'ı aşmasın */
+  /* Mobilde panel bottom: JS tarafından dinamik olarak ayarlanır */
   @media (max-width: 768px) {
     #piece-panel {
-      bottom: var(--mobile-bar-h, 140px);
+      bottom: 140px; /* JS yüklenene kadar fallback */
     }
   }
 
@@ -1581,8 +1581,16 @@ const miniScenes = []; // boş — animate loop için uyumluluk
 function getPieceSVG(piece, player) {
   const cols = player === 1 ? P1_COLORS : P2_COLORS;
   const idx = Math.min(piece.units - 2, cols.length - 1);
-  const hex = '#' + cols[idx].toString(16).padStart(6,'0');
-  const dark = '#' + Math.max(0, cols[idx] - 0x303030).toString(16).padStart(6,'0');
+  const baseColor = cols[idx];
+  const hex = '#' + baseColor.toString(16).padStart(6,'0');
+  // Dark yüzey: her channel'ı %35 karart ama minimum 0x0A garantile
+  const r = (baseColor >> 16) & 0xFF;
+  const g = (baseColor >>  8) & 0xFF;
+  const b =  baseColor        & 0xFF;
+  const dr = Math.max(10, Math.floor(r * 0.65));
+  const dg = Math.max(10, Math.floor(g * 0.65));
+  const db = Math.max(10, Math.floor(b * 0.65));
+  const dark = '#' + [dr,dg,db].map(v=>v.toString(16).padStart(2,'0')).join('');
 
   // İzometrik projeksiyon — her küp için 3 yüzey çiz
   const ISO = { sx: 7, sy: 4 }; // birim boyut
@@ -2774,19 +2782,24 @@ finalizePlacement = function(targets, animMeshes, player, pieceIndex) {
 
 // Mobile panel bottom offset — mobile controls yüksekliğini ölç
 function updateMobilePanelBottom() {
+  if (window.innerWidth > 768) return;
   const mc = document.getElementById('mobile-controls');
-  if (!mc) return;
-  const h = mc.offsetHeight;
-  document.documentElement.style.setProperty('--mobile-bar-h', h + 'px');
+  const panel = document.getElementById('piece-panel');
+  if (!mc || !panel) return;
+  const h = mc.getBoundingClientRect().height || mc.offsetHeight;
+  panel.style.bottom = (h + 4) + 'px';
 }
 
-setTimeout(() => {
-  const loading = document.getElementById('loading');
-  loading.style.opacity = '0';
-  setTimeout(() => loading.style.display = 'none', 500);
+setTimeout(()=>{
+  const loading=document.getElementById('loading');
+  loading.style.opacity='0';
+  setTimeout(()=>loading.style.display='none',500);
   animate();
+  // Panel bottom'u hemen + DOM settle sonra tekrar
   updateMobilePanelBottom();
-}, 1400);
+  setTimeout(updateMobilePanelBottom, 100);
+  setTimeout(updateMobilePanelBottom, 500);
+},1400);
 
 window.addEventListener('resize', updateMobilePanelBottom);
 
