@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>KAKTÜS — Strateji Oyunu</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -518,6 +518,33 @@
     z-index: 10;
   }
   #piece-panel.open { transform: translateX(0); }
+  #piece-panel.pinned { transform: translateX(0) !important; }
+
+  /* Pin butonu */
+  #panel-pin-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-muted);
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.18s;
+    flex-shrink: 0;
+  }
+  #panel-pin-btn.active {
+    background: rgba(200,240,96,0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  /* Mobilde pin yok */
+  @media (max-width: 768px) {
+    #panel-pin-btn { display: none !important; }
+  }
 
   /* Panel tab'ları */
   .panel-tabs {
@@ -557,13 +584,15 @@
 
   #piece-list {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
     padding: 8px;
     display: flex;
     flex-direction: column;
     gap: 6px;
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
+    min-height: 0; /* flex child scroll fix */
   }
 
   .piece-item {
@@ -756,6 +785,7 @@
   <div class="panel-tabs">
     <button class="panel-tab p1-tab active" id="tab-p1" onclick="switchPanelTab(1)">● O1 Taşları</button>
     <button class="panel-tab p2-tab" id="tab-p2" onclick="switchPanelTab(2)">● O2 Taşları</button>
+    <button id="panel-pin-btn" onclick="togglePanelPin()" title="Paneli sabitle">📌</button>
     <button class="panel-tab" style="flex:0;padding:10px 10px;" onclick="closePiecePanel()">✕</button>
   </div>
   <div class="panel-player-label p1" id="panel-player-label">Seçim: Oyuncu 1</div>
@@ -1412,6 +1442,13 @@ container.addEventListener('touchend', () => {
   lastTwoFingerCy = null;
 });
 
+// Safari pinch zoom fix — tüm ekranın zoom'unu engelle
+document.addEventListener('touchmove', (e) => {
+  if (e.touches.length >= 2) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
 // ─── AMBIENT PARTICLES ───────────────────────────────────────────────────────
 const particleCount = 80;
 const particleGeo = new THREE.BufferGeometry();
@@ -1635,21 +1672,40 @@ function buildPiecePanel(player) {
   panelPlayer = player;
 }
 
+let panelPinned = false;
+
+function togglePanelPin() {
+  panelPinned = !panelPinned;
+  const panel = document.getElementById('piece-panel');
+  const btn = document.getElementById('panel-pin-btn');
+  panel.classList.toggle('pinned', panelPinned);
+  btn.classList.toggle('active', panelPinned);
+  // Pin açıkken phase-btn "Parça Seç"e döner
+  const phaseBtn = document.getElementById('phase-btn');
+  if (panelPinned) {
+    phaseBtn.textContent = currentLang === 'tr' ? 'Parça Seç' : 'Select Piece';
+    GameState.phase = 'select';
+  } else {
+    phaseBtn.textContent = t('btn_select');
+    GameState.phase = 'inspect';
+  }
+}
+
 function openPiecePanel() {
   const p = GameState.currentPlayer;
   panelViewingPlayer = p;
-  // Tab durumunu güncelle
   document.getElementById('tab-p1').classList.toggle('active', p===1);
   document.getElementById('tab-p2').classList.toggle('active', p===2);
   const label = document.getElementById('panel-player-label');
   label.textContent = `Seçim: Oyuncu ${p}`;
   label.className = `panel-player-label p${p}`;
-  panelBuilt = false; // her açılışta fresh build (used durumu için)
+  panelBuilt = false;
   buildPiecePanel(p);
   document.getElementById('piece-panel').classList.add('open');
 }
 
 function closePiecePanel() {
+  if (panelPinned) return; // pinli iken kapanmaz
   document.getElementById('piece-panel').classList.remove('open');
 }
 
