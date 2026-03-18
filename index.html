@@ -520,6 +520,13 @@
   #piece-panel.open { transform: translateX(0); }
   #piece-panel.pinned { transform: translateX(0) !important; }
 
+  /* Mobilde panel bottom bar'ı aşmasın */
+  @media (max-width: 768px) {
+    #piece-panel {
+      bottom: var(--mobile-bar-h, 140px);
+    }
+  }
+
   /* Pin butonu */
   #panel-pin-btn {
     background: none;
@@ -2765,12 +2772,23 @@ finalizePlacement = function(targets, animMeshes, player, pieceIndex) {
   }
 };
 
-setTimeout(()=>{
-  const loading=document.getElementById('loading');
-  loading.style.opacity='0';
-  setTimeout(()=>loading.style.display='none',500);
+// Mobile panel bottom offset — mobile controls yüksekliğini ölç
+function updateMobilePanelBottom() {
+  const mc = document.getElementById('mobile-controls');
+  if (!mc) return;
+  const h = mc.offsetHeight;
+  document.documentElement.style.setProperty('--mobile-bar-h', h + 'px');
+}
+
+setTimeout(() => {
+  const loading = document.getElementById('loading');
+  loading.style.opacity = '0';
+  setTimeout(() => loading.style.display = 'none', 500);
   animate();
-},1400);
+  updateMobilePanelBottom();
+}, 1400);
+
+window.addEventListener('resize', updateMobilePanelBottom);
 
 </script>
 
