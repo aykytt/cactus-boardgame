@@ -3313,7 +3313,7 @@ setTimeout(()=>{
   const loading=document.getElementById('loading');
   loading.style.opacity='0';
   setTimeout(()=>loading.style.display='none',500);
-  animate();
+  // animate() artık startGameEngine içinde başlıyor
   updateMobilePanelBottom();
   setTimeout(updateMobilePanelBottom, 100);
   setTimeout(updateMobilePanelBottom, 500);
@@ -3502,6 +3502,20 @@ function hideLobby() {
 function startGameEngine() {
   document.getElementById('canvas-container').style.display='block';
   document.getElementById('hud').style.display='flex';
+
+  // Renderer'ı gerçek boyuta resize et — canvas display:none iken 0x0 başlamıştı
+  requestAnimationFrame(() => {
+    const w = window.innerWidth, h = window.innerHeight;
+    if (renderer) {
+      renderer.setSize(w, h);
+      if (camera) {
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+    }
+    updateMobilePanelBottom();
+  });
+
   const p1l=document.querySelector('#score-p1 .player-label');
   const p2l=document.querySelector('#score-p2 .player-label');
   const tn=document.getElementById('turn-name');
@@ -3510,8 +3524,13 @@ function startGameEngine() {
   if(p2l) p2l.textContent=p2Name;
   if(tn)  tn.textContent=p1Name;
   if(mtn) mtn.textContent=p1Name;
+
   const loading=document.getElementById('loading');
   loading.style.display='flex'; loading.style.opacity='1';
+
+  // Three.js render loop başlat
+  animate();
+
   if(gameMode!=='offline'&&roomRef) setupOnlineSync();
 }
 
