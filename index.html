@@ -3309,29 +3309,6 @@ function updateMobilePanelBottom() {
   panel.style.bottom = (h + 4) + 'px';
 }
 
-setTimeout(()=>{
-  const loading=document.getElementById('loading');
-  loading.style.opacity='0';
-  setTimeout(()=>loading.style.display='none',500);
-  // animate() artık startGameEngine içinde başlıyor
-  updateMobilePanelBottom();
-  setTimeout(updateMobilePanelBottom, 100);
-  setTimeout(updateMobilePanelBottom, 500);
-  // Mixpanel: oyun başladı
-  try {
-    gameStartTime = Date.now();
-    gameNotation = [];
-    invalidAttempts = 0;
-    panelOpenCount = 0;
-    mixpanel.track('game_start', {
-      lang: currentLang,
-      platform: isMobile() ? 'mobile' : 'desktop',
-      replay_number: replayCount,
-      game_mode: gameMode,
-    });
-  } catch(e){}
-},1400);
-
 // ─── LOBBY DİL SİSTEMİ ───────────────────────────────────────────────────────
 let lobbyLang = 'en';
 
@@ -3503,19 +3480,19 @@ function startGameEngine() {
   document.getElementById('canvas-container').style.display='block';
   document.getElementById('hud').style.display='flex';
 
-  // Renderer'ı gerçek boyuta resize et — canvas display:none iken 0x0 başlamıştı
+  // Renderer gerçek boyuta resize et
   requestAnimationFrame(() => {
     const w = window.innerWidth, h = window.innerHeight;
     if (renderer) {
       renderer.setSize(w, h);
-      if (camera) {
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
-      }
+      if (camera) { camera.aspect = w/h; camera.updateProjectionMatrix(); }
     }
     updateMobilePanelBottom();
+    setTimeout(updateMobilePanelBottom, 100);
+    setTimeout(updateMobilePanelBottom, 500);
   });
 
+  // İsim etiketleri
   const p1l=document.querySelector('#score-p1 .player-label');
   const p2l=document.querySelector('#score-p2 .player-label');
   const tn=document.getElementById('turn-name');
@@ -3525,11 +3502,30 @@ function startGameEngine() {
   if(tn)  tn.textContent=p1Name;
   if(mtn) mtn.textContent=p1Name;
 
+  // Loading ekranı göster, sonra kapat
   const loading=document.getElementById('loading');
   loading.style.display='flex'; loading.style.opacity='1';
+  setTimeout(()=>{
+    loading.style.opacity='0';
+    setTimeout(()=>{ loading.style.display='none'; },500);
+  }, 1200);
 
-  // Three.js render loop başlat
+  // Three.js render loop
   animate();
+
+  // Mixpanel
+  try {
+    gameStartTime = Date.now();
+    gameNotation = [];
+    invalidAttempts = 0;
+    panelOpenCount = 0;
+    mixpanel.track('game_start', {
+      lang: currentLang,
+      platform: isMobile()?'mobile':'desktop',
+      replay_number: replayCount,
+      game_mode: gameMode,
+    });
+  } catch(e){}
 
   if(gameMode!=='offline'&&roomRef) setupOnlineSync();
 }
