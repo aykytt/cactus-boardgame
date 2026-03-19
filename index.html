@@ -835,7 +835,7 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
     bottom: 80px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(10,11,9,0.88);
+    background: rgba(10,11,9,0.92);
     border: 1px solid var(--border);
     border-radius: 100px;
     padding: 10px 20px;
@@ -845,8 +845,11 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
     gap: 10px;
     pointer-events: none;
     white-space: nowrap;
+    transition: border-color 0.3s;
   }
   #online-waiting.visible { display: flex; }
+  #online-waiting.state-waiting { border-color: var(--border); }
+  #online-waiting.state-played  { border-color: var(--accent); }
 
   .ow-dot-row {
     display: flex; gap: 5px;
@@ -1198,7 +1201,7 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
   <!-- Top bar -->
   <div id="topbar">
     <div style="display:flex;align-items:center;gap:10px;">
-      <div class="game-title">⬡ Kaktüs</div>
+      <div class="game-title">⬡ cactus</div>
       <button id="rules-btn" onclick="openRulesModal()" style="
         background:rgba(255,255,255,0.07);border:1px solid var(--border);
         color:var(--text-muted);width:26px;height:26px;border-radius:50%;
@@ -1331,15 +1334,15 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
 
 <script>
 // ─── DİL SİSTEMİ ─────────────────────────────────────────────────────────────
-let currentLang = 'tr';
+let currentLang = 'en';
 
 const I18N = {
   tr: {
     player1: 'Oyuncu 1', player2: 'Oyuncu 2',
     pieces: (n) => `${n} taş`,
     turn_label: 'Sıra',
-    phase_inspect: 'HAZIRLIK', phase_select: 'TAŞ SEÇ',
-    phase_place: 'YERLEŞTİR', phase_turn: 'DÖNDÜR',
+    phase_inspect: 'hazırlik', phase_select: 'taş seç',
+    phase_place: 'yerleştir', phase_turn: 'döndür',
     btn_select: 'Taş Seç →', btn_place: 'Yerleştir →', btn_cancel: '✕ İptal',
     board_units: 'Tahta Birimi', move: 'Hamle',
     highlight_last: 'Son hamleyi vurgula',
@@ -1348,8 +1351,8 @@ const I18N = {
     win_kilit: '🔒 Kilit Oyun!', win_skor: '🏆 Skor Oyun!', win_kaktus: '🌵 Kaktüs Oyun!',
     win_draw: 'Berabere!', win_player: (p) => `Oyuncu ${p} Kazandı!`,
     replay: 'Yeniden Oyna',
-    rules_title: 'KAKTÜS — KURALLAR',
-    tab_rules: 'KURALLAR', tab_example: 'ÖRNEK OYUN',
+    rules_title: 'CACTUS — KURALLAR',
+    tab_rules: 'kurallar', tab_example: 'örnek oyun',
     no_moves: (p) => `Oyuncu ${p} — Yerleştirilebilecek alan kalmadı`,
     end_game: 'Oyunu Bitir', inspect: 'İncele',
     preview_label: 'Taş Seçildi — Döndür & Yerleştir',
@@ -1368,7 +1371,7 @@ const I18N = {
     win_kilit: '🔒 Lock Win!', win_skor: '🏆 Score Win!', win_kaktus: '🌵 Cactus Win!',
     win_draw: 'Draw!', win_player: (p) => `Player ${p} Wins!`,
     replay: 'Play Again',
-    rules_title: 'KAKTÜS — RULES',
+    rules_title: 'CACTUS — RULES',
     tab_rules: 'RULES', tab_example: 'EXAMPLE',
     no_moves: (p) => `Player ${p} — No valid moves remaining`,
     end_game: 'End Game', inspect: 'Inspect',
@@ -2197,7 +2200,7 @@ function buildPiecePanel(player) {
         closePiecePanel();
         GameState.phase = 'place';
         document.getElementById('phase-btn').textContent = '✕ İptal';
-        document.getElementById('game-phase').textContent = 'YERLEŞTİR';
+        document.getElementById('game-phase').textContent = 'yerleştir';
       });
     }
 
@@ -3610,13 +3613,42 @@ function isMyTurn() {
 function showWaitingBanner(opponentName) {
   const el = document.getElementById('online-waiting');
   const txt = document.getElementById('ow-text');
-  if (txt) txt.textContent = (opponentName || 'opponent') + ' is thinking...';
-  if (el) el.classList.add('visible');
+  if (txt) {
+    const name = opponentName || 'opponent';
+    txt.textContent = lobbyLang === 'tr'
+      ? `${name} oynuyor...`
+      : `${name} is playing...`;
+  }
+  if (el) {
+    el.classList.add('visible');
+    el.classList.remove('state-played');
+    el.classList.add('state-waiting');
+  }
+}
+
+function showPlayedBanner(opponentName) {
+  const el = document.getElementById('online-waiting');
+  const txt = document.getElementById('ow-text');
+  if (txt) {
+    const name = opponentName || 'opponent';
+    txt.textContent = lobbyLang === 'tr'
+      ? `${name} oynadı — senin sıran`
+      : `${name} played — your turn`;
+  }
+  if (el) {
+    el.classList.add('visible');
+    el.classList.remove('state-waiting');
+    el.classList.add('state-played');
+  }
+  // 2.5 saniye sonra banner kaybolur
+  setTimeout(() => hideWaitingBanner(), 2500);
 }
 
 function hideWaitingBanner() {
   const el = document.getElementById('online-waiting');
-  if (el) el.classList.remove('visible');
+  if (el) {
+    el.classList.remove('visible', 'state-waiting', 'state-played');
+  }
 }
 
 function showYourTurnToast() {
@@ -3629,10 +3661,10 @@ function showYourTurnToast() {
 
 function updateOnlineTurnUI() {
   if (gameMode === 'offline') return;
+  const oppName = localPlayer === 1 ? p2Name : p1Name;
   if (isMyTurn()) {
     hideWaitingBanner();
   } else {
-    const oppName = localPlayer === 1 ? p2Name : p1Name;
     showWaitingBanner(oppName);
   }
 }
@@ -3641,37 +3673,30 @@ function updateOnlineTurnUI() {
 function applyRemoteMove(lastMove) {
   if (!lastMove) return;
   const { pieceIndex, targets, player } = lastMove;
-  if (player === localPlayer) return; // kendi hamlemiz — atla
-
-  // Taşı sahneye ekle (skipSync=true)
+  if (player === localPlayer) return;
   const rotated = targets.map(t => ({ x: t.gx, y: t.gy, z: t.gz }));
   placePiece(rotated, { x: 0, y: 0, z: 0 }, player, pieceIndex, true);
 }
 
 function setupOnlineSync() {
   if (!roomRef) return;
-
-  // Başlangıç UI — P1 (host) her zaman ilk oynar
   updateOnlineTurnUI();
 
-  // Her iki taraf state'i dinliyor
   roomRef.child('state').on('value', snap => {
     const state = snap.val();
     if (!state || !state.lastMove) return;
-
     const lastMove = state.lastMove;
-
-    // Kendi hamlemizi tekrar uygulama
     if (lastMove.player === localPlayer) return;
 
     // Rakibin hamlesini uygula
     applyRemoteMove(lastMove);
 
-    // Kısa gecikme sonra sıra bize geçti
+    // Banner: "X played — your turn" göster, sonra kaybolur
+    const oppName = localPlayer === 1 ? p2Name : p1Name;
     setTimeout(() => {
-      updateOnlineTurnUI();
+      showPlayedBanner(oppName);
       showYourTurnToast();
-    }, 600);
+    }, 500);
   });
 }
 
@@ -3679,8 +3704,6 @@ function setupOnlineSync() {
 const _origFinalizeFB = finalizePlacement;
 finalizePlacement = function(targets, animMeshes, player, pieceIndex, skipSync) {
   _origFinalizeFB(targets, animMeshes, player, pieceIndex);
-
-  // Online modda, kendi hamlemizi gönder
   if (gameMode !== 'offline' && roomRef && !skipSync && player === localPlayer) {
     roomRef.child('state').set({
       lastPlayer: player,
@@ -3692,7 +3715,6 @@ finalizePlacement = function(targets, animMeshes, player, pieceIndex, skipSync) 
       round: GameState.round,
       ts: Date.now(),
     });
-    // Sıra karşıya geçti — banner göster
     updateOnlineTurnUI();
   }
 };
@@ -3884,12 +3906,12 @@ window.addEventListener('beforeunload', () => {
         flex:1;padding:12px;background:none;border:none;border-bottom:2px solid #c8f060;
         color:#f0f2e6;font-family:'Courier New',monospace;font-size:11px;font-weight:700;
         letter-spacing:0.15em;cursor:pointer;
-      " data-i18n="tab_rules">KURALLAR</button>
+      " data-i18n="tab_rules">kurallar</button>
       <button class="rules-tab" id="rtab-example" onclick="switchRulesTab('example')" style="
         flex:1;padding:12px;background:none;border:none;border-bottom:2px solid transparent;
         color:#a8ad94;font-family:'Courier New',monospace;font-size:11px;font-weight:700;
         letter-spacing:0.15em;cursor:pointer;
-      " data-i18n="tab_example">ÖRNEK OYUN</button>
+      " data-i18n="tab_example">örnek oyun</button>
     </div>
 
     <!-- Kurallar içeriği -->
