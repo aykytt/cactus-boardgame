@@ -1480,6 +1480,12 @@ const GameState = {
   selectedPieceIndex: -1,
   usedPieces: [[], []],
   inspectMode: false,
+  // Continuity bonus takibi: her oyuncu için hangi eşikler geçildi
+  // { p1: { t8: false, t16: false }, p2: { t8: false, t16: false } }
+  continuityThresholds: {
+    p1: { t8: false, t16: false },
+    p2: { t8: false, t16: false },
+  },
 };
 
 // ─── PIECE DEFINITIONS ────────────────────────────────────────────────────────
@@ -2688,19 +2694,43 @@ function showMoveScore(targets, player, basePoints, contactCount, contactBonus, 
 
 function checkContinuityWith(allCubes, player) {
   const pc = allCubes.filter(c => c.player === player);
+  const key = player === 1 ? 'p1' : 'p2';
+  const thresholds = GameState.continuityThresholds[key];
+
+  // Tüm yönlerde maksimum kesintisiz uzunluğu bul
   let maxLen = 0;
   for (const ax of [[1,0,0],[0,1,0],[0,0,1]]) {
     for (const s of pc) {
+      // Sadece zincirin başından say (soldan/alttan/önden)
+      const hasPrev = pc.some(c =>
+        c.gx === s.gx - ax[0] &&
+        c.gy === s.gy - ax[1] &&
+        c.gz === s.gz - ax[2]
+      );
+      if (hasPrev) continue; // bu zincirin başı değil, atla
       let len = 1, cx = s.gx, cy = s.gy, cz = s.gz;
-      while (pc.some(c => c.gx===cx+ax[0]&&c.gy===cy+ax[1]&&c.gz===cz+ax[2])) {
+      while (pc.some(c => c.gx===cx+ax[0] && c.gy===cy+ax[1] && c.gz===cz+ax[2])) {
         len++; cx+=ax[0]; cy+=ax[1]; cz+=ax[2];
       }
       if (len > maxLen) maxLen = len;
     }
   }
-  if (maxLen >= 16) { showBonusToast('Devamlılık Bonusu +20 🎉'); return 20; }
-  if (maxLen >= 8)  { showBonusToast('Devamlılık Bonusu +10 ⭐'); return 10; }
-  return 0;
+
+  // Eşik kontrolü — sadece ilk kez geçildiğinde bonus ver
+  let bonus = 0;
+
+  if (maxLen >= 16 && !thresholds.t16) {
+    thresholds.t16 = true;
+    thresholds.t8 = true; // 16 geçilince 8 de geçilmiş sayılır
+    bonus = 20;
+    showBonusToast('Continuity Bonus +20 🎉');
+  } else if (maxLen >= 8 && !thresholds.t8) {
+    thresholds.t8 = true;
+    bonus = 10;
+    showBonusToast('Continuity Bonus +10 ⭐');
+  }
+
+  return bonus;
 }
 
 function checkWinCondition() {
