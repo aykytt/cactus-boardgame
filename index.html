@@ -827,6 +827,69 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
     0% { transform: scale(1.3); opacity: 0.5; }
     100% { transform: scale(1); opacity: 1; }
   }
+
+  /* ── ONLINE WAITING OVERLAY ── */
+  #online-waiting {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(10,11,9,0.82);
+    backdrop-filter: blur(3px);
+    z-index: 60;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    pointer-events: all;
+  }
+  #online-waiting.visible { display: flex; }
+
+  .ow-dot-row {
+    display: flex; gap: 8px;
+  }
+  .ow-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: owPulse 1.2s ease-in-out infinite;
+  }
+  .ow-dot:nth-child(2) { animation-delay: 0.2s; }
+  .ow-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes owPulse {
+    0%,100% { opacity:0.2; transform:scale(0.7); }
+    50% { opacity:1; transform:scale(1); }
+  }
+  .ow-text {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* ── YOUR TURN TOAST ── */
+  #your-turn-toast {
+    display: none;
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: #0a0b09;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 10px 22px;
+    border-radius: 100px;
+    z-index: 70;
+    animation: toastIn 0.3s ease;
+  }
+  @keyframes toastIn {
+    from { opacity:0; transform: translateX(-50%) translateY(-8px); }
+    to   { opacity:1; transform: translateX(-50%) translateY(0); }
+  }
   #piece-panel {
     position: absolute;
     right: 0;
@@ -2188,6 +2251,8 @@ let previewRotation = { x:0, y:0, z:0 };
 function selectPiece(index, player) {
   // Sadece mevcut oyuncunun taşı seçilebilir
   if (player !== GameState.currentPlayer) return;
+  // Online modda sıra kontrolü — sadece kendi taşını seçebilirsin
+  if (gameMode !== 'offline' && player !== localPlayer) return;
   // Kullanılmış taş seçilemez
   if (GameState.usedPieces[player-1].includes(index)) return;
   document.querySelectorAll('.piece-item').forEach(el => el.classList.remove('selected'));
@@ -2565,11 +2630,10 @@ container.addEventListener('mousemove', (e) => {
 container.addEventListener('click',(e)=>{
   if(GameState.selectedPieceIndex<0||GameState.phase!=='place')return;
   if(!snapValid||!currentSnapOffset)return;
-
+  // Online modda sıra değilse tıklama engelle
+  if(gameMode !== 'offline' && !isMyTurn()) return;
   // Mobilde click ile yerleştirme YOK — sadece "Yerleştir" butonu
-  // Ghost yeşil = buton aktif, oradan yerleştir
   if (isMobile()) return;
-
   // Masaüstünde onay dialogu
   const piece=PIECE_DEFS[GameState.selectedPieceIndex];
   pendingRotated=getRotatedCubes(piece,previewRotation);
@@ -2582,6 +2646,8 @@ let pendingRotated=null;
 function confirmPlacement(){
   document.getElementById('confirm-dialog').classList.remove('visible');
   if(!pendingRotated||!currentSnapOffset)return;
+  // Online modda sıra kontrolü
+  if(gameMode !== 'offline' && !isMyTurn()) return;
   const snap={...currentSnapOffset};
   const rot=[...pendingRotated];
   placePiece(rot,snap,GameState.currentPlayer,GameState.selectedPieceIndex);
@@ -3227,7 +3293,9 @@ function mobileCancelPlace() {
 }
 
 function mobilePlacePiece() {
-  if (!snapValid || !currentSnapOffset) return; // ghost kırmızıysa çalışmaz
+  if (!snapValid || !currentSnapOffset) return;
+  // Online modda sıra kontrolü
+  if (gameMode !== 'offline' && !isMyTurn()) return;
   const piece = PIECE_DEFS[GameState.selectedPieceIndex];
   pendingRotated = getRotatedCubes(piece, previewRotation);
   placePiece(pendingRotated, { ...currentSnapOffset }, GameState.currentPlayer, GameState.selectedPieceIndex);
@@ -3531,44 +3599,87 @@ function startGameEngine() {
 }
 
 // ─── ONLINE SYNC ──────────────────────────────────────────────────────────────
-function setupOnlineSync() {
-  if (!roomRef) return;
-  // Host: her hamle sonrası state'i yaz
-  // Guest: state'i dinle ve uygula
-  if (gameMode === 'online-guest') {
-    roomRef.child('state').on('value', snap => {
-      const state = snap.val();
-      if (!state || state.lastPlayer === localPlayer) return;
-      applyRemoteMove(state);
-    });
+
+function isMyTurn() {
+  if (gameMode === 'offline') return true;
+  return GameState.currentPlayer === localPlayer;
+}
+
+function showWaitingOverlay(opponentName) {
+  const el = document.getElementById('online-waiting');
+  const txt = document.getElementById('ow-text');
+  if (txt) txt.textContent = (opponentName || 'Opponent') + ' is thinking...';
+  if (el) el.classList.add('visible');
+}
+
+function hideWaitingOverlay() {
+  const el = document.getElementById('online-waiting');
+  if (el) el.classList.remove('visible');
+}
+
+function showYourTurnToast() {
+  const toast = document.getElementById('your-turn-toast');
+  if (!toast) return;
+  const lang = typeof lobbyLang !== 'undefined' ? lobbyLang : 'en';
+  toast.textContent = lang === 'tr' ? 'SENİN SIRAN' : 'YOUR TURN';
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 2200);
+}
+
+function updateOnlineTurnUI() {
+  if (gameMode === 'offline') return;
+  const myTurn = isMyTurn();
+  if (myTurn) {
+    hideWaitingOverlay();
+  } else {
+    const oppName = localPlayer === 1 ? p2Name : p1Name;
+    showWaitingOverlay(oppName);
   }
 }
 
-function applyRemoteMove(state) {
-  // Rakibin hamlesini uygula — placedCubes ve UI'ı güncelle
-  // state: { placedCubes, scores, round, currentPlayer, lastMove }
-  if (!state.lastMove) return;
-  const { pieceIndex, targets, player } = state.lastMove;
-  if (player === localPlayer) return; // kendi hamlemiz
-  // Taşı sahneye koy
-  const piece = PIECE_DEFS[pieceIndex];
-  const rotated = targets.map(t => ({x:t.gx, y:t.gy, z:t.gz}));
-  placePiece(rotated, {x:0,y:0,z:0}, player, pieceIndex, true); // skipSync=true
+function setupOnlineSync() {
+  if (!roomRef) return;
+
+  // İlk durum: kim başlıyor?
+  // Host = P1 = ilk hamle hakkı
+  updateOnlineTurnUI();
+
+  // Her iki taraf da state'i dinliyor
+  roomRef.child('state').on('value', snap => {
+    const state = snap.val();
+    if (!state || !state.lastMove) return;
+
+    const { pieceIndex, targets, player } = state.lastMove;
+
+    // Kendi hamlemizi tekrar uygulama
+    if (player === localPlayer) return;
+
+    // Rakibin hamlesini sahneye ekle
+    const rotated = targets.map(t => ({x:t.gx, y:t.gy, z:t.gz}));
+    placePiece(rotated, {x:0,y:0,z:0}, player, pieceIndex, true);
+
+    // Sıra bize geçti
+    setTimeout(() => {
+      updateOnlineTurnUI();
+      showYourTurnToast();
+    }, 500);
+  });
 }
 
-// finalizePlacement'ta online modda state gönder
+// finalizePlacement wrapper — online modda state gönder, sıra kontrolü
 const _origFinalizeFB = finalizePlacement;
 finalizePlacement = function(targets, animMeshes, player, pieceIndex, skipSync) {
   _origFinalizeFB(targets, animMeshes, player, pieceIndex);
+
   if (gameMode !== 'offline' && roomRef && !skipSync && player === localPlayer) {
+    // State Firebase'e yaz
     roomRef.child('state').set({
-      placedCubes: placedCubes,
-      scores: GameState.scores,
-      round: GameState.round,
-      currentPlayer: GameState.currentPlayer,
       lastPlayer: player,
       lastMove: { pieceIndex, targets, player },
+      round: GameState.round,
     });
+    // Sıra karşıya geçti — overlay göster
+    updateOnlineTurnUI();
   }
 };
 
@@ -3592,6 +3703,19 @@ window.addEventListener('beforeunload', () => {
 </script>
 
 <!-- Confirm Dialog -->
+<!-- Online waiting overlay -->
+<div id="online-waiting">
+  <div class="ow-dot-row">
+    <div class="ow-dot"></div>
+    <div class="ow-dot"></div>
+    <div class="ow-dot"></div>
+  </div>
+  <div class="ow-text" id="ow-text">Opponent is thinking...</div>
+</div>
+
+<!-- Your turn toast -->
+<div id="your-turn-toast">YOUR TURN</div>
+
 <div id="confirm-dialog" style="
   display:none;position:absolute;inset:0;background:rgba(0,0,0,0.65);
   z-index:50;align-items:center;justify-content:center;
