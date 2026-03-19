@@ -1116,15 +1116,15 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
   </div>
 
   <div class="lobby-btns">
-    <button class="lobby-btn lobby-btn-primary" onclick="lobbyCreateRoom()" id="btn-create">
+    <button class="lobby-btn lobby-btn-primary" id="btn-create">
       <span id="lbl-create">Create Game</span>
       <span class="btn-arrow">→</span>
     </button>
-    <button class="lobby-btn lobby-btn-secondary" onclick="lobbyShowJoin()" id="btn-join">
+    <button class="lobby-btn lobby-btn-secondary" id="btn-join">
       <span id="lbl-join">Enter Code</span>
       <span class="btn-arrow">→</span>
     </button>
-    <button class="lobby-btn lobby-btn-ghost" onclick="lobbyOffline()" id="btn-offline">
+    <button class="lobby-btn lobby-btn-ghost" id="btn-offline">
       <span id="lbl-offline">Play on One Screen</span>
       <span class="btn-arrow">→</span>
     </button>
@@ -1135,7 +1135,7 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
 <div id="room-screen">
   <div class="room-title" id="room-title">Game Code</div>
   <div class="room-code-display" id="room-code-text">——</div>
-  <button class="room-copy-btn" id="room-copy-btn" onclick="roomCopyCode()">Copy</button>
+  <button class="room-copy-btn" id="room-copy-btn" >Copy</button>
   <div class="room-desc" id="room-desc">
     Share this code with your friend.<br>
     The game starts automatically when they join.
@@ -1144,7 +1144,7 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
     <div class="room-waiting-dot"></div>
     <span id="room-waiting-text">Waiting for friend...</span>
   </div>
-  <button class="room-cancel-btn" onclick="roomCancel()" id="room-cancel-text">Cancel</button>
+  <button class="room-cancel-btn"  id="room-cancel-text">Cancel</button>
 </div>
 
 <!-- ── JOIN (kod gir) ── -->
@@ -1159,11 +1159,11 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
          oninput="joinInputChanged(this)"
          onkeydown="if(event.key==='Enter') joinSubmit()">
   <div class="join-error" id="join-error"></div>
-  <button class="lobby-btn lobby-btn-primary" style="max-width:280px;margin-top:4px;" onclick="joinSubmit()">
+  <button class="lobby-btn lobby-btn-primary" style="max-width:280px;margin-top:4px;" >
     <span id="lbl-join-submit">Join Game</span>
     <span class="btn-arrow">→</span>
   </button>
-  <button class="room-cancel-btn" onclick="joinCancel()" id="lbl-join-cancel">Cancel</button>
+  <button class="room-cancel-btn"  id="lbl-join-cancel">Cancel</button>
 </div>
 
 <!-- ── COUNTDOWN ── -->
@@ -3566,6 +3566,30 @@ finalizePlacement = function(targets, animMeshes, player, pieceIndex, skipSync) 
 };
 
 window.addEventListener('resize', updateMobilePanelBottom);
+
+// ─── LOBBY EVENT LISTENERS — script yüklendikten sonra bağla ──────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const btnCreate  = document.getElementById('btn-create');
+  const btnJoin    = document.getElementById('btn-join');
+  const btnOffline = document.getElementById('btn-offline');
+  const btnCopy    = document.getElementById('room-copy-btn');
+  const btnRoomCancel = document.getElementById('room-cancel-text');
+  const btnJoinSubmit = document.getElementById('lbl-join-submit')?.parentElement;
+  const btnJoinCancel = document.getElementById('lbl-join-cancel');
+  const joinInput  = document.getElementById('join-code-input');
+
+  if (btnCreate)  btnCreate.addEventListener('click', lobbyCreateRoom);
+  if (btnJoin)    btnJoin.addEventListener('click', lobbyShowJoin);
+  if (btnOffline) btnOffline.addEventListener('click', lobbyOffline);
+  if (btnCopy)    btnCopy.addEventListener('click', roomCopyCode);
+  if (btnRoomCancel) btnRoomCancel.addEventListener('click', roomCancel);
+  if (btnJoinSubmit) btnJoinSubmit.addEventListener('click', joinSubmit);
+  if (btnJoinCancel) btnJoinCancel.addEventListener('click', joinCancel);
+  if (joinInput) {
+    joinInput.addEventListener('input', () => joinInputChanged(joinInput));
+    joinInput.addEventListener('keydown', (e) => { if(e.key==='Enter') joinSubmit(); });
+  }
+});
 
 // Mixpanel: oyun yarıda bırakılınca
 window.addEventListener('beforeunload', () => {
