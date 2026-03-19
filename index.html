@@ -1,3093 +1,1056 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>KAKTÜS — Strateji Oyunu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Thinking Card Kit</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  :root {
-    --bg: #0a0b09;
-    --surface: #131509;
-    --border: #3a3f2a;
-    --text: #f0f2e6;
-    --text-muted: #b8bda8;  /* AA 4.5:1+ on #0a0b09 */
-    --green-dark: #2d5a27;
-    --green-light: #8fba3c;
-    --green-glow: #c8f060;
-    --p1: #ffb830;
-    --p2: #ff6b4a;
-    --accent: #c8f060;
-  }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Courier New', monospace;
-    overflow: hidden;
-    height: 100dvh;
-    width: 100vw;
-  }
-
-  #canvas-container {
-    position: absolute;
-    inset: 0;
-  }
-
-  canvas {
-    display: block;
-    width: 100% !important;
-    height: 100% !important;
-  }
-
-  /* HUD */
-  #hud {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Top bar */
-  #topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    background: linear-gradient(to bottom, rgba(14,15,12,0.95), transparent);
-    pointer-events: all;
-  }
-
-  .game-title {
-    font-size: 15px;
-    letter-spacing: 0.3em;
-    color: var(--accent);
-    text-transform: uppercase;
-    font-weight: 700;
-  }
-
-  /* Score panels */
-  .score-panels {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
-  .score-card {
-    background: rgba(19,21,9,0.95);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 16px;
-    text-align: center;
-    min-width: 80px;
-    transition: border-color 0.3s;
-  }
-
-  .score-card.active {
-    border-color: var(--accent);
-    box-shadow: 0 0 14px rgba(200,240,96,0.2);
-  }
-
-  .score-card .player-label {
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    margin-bottom: 5px;
-    font-weight: 700;
-  }
-
-  .score-card.p1 .player-label { color: var(--p1); }
-  .score-card.p2 .player-label { color: var(--p2); }
-
-  .score-card .score-value {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1;
-  }
-
-  .score-card .pieces-left {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 4px;
-    font-weight: 600;
-  }
-
-  .turn-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: pulse 1.2s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.7); }
-  }
-
-  /* Bottom bar */
-  #bottombar {
-    margin-top: auto;
-    padding: 16px 20px;
-    background: linear-gradient(to top, rgba(14,15,12,0.95), transparent);
-    pointer-events: all;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  /* Turn display */
-  #turn-display {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-
-  .turn-label {
-    font-size: 11px;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    font-weight: 600;
-  }
-
-  .turn-name {
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-  }
-
-  .turn-name.p1 { color: var(--p1); }
-  .turn-name.p2 { color: var(--p2); }
-
-  /* Controls hint */
-  #controls-hint {
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    color: var(--text-muted);
-    text-align: right;
-    line-height: 2.0;
-    font-weight: 600;
-  }
-
-  #controls-hint span {
-    display: inline-block;
-    background: rgba(255,255,255,0.09);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    padding: 2px 6px;
-    margin: 0 1px;
-    font-size: 10px;
-    color: var(--text);
-    font-weight: 700;
-  }
-
-  /* Phase button */
-  #phase-btn {
-    pointer-events: all;
-    background: var(--accent);
-    color: #0a0b09;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 24px;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  #phase-btn:hover {
-    background: var(--green-glow);
-    transform: translateY(-1px);
-  }
-
-  /* Info panel - left side — MASAÜSTÜ */
-  #info-panel {
-    position: absolute;
-    left: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    pointer-events: all;
-  }
-
-  .info-chip {
-    background: rgba(19,21,9,0.92);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    font-weight: 600;
-  }
-
-  .info-chip strong {
-    color: var(--accent);
-    display: block;
-    font-size: 18px;
-    margin-bottom: 3px;
-    letter-spacing: 0.05em;
-  }
-
-  /* ── MOBİL GENEL ── */
-  @media (max-width: 768px) {
-    /* Info panel tamamen gizle */
-    #info-panel { display: none !important; }
-
-    /* Last move toggle gizle */
-    #last-move-toggle { display: none !important; }
-
-    /* Rotation hint gizle */
-    #rotation-hint { display: none !important; }
-
-    /* Controls hint gizle */
-    #controls-hint { display: none !important; }
-
-    /* Topbar kompakt */
-    #topbar { padding: 10px 12px; }
-
-    .game-title { font-size: 12px; letter-spacing: 0.2em; }
-
-    .score-card { padding: 7px 10px; min-width: 62px; }
-    .score-card .score-value { font-size: 22px; }
-    .score-card .player-label { font-size: 9px; }
-    .score-card .pieces-left { font-size: 9px; }
-
-    /* Bottombar kompakt */
-    #bottombar { padding: 10px 12px; }
-    .turn-name { font-size: 16px; }
-    .turn-label { font-size: 9px; }
-
-    #phase-btn { padding: 10px 16px; font-size: 11px; }
-
-    /* Preview label yukarı taşı */
-    #preview-label { bottom: 160px; font-size: 11px; }
-  }
-
-  /* ── MOBİL KONTROL PANELİ ── */
-  #mobile-controls {
-    display: none;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 20;
-    pointer-events: all;
-  }
-
-  @media (max-width: 768px) {
-    #mobile-controls { display: block; }
-    #bottombar { display: none; }
-  }
-
-  .mobile-ctrl-bar {
-    background: rgba(10,11,9,0.96);
-    border-top: 1px solid var(--border);
-    padding: 10px 14px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  /* Gövde döndür + sıra satırı */
-  .mobile-top-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-
-  .mobile-turn-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .mobile-turn-label { font-size: 9px; letter-spacing: 0.2em; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
-  .mobile-turn-name { font-size: 15px; font-weight: 700; }
-  .mobile-turn-name.p1 { color: var(--p1); }
-  .mobile-turn-name.p2 { color: var(--p2); }
-
-  /* Gövdeyi döndür butonu */
-  #mobile-orbit-btn {
-    background: rgba(255,255,255,0.07);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text-muted);
-    padding: 9px 14px;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    white-space: nowrap;
-    transition: all 0.15s;
-  }
-  #mobile-orbit-btn.active {
-    background: rgba(200,240,96,0.15);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  /* Taş seç / yerleştir butonları */
-  .mobile-action-row {
-    display: flex;
-    gap: 8px;
-  }
-
-  #mobile-phase-btn {
-    flex: 1;
-    background: var(--accent);
-    color: #0a0b09;
-    border: none;
-    border-radius: 8px;
-    padding: 12px;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  #mobile-phase-btn:disabled {
-    background: var(--border);
-    color: var(--text-muted);
-    cursor: not-allowed;
-  }
-
-  #mobile-cancel-btn {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text-muted);
-    padding: 12px 14px;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    cursor: pointer;
-    display: none;
-  }
-
-  /* Döndürme butonları grid */
-  #mobile-rotate-grid {
-    display: none;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-  }
-  #mobile-rotate-grid.visible { display: grid; }
-
-  .rot-btn-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .rot-label {
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    color: var(--text-muted);
-    text-align: center;
-    font-weight: 700;
-    text-transform: uppercase;
-  }
-  .rot-btn-pair {
-    display: flex;
-    gap: 4px;
-  }
-  .rot-btn {
-    flex: 1;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    padding: 10px 6px;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.15s;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  .rot-btn:active {
-    background: rgba(200,240,96,0.2);
-    border-color: var(--accent);
-    transform: scale(0.96);
-  }
-
-  /* Yerleştir butonu — mobil */
-  #mobile-place-btn {
-    width: 100%;
-    background: var(--border);
-    color: var(--text-muted);
-    border: none;
-    border-radius: 8px;
-    padding: 14px;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    cursor: not-allowed;
-    transition: all 0.2s;
-    display: none;
-  }
-  #mobile-place-btn.enabled {
-    background: var(--accent);
-    color: #0a0b09;
-    cursor: pointer;
-  }
-  #mobile-place-btn.visible { display: block; }
-
-  /* Loading overlay */
-  #loading {
-    position: absolute;
-    inset: 0;
-    background: var(--bg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    z-index: 100;
-    transition: opacity 0.5s;
-  }
-
-  #loading .logo {
-    font-size: 48px;
-    font-weight: 900;
-    letter-spacing: 0.3em;
-    color: var(--accent);
-  }
-
-  #loading .sub {
-    font-size: 13px;
-    letter-spacing: 0.4em;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    font-weight: 600;
-  }
-
-  .loader-bar {
-    width: 120px;
-    height: 2px;
-    background: var(--border);
-    border-radius: 1px;
-    overflow: hidden;
-  }
-
-  .loader-fill {
-    height: 100%;
-    background: var(--accent);
-    width: 0%;
-    animation: load 1.2s ease forwards;
-  }
-
-  @keyframes load {
-    to { width: 100%; }
-  }
-
-  /* ── PIECE PANEL (sağ taraf) ────────────────────────────────── */
-  #piece-panel {
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 210px;
-    background: rgba(10,11,9,0.97);
-    border-left: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    pointer-events: all;
-    transform: translateX(100%);
-    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
-    z-index: 10;
-  }
-  #piece-panel.open { transform: translateX(0); }
-  #piece-panel.pinned { transform: translateX(0) !important; }
-
-  /* Mobilde panel bottom: JS tarafından dinamik olarak ayarlanır */
-  @media (max-width: 768px) {
-    #piece-panel {
-      bottom: 140px; /* JS yüklenene kadar fallback */
-    }
-  }
-
-  /* Pin butonu */
-  #panel-pin-btn {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text-muted);
-    width: 26px;
-    height: 26px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.18s;
-    flex-shrink: 0;
-  }
-  #panel-pin-btn.active {
-    background: rgba(200,240,96,0.15);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-  /* Mobilde pin yok */
-  @media (max-width: 768px) {
-    #panel-pin-btn { display: none !important; }
-  }
-
-  /* Panel tab'ları */
-  .panel-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--border);
-  }
-  .panel-tab {
-    flex: 1;
-    padding: 10px 6px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-align: center;
-    text-transform: uppercase;
-    cursor: pointer;
-    border: none;
-    background: none;
-    color: var(--text-muted);
-    border-bottom: 2px solid transparent;
-    transition: all 0.18s;
-    font-family: 'Courier New', monospace;
-  }
-  .panel-tab.active { color: var(--text); border-bottom-color: var(--accent); }
-  .panel-tab.p1-tab.active { border-bottom-color: var(--p1); color: var(--p1); }
-  .panel-tab.p2-tab.active { border-bottom-color: var(--p2); color: var(--p2); }
-  .panel-tab:hover:not(.active) { color: var(--text); }
-
-  .panel-player-label {
-    padding: 8px 14px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    border-bottom: 1px solid var(--border);
-  }
-  .panel-player-label.p1 { color: var(--p1); }
-  .panel-player-label.p2 { color: var(--p2); }
-
-  #piece-list {
-    flex: 1;
-    overflow-y: scroll;
-    -webkit-overflow-scrolling: touch;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-    min-height: 0; /* flex child scroll fix */
-  }
-
-  .piece-item {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 10px;
-    cursor: pointer;
-    transition: all 0.18s;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .piece-item:hover { background: rgba(255,255,255,0.07); border-color: rgba(200,240,96,0.4); }
-  .piece-item.selected { border-color: var(--accent); background: rgba(200,240,96,0.08); box-shadow: 0 0 10px rgba(200,240,96,0.12); }
-  .piece-item.used { opacity: 0.28; pointer-events: none; }
-
-  .piece-preview {
-    width: 44px;
-    height: 44px;
-    flex-shrink: 0;
-    border-radius: 5px;
-    background: rgba(0,0,0,0.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .piece-preview svg { display: block; }
-  .piece-info { flex: 1; min-width: 0; }
-  .piece-name { font-size: 11px; font-weight: 700; color: var(--text); letter-spacing: 0.04em; margin-bottom: 3px; }
-  .piece-units { font-size: 10px; color: var(--text-muted); font-weight: 600; }
-  .piece-pts { font-size: 14px; font-weight: 900; flex-shrink: 0; }
-
-  /* Floating piece in main scene */
-  #preview-label {
-    position: absolute;
-    bottom: 90px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(10,11,9,0.92);
-    border: 1px solid var(--accent);
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s;
-    white-space: nowrap;
-  }
-  #preview-label.visible { opacity: 1; }
-
-  #rotation-hint {
-    position: absolute;
-    bottom: 90px;
-    right: 210px;
-    background: rgba(10,11,9,0.92);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 11px;
-    color: var(--text-muted);
-    font-weight: 600;
-    line-height: 2;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-  #rotation-hint.visible { opacity: 1; }
-  #rotation-hint span {
-    display: inline-block;
-    background: rgba(255,255,255,0.09);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    padding: 1px 5px;
-    font-size: 10px;
-    color: var(--text);
-    font-weight: 700;
-    margin: 0 1px;
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:     #F5F5F5;
+  --white:  #FFFFFF;
+  --card:   #EBEBEB;
+  --card2:  #E0E0E0;
+  --border: #D0D0D0;
+  --border2:#B8B8B8;
+  --text:   #0A0A0A;
+  --text2:  #333333;
+  --text3:  #555555;
+  --font:   Arial, Helvetica, sans-serif;
+  --r:      10px;
+  --r-lg:   16px;
+  --max:    960px;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  padding: 0;
+  /* NO min-height:100vh — Wix iframe uyumluluğu */
+}
+
+.wrap {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── SECTION SPACING ─────────────────────────────── */
+section { padding: 64px 0; }
+section + section { border-top: 1px solid var(--border); }
+
+/* ── LABELS ──────────────────────────────────────── */
+.eyebrow {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text3);
+  background: var(--card2);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+
+/* ── HERO ────────────────────────────────────────── */
+#hero {
+  padding: 80px 0 64px;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+}
+
+.hero-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+.hero-left {}
+
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  border: 1px solid var(--border);
+  padding: 5px 12px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+}
+
+.hero-dot {
+  width: 6px; height: 6px;
+  background: var(--text);
+  border-radius: 50%;
+}
+
+h1 {
+  font-size: clamp(36px, 5vw, 52px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.hero-sub {
+  font-size: 16px;
+  color: var(--text3);
+  line-height: 1.65;
+  margin-bottom: 28px;
+  max-width: 440px;
+}
+
+.hero-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 13px 22px;
+  border-radius: var(--r);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.14s;
+  text-decoration: none;
+  border: none;
+}
+
+.btn-dark {
+  background: var(--text);
+  color: var(--white);
+}
+.btn-dark:hover { opacity: 0.85; }
+
+.btn-outline {
+  background: transparent;
+  color: var(--text2);
+  border: 1px solid var(--border2);
+}
+.btn-outline:hover { border-color: var(--text2); color: var(--text); }
+
+/* Hero right — card stack preview */
+.hero-right {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.preview-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.preview-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+
+.pc-phase {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+.pc-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.pc-lines { display: flex; flex-direction: column; gap: 4px; }
+.pc-line {
+  height: 2px;
+  background: var(--card2);
+  border-radius: 1px;
+}
+.pc-line:nth-child(3) { width: 60%; }
+
+/* ── STATS ───────────────────────────────────────── */
+#stats {
+  padding: 40px 0;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+}
+
+.stats-row {
+  display: flex;
+  gap: 0;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  flex: 1;
+  min-width: 140px;
+  padding: 20px 24px;
+  border-right: 1px solid var(--border);
+}
+.stat-item:last-child { border-right: none; }
+
+.stat-n {
+  display: block;
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-l {
+  font-size: 12px;
+  color: var(--text3);
+  font-weight: 500;
+}
+
+/* ── BEFORE / AFTER ──────────────────────────────── */
+#beforeafter {}
+
+.ba-header { margin-bottom: 36px; }
+.ba-header h2 {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.ba-header p { font-size: 14px; color: var(--text3); line-height: 1.6; max-width: 520px; }
+
+.ba-slider-wrap {
+  position: relative;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  cursor: col-resize;
+  user-select: none;
+  background: var(--white);
+}
+
+.ba-before, .ba-after {
+  width: 100%;
+  padding: 28px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.ba-before { background: var(--card); }
+.ba-after  { background: var(--white); }
+
+.ba-label {
+  position: absolute;
+  top: 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.ba-label.before { left: 14px; background: var(--card2); color: var(--text3); border: 1px solid var(--border); }
+.ba-label.after  { right: 14px; background: var(--text); color: var(--white); }
+
+/* Old card style */
+.old-card {
+  background: var(--white);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 10px;
+}
+.old-card-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text2);
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+}
+.old-line { height: 1px; background: var(--border2); margin-bottom: 5px; }
+
+/* New card style */
+.new-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px;
+  border-left: 2.5px solid var(--text2);
+}
+.new-card-phase {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  background: var(--card);
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+}
+.new-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 7px;
+}
+.new-line { height: 1.5px; background: var(--card2); border-radius: 1px; margin-bottom: 4px; }
+.new-line:last-child { width: 65%; }
+
+/* ── CARD GRID ───────────────────────────────────── */
+#cards {}
+
+.section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.section-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.filter-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.filter-btn {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  transition: all 0.12s;
+  font-family: var(--font);
+}
+.filter-btn:hover { border-color: var(--border2); color: var(--text); }
+.filter-btn.active { background: var(--text); color: var(--white); border-color: var(--text); }
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.card-item {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.card-item:hover {
+  border-color: var(--border2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+}
+
+.ci-phase {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 20px;
+  display: inline-block;
+  width: fit-content;
+}
+.ci-phase.empathy  { background: #EBEBEB; color: var(--text3); }
+.ci-phase.ideation { background: #E0E0E0; color: var(--text2); }
+.ci-phase.evaluation { background: #D5D5D5; color: var(--text); }
+
+.ci-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.ci-desc {
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.ci-lines { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+.ci-line { height: 1.5px; background: var(--card2); border-radius: 1px; }
+.ci-line:last-child { width: 55%; }
+
+/* Download buttons */
+.download-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+/* ── TOOLS ───────────────────────────────────────── */
+#tools {}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.tool-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: all 0.15s;
+}
+.tool-card:hover {
+  border-color: var(--border2);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+}
+
+.tool-icon {
+  width: 44px;
+  height: 44px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.tool-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.tool-desc {
+  font-size: 13px;
+  color: var(--text3);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.tool-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tool-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text3);
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+/* ── PROMPT ──────────────────────────────────────── */
+#prompt {
+  background: var(--text);
+  color: var(--white);
+}
+
+#prompt .eyebrow {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.2);
+  color: #BBBBBB;
+}
+
+.prompt-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+.prompt-left h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--white);
+  margin-bottom: 12px;
+}
+
+.prompt-left p {
+  font-size: 14px;
+  color: #AAAAAA;
+  line-height: 1.65;
+  margin-bottom: 24px;
+}
+
+.prompt-steps { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+
+.p-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.p-step-n {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #AAAAAA;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.p-step-txt {
+  font-size: 13px;
+  color: #CCCCCC;
+  line-height: 1.5;
+}
+.p-step-txt strong { color: var(--white); }
+
+.prompt-right {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--r-lg);
+  padding: 20px;
+}
+
+.pr-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.pr-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #888888;
+}
+
+.btn-copy-prompt {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--white);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.12s;
+  font-family: var(--font);
+}
+.btn-copy-prompt:hover { background: rgba(255,255,255,0.18); }
+
+.pr-preview {
+  font-size: 12px;
+  color: #999999;
+  line-height: 1.7;
+  font-family: Arial, monospace;
+}
+
+.pr-line { margin-bottom: 2px; }
+.pr-line.head { color: #EEEEEE; font-weight: 700; }
+.pr-line.dim  { color: #555555; }
+.pr-line.val  { color: #CCCCCC; }
+.pr-dots { color: #444444; margin: 6px 0; }
+
+/* ── FOOTER ──────────────────────────────────────── */
+#footer {
+  padding: 32px 0;
+  border-top: 1px solid var(--border);
+  background: var(--white);
+}
+
+.footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.footer-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.footer-note {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+/* ── MODAL ───────────────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 28px;
+  max-width: 500px;
+  width: 100%;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  width: 28px; height: 28px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text2);
+}
+.modal-close:hover { background: var(--card2); }
+
+.modal h3 { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.modal p  { font-size: 13px; color: var(--text3); line-height: 1.6; margin-bottom: 18px; }
+
+.modal-desc {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+
+.modal-btns { display: flex; gap: 8px; }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .hero-inner, .prompt-inner { grid-template-columns: 1fr; }
+  .hero-right { display: none; }
+  .stats-row { flex-direction: column; }
+  .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
+}
 </style>
 </head>
 <body>
 
-<div id="loading">
-  <div class="logo">CACTUS</div>
-  <div class="sub">Strategy Game</div>
-  <div class="loader-bar"><div class="loader-fill"></div></div>
-</div>
-
-<div id="canvas-container"></div>
-
-<div id="hud">
-  <!-- Top bar -->
-  <div id="topbar">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <div class="game-title">⬡ Kaktüs</div>
-      <button id="rules-btn" onclick="openRulesModal()" style="
-        background:rgba(255,255,255,0.07);border:1px solid var(--border);
-        color:var(--text-muted);width:26px;height:26px;border-radius:50%;
-        font-family:monospace;font-size:13px;font-weight:700;cursor:pointer;
-        display:flex;align-items:center;justify-content:center;
-        transition:all 0.2s;flex-shrink:0;
-      ">?</button>
-    </div>
-
-    <div class="score-panels">
-      <div class="score-card p1 active" id="score-p1">
-        <div class="player-label" data-i18n="player1">Oyuncu 1</div>
-        <div class="score-value" id="val-p1">0</div>
-        <div class="pieces-left" id="pieces-p1" data-i18n-tpl="pieces">10 taş</div>
+<!-- ══ HERO ══════════════════════════════════════════ -->
+<section id="hero">
+<div class="wrap">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-tag">
+        <div class="hero-dot"></div>
+        Design Thinking · UX Research
       </div>
-      <div class="turn-indicator" id="turn-dot"></div>
-      <div class="score-card p2" id="score-p2">
-        <div class="player-label" data-i18n="player2">Oyuncu 2</div>
-        <div class="score-value" id="val-p2">0</div>
-        <div class="pieces-left" id="pieces-p2" data-i18n-tpl="pieces">10 taş</div>
+      <h1>Design Thinking<br>Card Kit</h1>
+      <p class="hero-sub">18 printable workshop cards, a digital 6-3-5 timer, and an AI-powered facilitator — rebuilt from years of hands-on UX research.</p>
+      <div class="hero-btns">
+        <button class="btn btn-dark" onclick="scrollTo('cards')">↓ Explore Cards</button>
+        <button class="btn btn-outline" onclick="scrollTo('tools')">Launch Tools →</button>
       </div>
     </div>
-
-    <div style="display:flex;align-items:center;gap:8px;">
-      <!-- TR/EN toggle -->
-      <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-left:6px;">
-        <button id="lang-tr" onclick="setLang('tr')" style="
-          background:var(--accent);color:#0a0b09;border:none;
-          padding:5px 10px;font-family:monospace;font-size:11px;font-weight:700;
-          cursor:pointer;letter-spacing:0.1em;transition:all 0.2s;
-        ">TR</button>
-        <button id="lang-en" onclick="setLang('en')" style="
-          background:transparent;color:var(--text-muted);border:none;
-          padding:5px 10px;font-family:monospace;font-size:11px;font-weight:700;
-          cursor:pointer;letter-spacing:0.1em;transition:all 0.2s;
-        ">EN</button>
-      </div>
-      <!-- game-phase gizli ama JS için tutuluyor -->
-      <div class="game-title" id="game-phase" style="display:none;">HAZIRLIK</div>
-    </div>
-  </div>
-
-  <!-- Info panel -->
-  <div id="info-panel">
-    <div class="info-chip">
-      <strong>32</strong>
-      Tahta Birimi
-    </div>
-    <div class="info-chip">
-      <strong id="turn-round">1</strong>
-      Hamle
-    </div>
-
-    <!-- Son hamle puan özeti -->
-    <div class="info-chip" id="last-score-chip" style="display:none;min-width:130px;">
-      <strong id="last-score-pts" style="font-size:15px;">+0</strong>
-      <div id="last-score-desc" style="font-size:10px;line-height:1.5;color:var(--text-muted);font-weight:600;margin-top:2px;"></div>
-    </div>
-
-    <!-- İnceleme modu: Skor kartı + Yeni Oyun -->
-    <div id="inspect-end-btn" style="display:none;pointer-events:all;">
-      <!-- Oyun bitti başlık -->
-      <div style="
-        background:rgba(255,255,255,0.04);border:1px solid var(--border);
-        border-radius:8px;padding:10px 12px;margin-bottom:6px;
-      ">
-        <div id="inspect-win-type" style="font-size:11px;font-weight:700;letter-spacing:0.1em;color:var(--accent);margin-bottom:6px;text-align:center;"></div>
-        <div id="inspect-win-player" style="font-size:13px;font-weight:900;letter-spacing:0.05em;text-align:center;margin-bottom:8px;"></div>
-        <!-- Skor satırı -->
-        <div style="display:flex;justify-content:space-between;gap:8px;">
-          <div style="text-align:center;flex:1;">
-            <div style="font-size:9px;letter-spacing:0.15em;color:var(--p1);font-weight:700;margin-bottom:2px;">O1</div>
-            <div id="inspect-score-p1" style="font-size:20px;font-weight:900;color:#f0f2e6;line-height:1;">0</div>
-            <div style="font-size:8px;color:var(--text-muted);">puan</div>
-          </div>
-          <div style="width:1px;background:var(--border);"></div>
-          <div style="text-align:center;flex:1;">
-            <div style="font-size:9px;letter-spacing:0.15em;color:var(--p2);font-weight:700;margin-bottom:2px;">O2</div>
-            <div id="inspect-score-p2" style="font-size:20px;font-weight:900;color:#f0f2e6;line-height:1;">0</div>
-            <div style="font-size:8px;color:var(--text-muted);">puan</div>
-          </div>
+    <div class="hero-right">
+      <div class="preview-card">
+        <div class="pc-phase">Empathy</div>
+        <div class="pc-title">Empathy Map</div>
+        <div class="pc-lines">
+          <div class="pc-line"></div><div class="pc-line"></div><div class="pc-line"></div>
         </div>
       </div>
-      <!-- Yeni Oyun butonu -->
-      <button onclick="location.reload()" style="
-        background:#c8f060;color:#0a0b09;border:none;
-        border-radius:8px;padding:10px 14px;cursor:pointer;
-        font-family:'Courier New',monospace;font-size:12px;
-        font-weight:700;letter-spacing:0.12em;width:100%;
-      " id="inspect-end-label">Yeni Oyun</button>
+      <div class="preview-card">
+        <div class="pc-phase">Ideation</div>
+        <div class="pc-title">6-3-5 Brainwriting</div>
+        <div class="pc-lines">
+          <div class="pc-line"></div><div class="pc-line"></div><div class="pc-line"></div>
+        </div>
+      </div>
+      <div class="preview-card">
+        <div class="pc-phase">Empathy</div>
+        <div class="pc-title">Kano Analysis</div>
+        <div class="pc-lines">
+          <div class="pc-line"></div><div class="pc-line"></div><div class="pc-line"></div>
+        </div>
+      </div>
+      <div class="preview-card">
+        <div class="pc-phase">Evaluation</div>
+        <div class="pc-title">Harris Profile</div>
+        <div class="pc-lines">
+          <div class="pc-line"></div><div class="pc-line"></div><div class="pc-line"></div>
+        </div>
+      </div>
     </div>
   </div>
-
-  <!-- Bottom bar -->
-  <div id="bottombar">
-    <div id="turn-display">
-      <div class="turn-label">Sıra</div>
-      <div class="turn-name p1" id="turn-name">Oyuncu 1</div>
-    </div>
-
-    <button id="phase-btn" onclick="openPiecePanel()">Taş Seç →</button>
-
-    <div id="controls-hint">
-      <span>Sürükle</span> döndür &nbsp;
-      <span>Scroll</span> zoom<br>
-      <span>Q/E</span> X &nbsp; <span>W/S</span> Y &nbsp; <span>A/D</span> Z
-    </div>
-  </div>
-<!-- Piece Panel -->
-<div id="piece-panel">
-  <!-- Tab bar -->
-  <div class="panel-tabs">
-    <button class="panel-tab p1-tab active" id="tab-p1" onclick="switchPanelTab(1)">● O1 Taşları</button>
-    <button class="panel-tab p2-tab" id="tab-p2" onclick="switchPanelTab(2)">● O2 Taşları</button>
-    <button id="panel-pin-btn" onclick="togglePanelPin()" title="Paneli sabitle">📌</button>
-    <button class="panel-tab" style="flex:0;padding:10px 10px;" onclick="closePiecePanel()">✕</button>
-  </div>
-  <div class="panel-player-label p1" id="panel-player-label">Seçim: Oyuncu 1</div>
-  <div id="piece-list"></div>
 </div>
+</section>
 
-<!-- Floating labels -->
-<div id="preview-label">Taş Seçildi — Döndür & Yerleştir</div>
-<div id="rotation-hint">
-  <span>Q</span>/<span>E</span> X ekseni &nbsp;
-  <span>W</span>/<span>S</span> Y ekseni &nbsp;
-  <span>A</span>/<span>D</span> Z ekseni
+<!-- ══ STATS ══════════════════════════════════════════ -->
+<section id="stats">
+<div class="wrap">
+  <div class="stats-row">
+    <div class="stat-item"><span class="stat-n">18</span><span class="stat-l">Workshop cards</span></div>
+    <div class="stat-item"><span class="stat-n">3</span><span class="stat-l">Design phases</span></div>
+    <div class="stat-item"><span class="stat-n">2</span><span class="stat-l">Download formats</span></div>
+    <div class="stat-item"><span class="stat-n">1</span><span class="stat-l">AI facilitator prompt</span></div>
+  </div>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</section>
+
+<!-- ══ BEFORE / AFTER ════════════════════════════════ -->
+<section id="beforeafter">
+<div class="wrap">
+  <div class="ba-header">
+    <div class="eyebrow">Redesigned</div>
+    <h2>From functional to finished</h2>
+    <p>Used these cards in real workshops for years. The logic was solid — the design wasn't. This is the rebuild: same methods, production-grade layout.</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+    <!-- Before -->
+    <div style="position:relative;">
+      <div class="ba-label before">Before</div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px;margin-top:0;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="old-card">
+            <div class="old-card-title">Empathy</div>
+            <div class="old-line"></div><div class="old-line"></div><div class="old-line"></div><div class="old-line"></div>
+          </div>
+          <div class="old-card">
+            <div class="old-card-title">See</div>
+            <div class="old-line"></div><div class="old-line"></div><div class="old-line"></div><div class="old-line"></div>
+          </div>
+          <div class="old-card">
+            <div class="old-card-title">Hear</div>
+            <div class="old-line"></div><div class="old-line"></div><div class="old-line"></div><div class="old-line"></div>
+          </div>
+          <div class="old-card">
+            <div class="old-card-title">Think</div>
+            <div class="old-line"></div><div class="old-line"></div><div class="old-line"></div><div class="old-line"></div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text3);margin-top:14px;line-height:1.5;">Flat hierarchy, no visual system, no phase context. It worked — but it didn't look like a product.</p>
+      </div>
+    </div>
+
+    <!-- After -->
+    <div style="position:relative;">
+      <div class="ba-label after">After</div>
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="new-card">
+            <div class="new-card-phase">Empathy</div>
+            <div class="new-card-title">See</div>
+            <div class="new-line"></div><div class="new-line"></div><div class="new-line"></div>
+          </div>
+          <div class="new-card">
+            <div class="new-card-phase">Empathy</div>
+            <div class="new-card-title">Hear</div>
+            <div class="new-line"></div><div class="new-line"></div><div class="new-line"></div>
+          </div>
+          <div class="new-card">
+            <div class="new-card-phase">Ideation</div>
+            <div class="new-card-title">Dark Side</div>
+            <div class="new-line"></div><div class="new-line"></div><div class="new-line"></div>
+          </div>
+          <div class="new-card">
+            <div class="new-card-phase">Evaluation</div>
+            <div class="new-card-title">Harris Profile</div>
+            <div class="new-line"></div><div class="new-line"></div><div class="new-line"></div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text3);margin-top:14px;line-height:1.5;">Grayscale system, rounded corners, phase badges, Tabler icons, AAA accessibility. Print-ready A5.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ CARDS ══════════════════════════════════════════ -->
+<section id="cards">
+<div class="wrap">
+  <div class="section-header">
+    <div>
+      <div class="eyebrow">Card Kit</div>
+      <h2>18 workshop methods</h2>
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn active" data-filter="all" onclick="filterCards(this,'all')">All</button>
+      <button class="filter-btn" data-filter="empathy"    onclick="filterCards(this,'empathy')">Empathy</button>
+      <button class="filter-btn" data-filter="ideation"   onclick="filterCards(this,'ideation')">Ideation</button>
+      <button class="filter-btn" data-filter="evaluation" onclick="filterCards(this,'evaluation')">Evaluation</button>
+    </div>
+  </div>
+
+  <div class="cards-grid" id="cards-grid"></div>
+
+  <div class="download-row">
+    <button class="btn btn-dark">↓ Download — Black &amp; White</button>
+    <button class="btn btn-outline">↓ Download — Colour Version</button>
+  </div>
+</div>
+</section>
+
+<!-- ══ TOOLS ══════════════════════════════════════════ -->
+<section id="tools">
+<div class="wrap">
+  <div style="margin-bottom:32px;">
+    <div class="eyebrow">Interactive Tools</div>
+    <h2 style="font-size:28px;font-weight:700;letter-spacing:-0.02em;color:var(--text);margin-bottom:8px;">Beyond the printed card</h2>
+    <p style="font-size:14px;color:var(--text3);line-height:1.6;max-width:520px;">Digital tools that extend the card set — run workshops without printing, or use the AI facilitator to guide your research process.</p>
+  </div>
+
+  <div class="tools-grid">
+
+    <div class="tool-card">
+      <div class="tool-icon">⏱</div>
+      <div class="tool-title">6-3-5 Brainwriting Timer</div>
+      <div class="tool-desc">Run a brainwriting session with 2–8 participants. Configurable rounds and duration. Saves all ideas — exports at the end.</div>
+      <div class="tool-meta">
+        <span class="tool-tag">Ideation</span>
+        <span class="tool-tag">2–8 people</span>
+        <span class="tool-tag">Digital</span>
+      </div>
+      <button class="btn btn-dark" style="width:100%;" onclick="openTool('635')">Launch Tool →</button>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-icon">✏️</div>
+      <div class="tool-title">Digital Fill &amp; Export</div>
+      <div class="tool-desc">Fill any card directly in the browser. Download as a completed PDF — ready to share or archive with your research notes.</div>
+      <div class="tool-meta">
+        <span class="tool-tag">All phases</span>
+        <span class="tool-tag">PDF export</span>
+        <span class="tool-tag">Coming soon</span>
+      </div>
+      <button class="btn btn-outline" style="width:100%;" disabled>Coming soon</button>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-icon">🤖</div>
+      <div class="tool-title">AI Workshop Facilitator</div>
+      <div class="tool-desc">Claude Projects prompt that acts as a personal DT facilitator — recommends the right cards, generates project-specific questions, and produces insight reports.</div>
+      <div class="tool-meta">
+        <span class="tool-tag">Claude Projects</span>
+        <span class="tool-tag">18 methods</span>
+        <span class="tool-tag">Personal use</span>
+      </div>
+      <button class="btn btn-dark" style="width:100%;" onclick="scrollTo('prompt')">Get the Prompt →</button>
+    </div>
+
+  </div>
+</div>
+</section>
+
+<!-- ══ PROMPT ══════════════════════════════════════════ -->
+<section id="prompt">
+<div class="wrap">
+  <div class="prompt-inner">
+    <div class="prompt-left">
+      <div class="eyebrow">Claude Projects</div>
+      <h2>Your personal UX Accelerator</h2>
+      <p>Paste this prompt into a Claude Project. Every morning, describe your project — the facilitator recommends the right methods, asks project-specific questions, and builds insight reports.</p>
+      <div class="prompt-steps">
+        <div class="p-step">
+          <div class="p-step-n">1</div>
+          <div class="p-step-txt">Open <strong>claude.ai</strong> → New Project → "UX Accelerator"</div>
+        </div>
+        <div class="p-step">
+          <div class="p-step-n">2</div>
+          <div class="p-step-txt">Click <strong>Set instructions</strong> → paste the prompt below</div>
+        </div>
+        <div class="p-step">
+          <div class="p-step-n">3</div>
+          <div class="p-step-txt">Describe your project and current phase — <strong>the facilitator takes over</strong></div>
+        </div>
+      </div>
+      <button class="btn" style="background:var(--white);color:var(--text);" onclick="copyPrompt()">Copy Master Prompt →</button>
+    </div>
+
+    <div class="prompt-right">
+      <div class="pr-header">
+        <span class="pr-title">Master Prompt — preview</span>
+        <button class="btn-copy-prompt" onclick="copyPrompt()">Copy</button>
+      </div>
+      <div class="pr-preview">
+        <div class="pr-line head"># UX Accelerator</div>
+        <div class="pr-line dim"># Design Thinking Facilitator</div>
+        <div class="pr-dots">···</div>
+        <div class="pr-line val">Ask: project type, scope, phase</div>
+        <div class="pr-line val">Recommend: max 3 cards + reasons</div>
+        <div class="pr-line val">Generate: project-specific questions</div>
+        <div class="pr-line val">Output: insights + design decisions</div>
+        <div class="pr-dots">···</div>
+        <div class="pr-line dim">18 methods · Dot Voting sim</div>
+        <div class="pr-line dim">Harris Profile · Insight Report</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ FOOTER ══════════════════════════════════════════ -->
+<section id="footer">
+<div class="wrap">
+  <div class="footer-inner">
+    <div class="footer-name">Design Thinking Card Kit</div>
+    <div class="footer-note">Built by Aykut · Free to use and print</div>
+  </div>
+</div>
+</section>
+
+<!-- ══ CARD MODAL ══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h3 id="modal-title">Card Title</h3>
+    <p id="modal-phase-tag" style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;"></p>
+    <div class="modal-desc" id="modal-desc"></div>
+    <div class="modal-btns">
+      <button class="btn btn-dark" style="flex:1;">↓ Download PDF</button>
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
 
 <script>
-// ─── DİL SİSTEMİ ─────────────────────────────────────────────────────────────
-let currentLang = 'tr';
-
-const I18N = {
-  tr: {
-    player1: 'Oyuncu 1', player2: 'Oyuncu 2',
-    pieces: (n) => `${n} taş`,
-    turn_label: 'Sıra',
-    phase_inspect: 'HAZIRLIK', phase_select: 'TAŞ SEÇ',
-    phase_place: 'YERLEŞTİR', phase_turn: 'DÖNDÜR',
-    btn_select: 'Taş Seç →', btn_place: 'Yerleştir →', btn_cancel: '✕ İptal',
-    board_units: 'Tahta Birimi', move: 'Hamle',
-    highlight_last: 'Son hamleyi vurgula',
-    confirm_title: 'Yerleştir?', confirm_msg: 'Taşı bu konuma koy',
-    confirm_ok: '✓ Onayla', confirm_cancel: 'İptal',
-    win_kilit: '🔒 Kilit Oyun!', win_skor: '🏆 Skor Oyun!', win_kaktus: '🌵 Kaktüs Oyun!',
-    win_draw: 'Berabere!', win_player: (p) => `Oyuncu ${p} Kazandı!`,
-    replay: 'Yeniden Oyna',
-    rules_title: 'KAKTÜS — KURALLAR',
-    tab_rules: 'KURALLAR', tab_example: 'ÖRNEK OYUN',
-    no_moves: (p) => `Oyuncu ${p} — Yerleştirilebilecek alan kalmadı`,
-    end_game: 'Oyunu Bitir', inspect: 'İncele',
-    preview_label: 'Taş Seçildi — Döndür & Yerleştir',
-  },
-  en: {
-    player1: 'Player 1', player2: 'Player 2',
-    pieces: (n) => `${n} pieces`,
-    turn_label: 'Turn',
-    phase_inspect: 'READY', phase_select: 'SELECT',
-    phase_place: 'PLACE', phase_turn: 'ROTATE',
-    btn_select: 'Select Piece →', btn_place: 'Place →', btn_cancel: '✕ Cancel',
-    board_units: 'Board Units', move: 'Move',
-    highlight_last: 'Highlight last move',
-    confirm_title: 'Place here?', confirm_msg: 'Place the piece at this position',
-    confirm_ok: '✓ Confirm', confirm_cancel: 'Cancel',
-    win_kilit: '🔒 Lock Win!', win_skor: '🏆 Score Win!', win_kaktus: '🌵 Cactus Win!',
-    win_draw: 'Draw!', win_player: (p) => `Player ${p} Wins!`,
-    replay: 'Play Again',
-    rules_title: 'KAKTÜS — RULES',
-    tab_rules: 'RULES', tab_example: 'EXAMPLE',
-    no_moves: (p) => `Player ${p} — No valid moves remaining`,
-    end_game: 'End Game', inspect: 'Inspect',
-    preview_label: 'Piece Selected — Rotate & Place',
-  }
-};
-
-function t(key, ...args) {
-  const val = I18N[currentLang][key];
-  return typeof val === 'function' ? val(...args) : (val || key);
-}
-
-function setLang(lang) {
-  currentLang = lang;
-  document.getElementById('lang-tr').style.background = lang === 'tr' ? 'var(--accent)' : 'transparent';
-  document.getElementById('lang-tr').style.color = lang === 'tr' ? '#0a0b09' : 'var(--text-muted)';
-  document.getElementById('lang-en').style.background = lang === 'en' ? 'var(--accent)' : 'transparent';
-  document.getElementById('lang-en').style.color = lang === 'en' ? '#0a0b09' : 'var(--text-muted)';
-
-  // Static UI güncelle
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.dataset.i18n;
-    if (I18N[lang][key]) el.textContent = I18N[lang][key];
-  });
-  document.querySelector('.turn-label').textContent = t('turn_label');
-  document.getElementById('game-phase').textContent = t('phase_inspect');
-  document.getElementById('phase-btn').textContent = t('btn_select');
-  document.querySelector('[data-i18n="highlight_last"]').textContent = t('highlight_last');
-  document.querySelector('[data-i18n="board_units"]')?.setAttribute('data-i18n-val', t('board_units'));
-
-  // Info chip labels
-  const chips = document.querySelectorAll('.info-chip');
-  if (chips[0]) chips[0].lastChild.textContent = ' ' + t('board_units');
-  if (chips[1]) chips[1].lastChild.textContent = ' ' + t('move');
-
-  // Confirm dialog
-  const cd = document.getElementById('confirm-dialog');
-  if (cd) {
-    cd.querySelector('.confirm-title')?.textContent && (cd.querySelector('.confirm-title').textContent = t('confirm_title'));
-    cd.querySelector('.confirm-msg')?.textContent && (cd.querySelector('.confirm-msg').textContent = t('confirm_msg'));
-  }
-
-  // Kural modalı içeriğini güncelle
-  renderRulesContent();
-  updateInspectBtn();
-}
-
-function updateInspectBtn() {
-  const label = document.getElementById('inspect-end-label');
-  if (label) label.textContent = t('end_game');
-}
-
-// ─── KURAL MODALI ─────────────────────────────────────────────────────────────
-const RULES_CONTENT = {
-  tr: {
-    sections: [
-      {
-        title: 'Temel Kurallar',
-        items: [
-          'Oyun 2 kişilik, sıra tabanlıdır. Her oyuncunun 10 taşı vardır.',
-          'İlk taş, gövdenin üst veya alt koyu bölgesine temas edecek şekilde yerleştirilir.',
-          'Sonraki her taş, bir önceki rakip taşına en az 1 birimden temas etmelidir.',
-          'Taşlar gövdenin dışına yapışır — içine giremez.',
-          'Kuşbakışı bakıldığında taş gövdeden en fazla 1 kademe dışarı taşabilir.',
-        ]
-      },
-      {
-        title: 'Puanlama',
-        items: [
-          '📦 Her taş, birim sayısı kadar temel puan getirir.',
-          '🤝 Temas ettiğiniz rakip birim başına +1 ekstra puan kazanırsınız.',
-          '⚡ Tek bir biriminiz aynı anda 2+ rakip birime temas ederse +5 Yerleşim Bonusu.',
-          '⭐ Herhangi bir yönde 8+ birim aralıksız devamlılık → +10 Devamlılık Bonusu.',
-          '🎉 Aynı devamlılık 16 birime ulaşırsa → +20 Devamlılık Bonusu.',
-        ]
-      },
-      {
-        title: 'Oyun Sonu',
-        items: [
-          '🏆 Skor Oyun: Tüm taşlar bitince en yüksek puan kazanır.',
-          '🌵 Kaktüs Oyun: Yerleştirilemez hale gelinince, elde kalan taş puanları düşülür.',
-          '🔒 Kilit Oyun: Gövdeyi yatayda (12 birim) veya dikeyde (20 birim) aralıksız sararsanız anında kazanırsınız.',
-        ]
-      },
-    ]
-  },
-  en: {
-    sections: [
-      {
-        title: 'Basic Rules',
-        items: [
-          'The game is 2-player, turn-based. Each player has 10 pieces.',
-          'The first piece must touch the dark zone at the top or bottom of the board.',
-          'Each subsequent piece must touch at least 1 unit of the opponent\'s last piece.',
-          'Pieces attach to the outside of the board — they cannot enter it.',
-          'When viewed from above, a piece may extend at most 1 step beyond the board edge.',
-        ]
-      },
-      {
-        title: 'Scoring',
-        items: [
-          '📦 Each piece scores points equal to its number of units.',
-          '🤝 Earn +1 extra point for each opponent unit you touch.',
-          '⚡ If a single unit touches 2+ opponent units at once → +5 Placement Bonus.',
-          '⭐ 8+ units of your color in unbroken sequence (any direction) → +10 Continuity Bonus.',
-          '🎉 Same sequence reaching 16 units → +20 Continuity Bonus.',
-        ]
-      },
-      {
-        title: 'Game End',
-        items: [
-          '🏆 Score Win: When all pieces are placed, highest score wins.',
-          '🌵 Cactus Win: When no moves remain, leftover piece values are deducted.',
-          '🔒 Lock Win: Complete an unbroken loop around the board — 12 units horizontal or 20 vertical — to win instantly.',
-        ]
-      },
-    ]
-  }
-};
-
-const EXAMPLE_CONTENT = {
-  tr: [
-    { num: '1. HAMLE', text: 'İlk oyuncu taşını seçer ve gövdenin üst ya da alt koyu bölgesine temas edecek şekilde yerleştirir. 4 birimlik taş → 4 puan.' },
-    { num: '2. HAMLE', text: 'İkinci oyuncu taşını, ilk oyuncunun taşına temas ettirecek şekilde yerleştirmek zorundadır. Temas ettiği birim kadar ekstra puan kazanır.' },
-    { num: 'YERLEŞİM BONUSU', text: 'Tek bir biriminiz aynı anda rakibin 2 veya daha fazla birimine temas ederse +5 bonus puan kazanırsınız.' },
-    { num: 'DEVAMLlLIK BONUSU', text: 'Kendi renginizdeki taşlar herhangi bir yönde 8 birim aralıksız sıralanırsa +10 bonus. 16 birime ulaşınca +20 bonus.' },
-    { num: 'KİLİT OYUN', text: 'Gövdenin etrafını yatayda 12 birim veya dikeyde 20 birim aralıksız sararsan, skor ne olursa olsun anında kazanırsın.' },
-  ],
-  en: [
-    { num: 'MOVE 1', text: 'The first player selects a piece and places it touching the dark zone at the top or bottom. A 4-unit piece → 4 points.' },
-    { num: 'MOVE 2', text: 'The second player must place their piece touching the first player\'s last piece. They earn extra points for each unit touched.' },
-    { num: 'PLACEMENT BONUS', text: 'If a single unit of yours touches 2 or more opponent units at once, you earn +5 bonus points.' },
-    { num: 'CONTINUITY BONUS', text: 'If your pieces form an unbroken line of 8+ units in any direction → +10 bonus. Reaching 16 units → +20 bonus.' },
-    { num: 'LOCK WIN', text: 'Surround the board with an unbroken loop — 12 units horizontally or 20 vertically — to win instantly regardless of score.' },
-  ]
-};
-
-let currentRulesTab = 'rules';
-
-function openRulesModal() {
-  renderRulesContent();
-  document.getElementById('rules-modal').classList.add('visible');
-}
-
-function closeRulesModal() {
-  document.getElementById('rules-modal').classList.remove('visible');
-}
-
-function switchRulesTab(tab) {
-  currentRulesTab = tab;
-  document.getElementById('rules-content').style.display = tab === 'rules' ? 'block' : 'none';
-  document.getElementById('example-content').style.display = tab === 'example' ? 'block' : 'none';
-  document.getElementById('rtab-rules').style.borderBottomColor = tab === 'rules' ? '#c8f060' : 'transparent';
-  document.getElementById('rtab-rules').style.color = tab === 'rules' ? '#f0f2e6' : '#a8ad94';
-  document.getElementById('rtab-example').style.borderBottomColor = tab === 'example' ? '#c8f060' : 'transparent';
-  document.getElementById('rtab-example').style.color = tab === 'example' ? '#f0f2e6' : '#a8ad94';
-}
-
-function renderRulesContent() {
-  const lang = currentLang;
-
-  // Kurallar tab başlıkları
-  document.getElementById('rtab-rules').textContent = t('tab_rules');
-  document.getElementById('rtab-example').textContent = t('tab_example');
-  document.querySelector('[data-i18n="rules_title"]').textContent = t('rules_title');
-
-  // Kurallar içeriği
-  const rulesData = RULES_CONTENT[lang];
-  let html = '';
-  rulesData.sections.forEach(sec => {
-    html += `<div class="rules-section"><h3>${sec.title}</h3><ul>`;
-    sec.items.forEach(item => { html += `<li>${item}</li>`; });
-    html += `</ul></div>`;
-  });
-  document.getElementById('rules-text').innerHTML = html;
-
-  // Örnek oyun içeriği
-  const exData = EXAMPLE_CONTENT[lang];
-  let exHtml = '';
-  exData.forEach(step => {
-    exHtml += `<div class="example-step"><div class="step-num">${step.num}</div><p>${step.text}</p></div>`;
-  });
-  exHtml += `<div class="coming-soon">🎬 ${lang === 'tr' ? 'Animasyonlu örnek oyun yakında eklenecek.' : 'Animated example coming soon.'}</div>`;
-  document.getElementById('example-text').innerHTML = exHtml;
-}
-
-
-const GameState = {
-  currentPlayer: 1,
-  scores: [0, 0],
-  piecesLeft: [10, 10],
-  round: 1,
-  phase: 'inspect',
-  lastPlacedCubes: [],
-  selectedPieceIndex: -1,
-  usedPieces: [[], []],
-  inspectMode: false,
-};
-
-// ─── PIECE DEFINITIONS ────────────────────────────────────────────────────────
-// Her parça: küp koordinatları dizisi [x, y, z]
-// Orijin (0,0,0) parçanın referans noktası
-
-const PIECE_DEFS = [
-  {
-    id: 0,
-    name: '2\'li Çubuk',
-    units: 2,
-    // 2 yan yana (X ekseninde)
-    cubes: [[0,0,0],[1,0,0]],
-  },
-  {
-    id: 1,
-    name: '3\'lü Köşe',
-    units: 3,
-    // 2 üst üste + alttakinin yanında 1
-    cubes: [[0,0,0],[0,1,0],[1,0,0]],
-  },
-  {
-    id: 2,
-    name: '4\'lü L',
-    units: 4,
-    // 3 üst üste + alttakinin yanında 1
-    cubes: [[0,0,0],[0,1,0],[0,2,0],[1,0,0]],
-  },
-  {
-    id: 3,
-    name: '4\'lü Kare',
-    units: 4,
-    // 2x2 kare (XZ düzleminde)
-    cubes: [[0,0,0],[1,0,0],[0,0,1],[1,0,1]],
-  },
-  {
-    id: 4,
-    name: '5\'li Büyük L',
-    units: 5,
-    // 4 üst üste + alttakinin yanında 1
-    cubes: [[0,0,0],[0,1,0],[0,2,0],[0,3,0],[1,0,0]],
-  },
-  {
-    id: 5,
-    name: '5\'li Merdiven',
-    units: 5,
-    // 3 yüksek sütun + yanında 2 yüksek sütun
-    cubes: [[0,0,0],[0,1,0],[0,2,0],[1,0,0],[1,1,0]],
-  },
-  {
-    id: 6,
-    name: '6\'lı Duvar',
-    units: 6,
-    // 3x2 düz dikdörtgen (3 geniş, 2 yüksek → XY)
-    cubes: [[0,0,0],[1,0,0],[2,0,0],[0,1,0],[1,1,0],[2,1,0]],
-  },
-  {
-    id: 7,
-    name: '6\'lı Merdiven',
-    units: 6,
-    // 4 yüksek + yanında 2 yüksek
-    cubes: [[0,0,0],[0,1,0],[0,2,0],[0,3,0],[1,0,0],[1,1,0]],
-  },
-  {
-    id: 8,
-    name: '7\'li Merdiven',
-    units: 7,
-    // 4 yüksek + yanında 3 yüksek
-    cubes: [[0,0,0],[0,1,0],[0,2,0],[0,3,0],[1,0,0],[1,1,0],[1,2,0]],
-  },
-  {
-    id: 9,
-    name: '8\'li Duvar',
-    units: 8,
-    // 4 yüksek + yanında 4 yüksek (2x4 duvar)
-    cubes: [[0,0,0],[0,1,0],[0,2,0],[0,3,0],[1,0,0],[1,1,0],[1,2,0],[1,3,0]],
-  },
+// ── CARD DATA ───────────────────────────────────────
+const CARDS = [
+  { title:"Empathy Map",         phase:"empathy",    desc:"Map what your user sees, hears, says and does — before defining any problem." },
+  { title:"Persona",             phase:"empathy",    desc:"Build a realistic representation of your key user segment to guide design decisions." },
+  { title:"WWWWWH",              phase:"empathy",    desc:"Frame your research question from six angles to observe what truly matters." },
+  { title:"AEIOU",               phase:"empathy",    desc:"Structured observation: Activities, Environments, Interactions, Objects, Users." },
+  { title:"Benchmark",           phase:"empathy",    desc:"Compare key features across competitors to identify gaps and your unique positioning." },
+  { title:"Kano Questionnaire",  phase:"empathy",    desc:"Rate features when present and absent to uncover what truly delights or dissatisfies." },
+  { title:"Kano Interpretation", phase:"empathy",    desc:"Plot responses to classify features as attractive, must-have, or indifferent." },
+  { title:"MoSCoW",              phase:"empathy",    desc:"Prioritise requirements by forcing consensus on what must, should, could and won't be delivered." },
+  { title:"Love / Break-up",     phase:"empathy",    desc:"Write to a product as a person — surface emotional highs and frustrations clearly." },
+  { title:"Brainstorming",       phase:"ideation",   desc:"Generate as many raw ideas as possible in a fixed time. Quantity over quality." },
+  { title:"6-3-5 Brainwriting",  phase:"ideation",   desc:"Silent parallel ideation — build on each other's ideas without groupthink." },
+  { title:"Dark Side",           phase:"ideation",   desc:"Invert each idea to reveal its worst outcome — then flip back to find opportunities." },
+  { title:"Tomorrow's Headlines",phase:"ideation",   desc:"Write a future headline about your solution — forces a bold, user-centred vision." },
+  { title:"KJ Technique",        phase:"ideation",   desc:"Cluster observations into affinity groups to reveal patterns and themes." },
+  { title:"Lotus Blossom",       phase:"ideation",   desc:"Expand a central theme into 8 sub-themes, each opening its own 3×3." },
+  { title:"Morphological Chart", phase:"ideation",   desc:"Combine options across parameters systematically to create novel solutions." },
+  { title:"Harris Profile",      phase:"evaluation", desc:"Score alternatives on a -2 to +2 scale and compare totals for evidence-based decisions." },
+  { title:"Flowchart",           phase:"ideation",   desc:"Map process steps, decisions and branches — rectangles, diamonds, branches." },
 ];
 
-// ─── RENK SİSTEMİ ────────────────────────────────────────────────────────────
-// P1 (soğuk): sarı-yeşilden koyu yeşile — doygun, net yeşil skalası
-const P1_COLORS = [
-  0xd4f04a, // 2 birim - çok açık sarı-yeşil
-  0xb8dc28, // 3 birim - açık yeşil-sarı
-  0x8fc820, // 4 birim - orta-açık yeşil
-  0x70b018, // 4 birim (kare)
-  0x529a10, // 5 birim - orta yeşil
-  0x3d8410, // 5 birim (merdiven)
-  0x2d6c0c, // 6 birim - koyu yeşil
-  0x205808, // 6 birim (merdiven)
-  0x1a5206, // 7 birim - koyu ama görünür
-  0x163e04, // 8 birim - en koyu, görünür koyu yeşil
-];
-
-// P2 (sıcak): açık sarıdan koyu kırmızıya — poster'daki sıcak palet
-const P2_COLORS = [
-  0xffe838, // 2 birim - parlak sarı
-  0xffcc20, // 3 birim - sarı
-  0xffaa00, // 4 birim - amber
-  0xff8c00, // 4 birim (kare) - koyu amber
-  0xf06800, // 5 birim - turuncu
-  0xe05000, // 5 birim (merdiven)
-  0xcc3800, // 6 birim - koyu turuncu
-  0xb82800, // 6 birim (merdiven)
-  0xa01800, // 7 birim - kırmızı-turuncu
-  0x8a1208, // 8 birim - koyu kırmızı, görünür
-];
-
-// ─── SCENE SETUP ─────────────────────────────────────────────────────────────
-const container = document.getElementById('canvas-container');
-const W = () => container.clientWidth;
-const H = () => container.clientHeight;
-
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
-renderer.setSize(W(), H());
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.setClearColor(0x0a0b09, 1);
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.25;
-container.appendChild(renderer.domElement);
-
-const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x0a0b09, 0.012);
-
-const camera = new THREE.PerspectiveCamera(42, W() / H(), 0.1, 200);
-camera.position.set(8, 10, 16);
-camera.lookAt(0, 0, 0);
-
-// ─── LIGHTING — yüksek kalite ────────────────────────────────────────────────
-const ambientLight = new THREE.AmbientLight(0x8899aa, 0.45);
-scene.add(ambientLight);
-
-const mainLight = new THREE.DirectionalLight(0xfff8f0, 1.8);
-mainLight.position.set(6, 16, 10);
-mainLight.castShadow = true;
-mainLight.shadow.mapSize.set(2048, 2048);
-mainLight.shadow.camera.near = 0.5;
-mainLight.shadow.camera.far = 60;
-mainLight.shadow.camera.left = -15;
-mainLight.shadow.camera.right = 15;
-mainLight.shadow.camera.top = 22;
-mainLight.shadow.camera.bottom = -22;
-mainLight.shadow.bias = -0.001;
-scene.add(mainLight);
-
-const fillLight = new THREE.DirectionalLight(0xaaccff, 0.4);
-fillLight.position.set(-8, 2, -6);
-scene.add(fillLight);
-
-const rimLight = new THREE.DirectionalLight(0xffeebb, 0.35);
-rimLight.position.set(2, -6, -10);
-scene.add(rimLight);
-
-// Nokta ışık — küplere derinlik katar
-const pointLight = new THREE.PointLight(0xfff0cc, 0.6, 25);
-pointLight.position.set(3, 5, 8);
-scene.add(pointLight);
-
-// ─── BOARD GEOMETRY ──────────────────────────────────────────────────────────
-const UNIT = 1.0;       // küp boyutu
-const GAP  = 0.04;      // küpler arası boşluk
-const BEVEL = 0.06;     // köşe yumuşatma
-
-// Renkler
-const MAT_DARK_GREEN = new THREE.MeshStandardMaterial({
-  color: 0x7a5c38,
-  roughness: 0.7,
-  metalness: 0.04,
-});
-const MAT_LIGHT_GREEN = new THREE.MeshStandardMaterial({
-  color: 0xc4a46e,
-  roughness: 0.65,
-  metalness: 0.02,
-});
-
-// Parça materyali - doygun renkler, net yüzey
-function getPieceMaterial(player, units) {
-  const idx = units - 2;
-  const colors = player === 1 ? P1_COLORS : P2_COLORS;
-  const color = colors[Math.min(idx, colors.length - 1)];
-  return new THREE.MeshStandardMaterial({
-    color,
-    roughness: 0.45,
-    metalness: 0.08,
-    envMapIntensity: 0.5,
+function buildCards(filter) {
+  const grid = document.getElementById('cards-grid');
+  grid.innerHTML = '';
+  CARDS.filter(c => filter === 'all' || c.phase === filter).forEach((c, i) => {
+    const el = document.createElement('div');
+    el.className = 'card-item';
+    el.innerHTML = `
+      <div class="ci-phase ${c.phase}">${c.phase.charAt(0).toUpperCase()+c.phase.slice(1)}</div>
+      <div class="ci-title">${c.title}</div>
+      <div class="ci-desc">${c.desc}</div>
+      <div class="ci-lines"><div class="ci-line"></div><div class="ci-line"></div><div class="ci-line"></div></div>
+    `;
+    el.addEventListener('click', () => openCard(c));
+    grid.appendChild(el);
   });
 }
 
-// Chamfered (yumuşatılmış köşeli) küp geometrisi
-function createRoundedBoxGeometry(size, radius) {
-  // BoxGeometry + subdivision yaklaşımı yerine THREE.js r128'de
-  // basit bir chamfer simüle ediyoruz: küçük scale trick
-  const geo = new THREE.BoxGeometry(size, size, size, 2, 2, 2);
-  // Köşeleri içeri çekiyoruz
-  const pos = geo.attributes.position;
-  for (let i = 0; i < pos.count; i++) {
-    let x = pos.getX(i);
-    let y = pos.getY(i);
-    let z = pos.getZ(i);
-    const half = size / 2;
-    const clamp = (v) => Math.max(-half + radius, Math.min(half - radius, v));
-    // normalize + bevel
-    const len = Math.sqrt(x*x + y*y + z*z);
-    const factor = 1 - (radius / len) * 0.15;
-    pos.setXYZ(i, x * factor, y * factor, z * factor);
-  }
-  geo.computeVertexNormals();
-  return geo;
+function filterCards(btn, filter) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildCards(filter);
 }
 
-// Board group — merkez orijinde
-const boardGroup = new THREE.Group();
-scene.add(boardGroup);
-
-// Grid: x: 0,1  y: 0..7  z: 0,1
-// Yükseklik 8, genişlik 2x2
-const boardCubes = [];
-
-function isBoardDark(x, y, z) {
-  return y <= 0 || y >= 7; // alt ve üst 1 kat (toplam 4 küp her katman 2x2=4 → 2 kat × 4 = 8 küp = koyu)
-  // Ancak kural: üstteki 4 birim + alttaki 4 birim koyu
-  // 2x2 grid → 1 kat = 4 küp → y=0,1 alt iki kat olabilir ama kural 4 birim
-  // Yani sadece y=0 (alt kat, 4 küp) ve y=7 (üst kat, 4 küp) koyu
+function openCard(c) {
+  document.getElementById('modal-title').textContent = c.title;
+  document.getElementById('modal-phase-tag').textContent = c.phase;
+  document.getElementById('modal-desc').textContent = c.desc;
+  document.getElementById('modal').classList.add('open');
 }
 
-const cubeGeo = createRoundedBoxGeometry(UNIT - GAP * 2, BEVEL);
-
-for (let y = 0; y < 8; y++) {
-  for (let x = 0; x < 2; x++) {
-    for (let z = 0; z < 2; z++) {
-      const isDark = (y === 0 || y === 7);
-      const mat = isDark ? MAT_DARK_GREEN.clone() : MAT_LIGHT_GREEN.clone();
-      const mesh = new THREE.Mesh(cubeGeo, mat);
-
-      // Merkez: x: -0.5..0.5, y: -3.5..3.5, z: -0.5..0.5
-      mesh.position.set(
-        (x - 0.5) * UNIT,
-        (y - 3.5) * UNIT,
-        (z - 0.5) * UNIT
-      );
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-
-      mesh.userData = {
-        type: 'board',
-        gx: x, gy: y, gz: z,
-        isDark,
-        baseMat: mat,
-      };
-
-      boardGroup.add(mesh);
-      boardCubes.push(mesh);
-    }
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal')) {
+    document.getElementById('modal').classList.remove('open');
   }
 }
 
-// Subtle edge lines — grid outline
-const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(UNIT - GAP*2, UNIT - GAP*2, UNIT - GAP*2));
-const edgeMat = new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25 });
-
-boardCubes.forEach(cube => {
-  const edges = new THREE.LineSegments(edgeGeo, edgeMat);
-  edges.position.copy(cube.position);
-  boardGroup.add(edges);
-});
-
-// ─── ORBIT CONTROLS (Manuel) ─────────────────────────────────────────────────
-let orbit = {
-  isDragging: false,
-  lastX: 0, lastY: 0,
-  rotX: 0.3,
-  rotY: -0.5,
-  distance: 28,
-  minDist: 6,
-  maxDist: 35,
-  targetRotX: 0.3,
-  targetRotY: -0.5,
-  targetDist: 28,
-};
-
-function updateCamera() {
-  const x = orbit.distance * Math.sin(orbit.rotY) * Math.cos(orbit.rotX);
-  const y = orbit.distance * Math.sin(orbit.rotX);
-  const z = orbit.distance * Math.cos(orbit.rotY) * Math.cos(orbit.rotX);
-  camera.position.set(x, y, z);
-  camera.lookAt(0, 0, 0);
-}
-
-// Mouse events
-container.addEventListener('mousedown', (e) => {
-  orbit.isDragging = true;
-  orbit.lastX = e.clientX;
-  orbit.lastY = e.clientY;
-});
-
-document.addEventListener('mouseup', () => { orbit.isDragging = false; });
-
-document.addEventListener('mousemove', (e) => {
-  if (!orbit.isDragging) return;
-  const dx = e.clientX - orbit.lastX;
-  const dy = e.clientY - orbit.lastY;
-  orbit.targetRotY -= dx * 0.008;
-  orbit.targetRotX -= dy * 0.008;
-  orbit.targetRotX = Math.max(-1.4, Math.min(1.4, orbit.targetRotX));
-  orbit.lastX = e.clientX;
-  orbit.lastY = e.clientY;
-});
-
-container.addEventListener('wheel', (e) => {
-  orbit.targetDist += e.deltaY * 0.025;
-  orbit.targetDist = Math.max(orbit.minDist, Math.min(orbit.maxDist, orbit.targetDist));
-}, { passive: true });
-
-// Touch events — unified (orbit + pinch zoom; mobil ghost touchmove ayrıca)
-let lastTouchDist = 0;
-let lastTouchX = 0;
-let lastTouchY = 0;
-let touchDragging = false;
-let lastTwoFingerCx = null;
-let lastTwoFingerCy = null;
-
-container.addEventListener('touchstart', (e) => {
-  if (e.touches.length === 1) {
-    touchDragging = true;
-    lastTwoFingerCx = null; lastTwoFingerCy = null;
-    lastTouchX = e.touches[0].clientX;
-    lastTouchY = e.touches[0].clientY;
-    // Mobil: parça seçiliyse ghost güncelle
-    if (typeof isMobile === 'function' && isMobile() &&
-        GameState.selectedPieceIndex >= 0 && GameState.phase === 'place' && !mobileOrbitActive) {
-      lastMobileTouchX = e.touches[0].clientX;
-      lastMobileTouchY = e.touches[0].clientY;
-      if (typeof updateMobileGhost === 'function') updateMobileGhost(lastMobileTouchX, lastMobileTouchY);
-    }
-  } else if (e.touches.length === 2) {
-    touchDragging = false;
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    lastTouchDist = Math.sqrt(dx*dx + dy*dy);
-  }
-}, { passive: true });
-
-container.addEventListener('touchmove', (e) => {
-  const oneFinger = e.touches.length === 1;
-  const twoFinger = e.touches.length === 2;
-
-  if (oneFinger && touchDragging) {
-    const x = e.touches[0].clientX;
-    const y = e.touches[0].clientY;
-    const dx = x - lastTouchX;
-    const dy = y - lastTouchY;
-
-    if (isMobile() && GameState.selectedPieceIndex >= 0 && GameState.phase === 'place') {
-      // Taş seçili + 1 parmak = ghost kaydır
-      lastMobileTouchX = x;
-      lastMobileTouchY = y;
-      if (typeof updateMobileGhost === 'function') updateMobileGhost(x, y);
-    } else {
-      // Normal orbit — 1 parmak
-      orbit.targetRotY -= dx * 0.008;
-      orbit.targetRotX -= dy * 0.008;
-      orbit.targetRotX = Math.max(-1.4, Math.min(1.4, orbit.targetRotX));
-    }
-    lastTouchX = x;
-    lastTouchY = y;
-
-  } else if (twoFinger) {
-    const t0x = e.touches[0].clientX, t0y = e.touches[0].clientY;
-    const t1x = e.touches[1].clientX, t1y = e.touches[1].clientY;
-
-    // Pinch zoom — her zaman
-    const dist = Math.sqrt((t0x-t1x)**2 + (t0y-t1y)**2);
-    orbit.targetDist -= (dist - lastTouchDist) * 0.04;
-    orbit.targetDist = Math.max(orbit.minDist, Math.min(orbit.maxDist, orbit.targetDist));
-    lastTouchDist = dist;
-
-    // 2 parmak centroid orbit — taş seçiliyken gövde döndür
-    if (isMobile() && GameState.selectedPieceIndex >= 0 && GameState.phase === 'place') {
-      const cx = (t0x + t1x) / 2;
-      const cy = (t0y + t1y) / 2;
-      // lastTwoFingerCx/Cy ile delta hesapla
-      if (lastTwoFingerCx !== null) {
-        const ddx = cx - lastTwoFingerCx;
-        const ddy = cy - lastTwoFingerCy;
-        // Duyarlılık: ekran genişliğine oranla normalize et
-        const sensitivity = 2.5 / Math.min(window.innerWidth, window.innerHeight);
-        orbit.targetRotY -= ddx * sensitivity;
-        orbit.targetRotX -= ddy * sensitivity;
-        orbit.targetRotX = Math.max(-1.4, Math.min(1.4, orbit.targetRotX));
-      }
-      lastTwoFingerCx = cx;
-      lastTwoFingerCy = cy;
-    }
-  }
-}, { passive: true });
-
-container.addEventListener('touchend', () => {
-  touchDragging = false;
-  lastTwoFingerCx = null;
-  lastTwoFingerCy = null;
-});
-
-// Safari pinch zoom fix — tüm ekranın zoom'unu engelle
-document.addEventListener('touchmove', (e) => {
-  if (e.touches.length >= 2) {
-    e.preventDefault();
-  }
-}, { passive: false });
-
-// ─── AMBIENT PARTICLES ───────────────────────────────────────────────────────
-const particleCount = 80;
-const particleGeo = new THREE.BufferGeometry();
-const positions = new Float32Array(particleCount * 3);
-const particleSpeeds = [];
-
-for (let i = 0; i < particleCount; i++) {
-  positions[i * 3]     = (Math.random() - 0.5) * 40;
-  positions[i * 3 + 1] = (Math.random() - 0.5) * 25;
-  positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
-  particleSpeeds.push({ vx: (Math.random()-0.5)*0.003, vy: (Math.random()-0.5)*0.002, vz: (Math.random()-0.5)*0.003 });
-}
-
-particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-const particleMat = new THREE.PointsMaterial({ color: 0xC8A97A, size: 0.06, transparent: true, opacity: 0.25 });
-const particles = new THREE.Points(particleGeo, particleMat);
-scene.add(particles);
-
-// ─── BOARD AUTO-ROTATE — KALDIRILDI (test sırasında zorlaştırıyor)
-// İleride opsiyonel toggle olarak geri eklenebilir
-const autoRotate = false;
-
-
-// ─── ANIMATE ─────────────────────────────────────────────────────────────────
-const clock = new THREE.Clock();
-
-function animate() {
-  requestAnimationFrame(animate);
-  const t = clock.getElapsedTime();
-
-  // Smooth orbit interpolation
-  orbit.rotX += (orbit.targetRotX - orbit.rotX) * 0.08;
-  orbit.rotY += (orbit.targetRotY - orbit.rotY) * 0.08;
-  orbit.distance += (orbit.targetDist - orbit.distance) * 0.08;
-
-  // Auto-rotate kapalı — sabit durur
-  // Mobile orbit: basılı tutunca 4 yönde döner
-  if (typeof mobileOrbitActive !== 'undefined' && mobileOrbitActive) {
-    const speed = 0.025;
-    if (mobileOrbitDir === 'left')  orbit.targetRotY -= speed;
-    if (mobileOrbitDir === 'right') orbit.targetRotY += speed;
-    if (mobileOrbitDir === 'up')    orbit.targetRotX = Math.min(1.4, orbit.targetRotX + speed);
-    if (mobileOrbitDir === 'down')  orbit.targetRotX = Math.max(-1.4, orbit.targetRotX - speed);
-  }
-  updateCamera();
-
-  // Particle drift
-  const pos = particles.geometry.attributes.position;
-  for (let i = 0; i < particleCount; i++) {
-    pos.array[i*3]   += particleSpeeds[i].vx;
-    pos.array[i*3+1] += particleSpeeds[i].vy;
-    pos.array[i*3+2] += particleSpeeds[i].vz;
-    // Boundary wrap
-    if (Math.abs(pos.array[i*3])   > 20) particleSpeeds[i].vx *= -1;
-    if (Math.abs(pos.array[i*3+1]) > 12) particleSpeeds[i].vy *= -1;
-    if (Math.abs(pos.array[i*3+2]) > 20) particleSpeeds[i].vz *= -1;
-  }
-  pos.needsUpdate = true;
-
-  // Pulsing glow on dark (start zone) cubes
-  boardCubes.forEach(cube => {
-    if (cube.userData.isDark) {
-      const pulse = 0.5 + 0.5 * Math.sin(t * 1.8 + cube.position.x + cube.position.z);
-      cube.material.emissive = new THREE.Color(0x3d2010);
-      cube.material.emissiveIntensity = pulse * 0.2;
-    }
-  });
-
-  // Floating preview döndürme (smooth — mobilde daha yavaş)
-  if (selectedPieceGroup) {
-    const smoothFactor = isMobile() ? 0.06 : 0.12;
-    selectedPieceGroup.rotation.x += (previewRotation.x - selectedPieceGroup.rotation.x) * smoothFactor;
-    selectedPieceGroup.rotation.y += (previewRotation.y - selectedPieceGroup.rotation.y) * smoothFactor;
-    selectedPieceGroup.rotation.z += (previewRotation.z - selectedPieceGroup.rotation.z) * smoothFactor;
-    const previewX = isMobile() ? 2.8 : 5.5;
-    const previewY = isMobile() ? 5.5 : 3;
-    selectedPieceGroup.position.x = previewX;
-    selectedPieceGroup.position.y = previewY + Math.sin(t * 1.4) * 0.12;
-  }
-
-  // Son hamle vurgulama pulse
-  updateHighlightPulse(t);
-
-  // Mini preview renderer'lar — SVG'ye geçildi, artık yok
-  // miniScenes boş array, döngü yapmıyor
-
-  renderer.render(scene, camera);
-}
-
-// ─── RESIZE ──────────────────────────────────────────────────────────────────
-window.addEventListener('resize', () => {
-  camera.aspect = W() / H();
-  camera.updateProjectionMatrix();
-  renderer.setSize(W(), H());
-});
-
-// ─── PIECE PANEL ─────────────────────────────────────────────────────────────
-// SVG ikon sistemi — WebGL renderer yok, beyaz ekran yok
-const miniScenes = []; // boş — animate loop için uyumluluk
-
-function getPieceSVG(piece, player) {
-  const cols = player === 1 ? P1_COLORS : P2_COLORS;
-  const idx = Math.min(piece.units - 2, cols.length - 1);
-  const baseColor = cols[idx];
-  const hex = '#' + baseColor.toString(16).padStart(6,'0');
-  // Dark yüzey: her channel'ı %35 karart ama minimum 0x0A garantile
-  const r = (baseColor >> 16) & 0xFF;
-  const g = (baseColor >>  8) & 0xFF;
-  const b =  baseColor        & 0xFF;
-  const dr = Math.max(10, Math.floor(r * 0.65));
-  const dg = Math.max(10, Math.floor(g * 0.65));
-  const db = Math.max(10, Math.floor(b * 0.65));
-  const dark = '#' + [dr,dg,db].map(v=>v.toString(16).padStart(2,'0')).join('');
-
-  // İzometrik projeksiyon — her küp için 3 yüzey çiz
-  const ISO = { sx: 7, sy: 4 }; // birim boyut
-  const cubes = piece.cubes;
-
-  // Bounds hesapla
-  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
-  cubes.forEach(([cx,cy,cz]) => {
-    const px = (cx - cz) * ISO.sx;
-    const py = -(cy * ISO.sy * 2) + (cx + cz) * ISO.sy;
-    if(px < minX) minX=px; if(px > maxX) maxX=px;
-    if(py < minY) minY=py; if(py > maxY) maxY=py;
-  });
-  const W = maxX - minX + ISO.sx*2 + 4;
-  const H = maxY - minY + ISO.sy*2 + 8;
-  const ox = -minX + ISO.sx + 2;
-  const oy = -minY + ISO.sy*2 + 2;
-
-  // Y'ye göre sırala (painter's algorithm)
-  const sorted = [...cubes].sort(([ax,ay,az],[bx,by,bz]) => (ay - by) || (az + ax) - (bz + bx));
-
-  let paths = '';
-  sorted.forEach(([cx,cy,cz]) => {
-    const px = (cx - cz) * ISO.sx + ox;
-    const py = -(cy * ISO.sy * 2) + (cx + cz) * ISO.sy + oy;
-    const sx = ISO.sx, sy = ISO.sy;
-    // Üst yüzey
-    paths += `<polygon points="${px},${py} ${px+sx},${py+sy} ${px},${py+sy*2} ${px-sx},${py+sy}" fill="${hex}" stroke="#00000033" stroke-width="0.5"/>`;
-    // Sol yüzey
-    paths += `<polygon points="${px-sx},${py+sy} ${px},${py+sy*2} ${px},${py+sy*4} ${px-sx},${py+sy*3}" fill="${dark}" stroke="#00000033" stroke-width="0.5"/>`;
-    // Sağ yüzey
-    paths += `<polygon points="${px},${py+sy*2} ${px+sx},${py+sy} ${px+sx},${py+sy*3} ${px},${py+sy*4}" fill="${hex}cc" stroke="#00000033" stroke-width="0.5"/>`;
-  });
-
-  return `<svg viewBox="0 0 ${W} ${H+8}" width="40" height="40" xmlns="http://www.w3.org/2000/svg">${paths}</svg>`;
-}
-
-let panelBuilt = false;
-let panelPlayer = -1;
-let panelViewingPlayer = 1; // şuan hangi oyuncunun taşları gösteriliyor
-
-function switchPanelTab(player) {
-  panelViewingPlayer = player;
-  // Tab aktif durumu
-  document.getElementById('tab-p1').classList.toggle('active', player===1);
-  document.getElementById('tab-p2').classList.toggle('active', player===2);
-  // Label
-  const label = document.getElementById('panel-player-label');
-  const isCurrent = player === GameState.currentPlayer;
-  label.textContent = isCurrent ? `Seçim: Oyuncu ${player}` : `📋 Oyuncu ${player} — İnceleme`;
-  label.className = `panel-player-label p${player}`;
-  // Listeyi yeniden oluştur
-  panelBuilt = false; // force rebuild
-  buildPiecePanel(player);
-}
-
-function buildPiecePanel(player) {
-  if (panelBuilt && panelPlayer === player) {
-    document.querySelectorAll('.piece-item').forEach(el => {
-      const idx = parseInt(el.dataset.index);
-      el.classList.toggle('used', GameState.usedPieces[player-1].includes(idx));
-    });
-    return;
-  }
-
-  const list = document.getElementById('piece-list');
-  list.innerHTML = '';
-  const isCurrent = player === GameState.currentPlayer;
-
-  PIECE_DEFS.forEach((piece, i) => {
-    const used = GameState.usedPieces[player-1].includes(i);
-    const item = document.createElement('div');
-    item.className = 'piece-item' + (used ? ' used' : '');
-    item.dataset.index = i;
-
-    // Rakip taşlarını inceleme modunda seçilemez
-    if (!isCurrent) {
-      item.style.cursor = 'default';
-      item.style.opacity = used ? '0.25' : '0.75';
-    }
-
-    const previewDiv = document.createElement('div');
-    previewDiv.className = 'piece-preview';
-    previewDiv.innerHTML = getPieceSVG(piece, player);
-
-    const info = document.createElement('div');
-    info.className = 'piece-info';
-    const usedLabel = used ? ' <span style="color:var(--text-muted);font-size:9px;">kullanıldı</span>' : '';
-    info.innerHTML = `<div class="piece-name">${piece.name}${usedLabel}</div><div class="piece-units">${piece.units} birim</div>`;
-
-    const pts = document.createElement('div');
-    pts.className = 'piece-pts';
-    pts.style.color = player === 1 ? 'var(--p1)' : 'var(--p2)';
-    pts.textContent = piece.units;
-
-    item.appendChild(previewDiv);
-    item.appendChild(info);
-    item.appendChild(pts);
-
-    // Sadece mevcut oyuncunun kendi sırasında seçebilir
-    if (isCurrent) {
-      item.addEventListener('click', () => {
-        if (GameState.usedPieces[player-1].includes(i)) return;
-        selectPiece(i, player);
-        closePiecePanel();
-        GameState.phase = 'place';
-        document.getElementById('phase-btn').textContent = '✕ İptal';
-        document.getElementById('game-phase').textContent = 'YERLEŞTİR';
-      });
-    }
-
-    list.appendChild(item);
-  });
-
-  panelBuilt = true;
-  panelPlayer = player;
-}
-
-let panelPinned = false;
-
-function togglePanelPin() {
-  panelPinned = !panelPinned;
-  const panel = document.getElementById('piece-panel');
-  const btn = document.getElementById('panel-pin-btn');
-  panel.classList.toggle('pinned', panelPinned);
-  btn.classList.toggle('active', panelPinned);
-  // Pin açıkken phase-btn "Parça Seç"e döner
-  const phaseBtn = document.getElementById('phase-btn');
-  if (panelPinned) {
-    phaseBtn.textContent = currentLang === 'tr' ? 'Parça Seç' : 'Select Piece';
-    GameState.phase = 'select';
-  } else {
-    phaseBtn.textContent = t('btn_select');
-    GameState.phase = 'inspect';
+// ── TOOLS ───────────────────────────────────────────
+function openTool(id) {
+  if (id === '635') {
+    alert('In production: opens 635_brainwriting_v2.html in an iframe or new tab.');
   }
 }
 
-function openPiecePanel() {
-  const p = GameState.currentPlayer;
-  panelViewingPlayer = p;
-  document.getElementById('tab-p1').classList.toggle('active', p===1);
-  document.getElementById('tab-p2').classList.toggle('active', p===2);
-  const label = document.getElementById('panel-player-label');
-  label.textContent = `Seçim: Oyuncu ${p}`;
-  label.className = `panel-player-label p${p}`;
-  panelBuilt = false;
-  buildPiecePanel(p);
-  document.getElementById('piece-panel').classList.add('open');
-}
-
-function closePiecePanel() {
-  if (panelPinned) return; // pinli iken kapanmaz
-  document.getElementById('piece-panel').classList.remove('open');
-}
-
-// ─── FLOATING PREVIEW (seçili parça sahnede) ─────────────────────────────────
-let selectedPieceGroup = null;
-let previewRotation = { x:0, y:0, z:0 };
-
-function selectPiece(index, player) {
-  // Sadece mevcut oyuncunun taşı seçilebilir
-  if (player !== GameState.currentPlayer) return;
-  // Kullanılmış taş seçilemez
-  if (GameState.usedPieces[player-1].includes(index)) return;
-  document.querySelectorAll('.piece-item').forEach(el => el.classList.remove('selected'));
-  document.querySelector(`.piece-item[data-index="${index}"]`)?.classList.add('selected');
-  GameState.selectedPieceIndex = index;
-
-  if (selectedPieceGroup) { scene.remove(selectedPieceGroup); selectedPieceGroup = null; }
-
-  const piece = PIECE_DEFS[index];
-  previewRotation = { x:0, y:0, z:0 };
-
-  const group = new THREE.Group();
-  const mat = getPieceMaterial(player, piece.units);
-  const geo = createRoundedBoxGeometry(UNIT - GAP*2, BEVEL);
-  const edgeG = new THREE.EdgesGeometry(new THREE.BoxGeometry(UNIT-GAP*2,UNIT-GAP*2,UNIT-GAP*2));
-  const edgeM = new THREE.LineBasicMaterial({ color:0x000000, transparent:true, opacity:0.25 });
-
-  piece.cubes.forEach(([cx,cy,cz]) => {
-    const mesh = new THREE.Mesh(geo, mat.clone());
-    mesh.material.transparent = true;
-    mesh.material.opacity = 0.85;
-    mesh.position.set(cx*UNIT, cy*UNIT, cz*UNIT);
-    group.add(mesh);
-    const el = new THREE.LineSegments(edgeG, edgeM.clone());
-    el.position.set(cx*UNIT, cy*UNIT, cz*UNIT);
-    group.add(el);
-  });
-
-  const box3 = new THREE.Box3().setFromObject(group);
-  const center = new THREE.Vector3();
-  box3.getCenter(center);
-  group.position.sub(center);
-  // Floating preview pozisyonu: mobilde gövdenin sağ üstüne yakın, masaüstünde uzakta
-  const previewX = isMobile() ? 2.8 : 5.5;
-  const previewY = isMobile() ? 5.5 : 3;
-  group.position.set(previewX, previewY, 0);
-  group.userData.isPreview = true;
-
-  scene.add(group);
-  selectedPieceGroup = group;
-
-  document.getElementById('preview-label').classList.add('visible');
-  document.getElementById('rotation-hint').classList.add('visible');
-}
-
-function deselectPiece() {
-  GameState.selectedPieceIndex = -1;
-  if (selectedPieceGroup) { scene.remove(selectedPieceGroup); selectedPieceGroup = null; }
-  document.querySelectorAll('.piece-item').forEach(el => el.classList.remove('selected'));
-  document.getElementById('preview-label').classList.remove('visible');
-  document.getElementById('rotation-hint').classList.remove('visible');
-}
-
-// ─── KLAVYE — PARÇA DÖNDÜRME ─────────────────────────────────────────────────
-const ROT_STEP = Math.PI / 2;
-
-document.addEventListener('keydown', (e) => {
-  if (!selectedPieceGroup) return;
-  const k = e.key.toLowerCase();
-  if (k==='q') previewRotation.x -= ROT_STEP;
-  if (k==='e') previewRotation.x += ROT_STEP;
-  if (k==='w') previewRotation.y += ROT_STEP;
-  if (k==='s') previewRotation.y -= ROT_STEP;
-  if (k==='a') previewRotation.z -= ROT_STEP;
-  if (k==='d') previewRotation.z += ROT_STEP;
-  if (k==='escape') {
-    deselectPiece(); removeGhost();
-    GameState.phase = 'inspect';
-    document.getElementById('phase-btn').textContent = 'Taş Seç →';
-    document.getElementById('game-phase').textContent = 'HAZIRLIK';
-  }
-});
-
-
-// ─── MODÜL 3: SNAP & YERLEŞTİRME SİSTEMİ ────────────────────────────────────
-
-const placedCubes = [];
-const placedMeshes = [];
-const BOARD = { minX:0, maxX:1, minY:0, maxY:7, minZ:0, maxZ:1 };
-
-function isBoardOccupied(gx,gy,gz) {
-  return gx>=BOARD.minX&&gx<=BOARD.maxX&&gy>=BOARD.minY&&gy<=BOARD.maxY&&gz>=BOARD.minZ&&gz<=BOARD.maxZ;
-}
-function isPlacedOccupied(gx,gy,gz) {
-  return placedCubes.some(c=>c.gx===gx&&c.gy===gy&&c.gz===gz);
-}
-function getRotatedCubes(pieceDef,rotation) {
-  const mat=new THREE.Matrix4();
-  const euler=new THREE.Euler(
-    Math.round(rotation.x/(Math.PI/2))*(Math.PI/2),
-    Math.round(rotation.y/(Math.PI/2))*(Math.PI/2),
-    Math.round(rotation.z/(Math.PI/2))*(Math.PI/2)
-  );
-  mat.makeRotationFromEuler(euler);
-  return pieceDef.cubes.map(([cx,cy,cz])=>{
-    const v=new THREE.Vector3(cx,cy,cz).applyMatrix4(mat);
-    return {x:Math.round(v.x),y:Math.round(v.y),z:Math.round(v.z)};
-  });
-}
-const DIRS6=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
-// Koyu bölge (başlangıç zonu): y=0 veya y=7
-function isDarkZone(gy) { return gy===0||gy===7; }
-
-// İlk hamle: parçanın en az 1 küpü koyu bölgeye (y=0 veya y=7 KATMANI) BİTİŞİK olmalı
-// Parça gövdenin dışında, dolayısıyla komşu gövde küpü y=0 ya da y=7 ise geçerli
-function touchesStartZone(cubes,offset){
-  for(const c of cubes){
-    const wx=c.x+offset.x, wy=c.y+offset.y, wz=c.z+offset.z;
-    for(const[dx,dy,dz]of DIRS6){
-      const nx=wx+dx, ny=wy+dy, nz=wz+dz;
-      // Komşu gövde içinde mi?
-      if(isBoardOccupied(nx,ny,nz)){
-        // O gövde küpü koyu zona (y=0 veya y=7) mı?
-        if(ny===0||ny===7) return true;
-      }
-    }
-  }
-  return false;
-}
-
-function touchesBoard(cubes,offset){
-  for(const c of cubes)for(const[dx,dy,dz]of DIRS6){
-    if(isBoardOccupied(c.x+offset.x+dx,c.y+offset.y+dy,c.z+offset.z+dz))return true;
-  }return false;
-}
-function touchesLastOpponent(cubes,offset){
-  if(GameState.lastPlacedCubes.length===0)return true;
-  for(const c of cubes)for(const[dx,dy,dz]of DIRS6){
-    const nx=c.x+offset.x+dx,ny=c.y+offset.y+dy,nz=c.z+offset.z+dz;
-    if(GameState.lastPlacedCubes.some(lc=>lc.gx===nx&&lc.gy===ny&&lc.gz===nz))return true;
-  }return false;
-}
-function hasCollision(cubes,offset){
-  for(const c of cubes){
-    const wx=c.x+offset.x,wy=c.y+offset.y,wz=c.z+offset.z;
-    if(isBoardOccupied(wx,wy,wz)||isPlacedOccupied(wx,wy,wz))return true;
-  }return false;
-}
-function withinReach(cubes, offset) {
-  for (const c of cubes) {
-    const wx = c.x + offset.x;
-    const wy = c.y + offset.y;
-    const wz = c.z + offset.z;
-    if (wx < BOARD.minX - 1 || wx > BOARD.maxX + 1) return false;
-    if (wy < BOARD.minY - 1 || wy > BOARD.maxY + 1) return false;
-    if (wz < BOARD.minZ - 1 || wz > BOARD.maxZ + 1) return false;
-  }
-  return true;
-}
-
-function isValidPlacement(cubes, offset) {
-  if (hasCollision(cubes, offset)) return false;
-  if (!withinReach(cubes, offset)) return false;
-  if (!touchesBoard(cubes, offset)) return false;
-  const isFirstMove = placedCubes.length === 0;
-  if (isFirstMove) {
-    if (!touchesStartZone(cubes, offset)) return false;
-  } else {
-    if (!touchesLastOpponent(cubes, offset)) return false;
-  }
-  return true;
-}
-
-function gridToWorld(gx, gy, gz) {
-  return new THREE.Vector3((gx - 0.5) * UNIT, (gy - 3.5) * UNIT, (gz - 0.5) * UNIT);
-}
-
-// ─── GHOST & SNAP ─────────────────────────────────────────────────────────────
-let ghostGroup = null, currentSnapOffset = null, snapValid = false;
-const GHOST_VALID = new THREE.MeshStandardMaterial({
-  color: 0x88ff44, transparent: true, opacity: 0.45, roughness: 0.5, depthWrite: false
-});
-const GHOST_INVALID = new THREE.MeshStandardMaterial({
-  color: 0xff3322, transparent: true, opacity: 0.35, roughness: 0.5, depthWrite: false
-});
-
-function showGhost(rotatedCubes, offset, valid) {
-  removeGhost();
-  ghostGroup = new THREE.Group();
-  const mat = valid ? GHOST_VALID : GHOST_INVALID;
-  const geo = createRoundedBoxGeometry(UNIT - GAP * 2, BEVEL);
-  rotatedCubes.forEach(c => {
-    const mesh = new THREE.Mesh(geo, mat.clone());
-    mesh.position.copy(gridToWorld(c.x + offset.x, c.y + offset.y, c.z + offset.z));
-    ghostGroup.add(mesh);
-  });
-  scene.add(ghostGroup);
-  snapValid = valid;
-  currentSnapOffset = { ...offset };
-}
-
-function removeGhost() {
-  if (ghostGroup) { scene.remove(ghostGroup); ghostGroup = null; }
-  snapValid = false;
-  currentSnapOffset = null;
-}
-
-// Parçanın merkezini world koordinatına çevir
-function getPieceCenter(cubes, offset) {
-  let sx = 0, sy = 0, sz = 0;
-  for (const c of cubes) { sx += c.x + offset.x; sy += c.y + offset.y; sz += c.z + offset.z; }
-  return new THREE.Vector3(sx / cubes.length, sy / cubes.length, sz / cubes.length);
-}
-
-// Mouse ray'ini bir plane'le kesiştir
-function raycastToPlane(mouseX, mouseY, planeNormal, planePoint) {
-  const ray = new THREE.Ray();
-  const ndcMouse = new THREE.Vector3(mouseX, mouseY, 0.5);
-  ndcMouse.unproject(camera);
-  ray.origin.copy(camera.position);
-  ray.direction.copy(ndcMouse.sub(camera.position).normalize());
-  const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(planeNormal, planePoint);
-  const target = new THREE.Vector3();
-  ray.intersectPlane(plane, target);
-  return target;
-}
-
-// World pozisyonundan en yakın geçerli grid offset'i bul
-function worldToSnapOffset(worldPos, rotatedCubes) {
-  // Parça merkezini world pos'a yerleştir, grid'e yuvarla
-  // Parçanın kendi merkezi
-  let cx = 0, cy = 0, cz = 0;
-  for (const c of rotatedCubes) { cx += c.x; cy += c.y; cz += c.z; }
-  cx /= rotatedCubes.length; cy /= rotatedCubes.length; cz /= rotatedCubes.length;
-
-  // worldPos'u grid'e çevir
-  const gx = Math.round(worldPos.x / UNIT + 0.5);
-  const gy = Math.round(worldPos.y / UNIT + 3.5);
-  const gz = Math.round(worldPos.z / UNIT + 0.5);
-
-  // Offset: grid pozisyonu - parça merkezi (yuvarlanmış)
-  const baseOffset = {
-    x: Math.round(gx - cx),
-    y: Math.round(gy - cy),
-    z: Math.round(gz - cz),
-  };
-
-  return baseOffset;
-}
-
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-
-// Aktif snap plane — mouse hangi yüzeye girince o yüzeyin normali ve pozisyonu
-let activePlaneNormal = null;
-let activePlanePoint = null;
-
-container.addEventListener('mousemove', (e) => {
-  if (GameState.selectedPieceIndex < 0 || GameState.phase !== 'place') return;
-
-  const mx = (e.clientX / W()) * 2 - 1;
-  const my = -(e.clientY / H()) * 2 + 1;
-  mouse.x = mx; mouse.y = my;
-
-  raycaster.setFromCamera(mouse, camera);
-  const hits = raycaster.intersectObjects([...boardCubes, ...placedMeshes], false);
-
-  const piece = PIECE_DEFS[GameState.selectedPieceIndex];
-  const rotated = getRotatedCubes(piece, previewRotation);
-
-  if (hits.length > 0) {
-    const hit = hits[0];
-    const fn = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
-    fn.x = Math.round(fn.x); fn.y = Math.round(fn.y); fn.z = Math.round(fn.z);
-
-    const ud = hit.object.userData;
-    if (ud.gx === undefined) { removeGhost(); return; }
-
-    // Snap plane: hit yüzeyinin dış tarafından geçen düzlem
-    const hitWorldPos = gridToWorld(ud.gx, ud.gy, ud.gz);
-    const planePoint = hitWorldPos.clone().add(
-      new THREE.Vector3(fn.x * UNIT, fn.y * UNIT, fn.z * UNIT)
-    );
-    activePlaneNormal = fn.clone();
-    activePlanePoint = planePoint.clone();
-  }
-
-  if (!activePlaneNormal || !activePlanePoint) { removeGhost(); return; }
-
-  // Mouse ray'ini aktif plane ile kesiştir
-  const worldPos = raycastToPlane(mx, my, activePlaneNormal, activePlanePoint);
-  if (!worldPos || worldPos.length() > 100) { removeGhost(); return; }
-
-  // Grid offset hesapla
-  const baseOffset = worldToSnapOffset(worldPos, rotated);
-
-  // Geçerli offset'i ara — base + küçük ayarlamalar
-  // Gövdeye temas sağlamak için ±1 aralığında ara
-  const adjustments = [
-    {x:0,y:0,z:0},
-    {x:1,y:0,z:0},{x:-1,y:0,z:0},
-    {x:0,y:1,z:0},{x:0,y:-1,z:0},
-    {x:0,y:0,z:1},{x:0,y:0,z:-1},
-  ];
-
-  let bestValid = null;
-  let bestInvalid = null;
-  let bestInvalidDist = Infinity;
-
-  for (const adj of adjustments) {
-    const offset = {
-      x: baseOffset.x + adj.x,
-      y: baseOffset.y + adj.y,
-      z: baseOffset.z + adj.z,
-    };
-    if (isValidPlacement(rotated, offset)) {
-      if (!bestValid) bestValid = offset;
-      break;
-    } else if (!hasCollision(rotated, offset)) {
-      // Gövdeye en yakın geçersizi bul
-      const dist = Math.abs(adj.x) + Math.abs(adj.y) + Math.abs(adj.z);
-      if (dist < bestInvalidDist) {
-        bestInvalidDist = dist;
-        bestInvalid = offset;
-      }
-    }
-  }
-
-  if (bestValid) {
-    showGhost(rotated, bestValid, true);
-  } else if (bestInvalid) {
-    showGhost(rotated, bestInvalid, false);
-  } else {
-    removeGhost();
-  }
-});
-
-container.addEventListener('click',(e)=>{
-  if(GameState.selectedPieceIndex<0||GameState.phase!=='place')return;
-  if(!snapValid||!currentSnapOffset)return;
-
-  // Mobilde click ile yerleştirme YOK — sadece "Yerleştir" butonu
-  // Ghost yeşil = buton aktif, oradan yerleştir
-  if (isMobile()) return;
-
-  // Masaüstünde onay dialogu
-  const piece=PIECE_DEFS[GameState.selectedPieceIndex];
-  pendingRotated=getRotatedCubes(piece,previewRotation);
-  GameState.phase='confirm';
-  document.getElementById('confirm-dialog').classList.add('visible');
-  document.getElementById('phase-btn').textContent='...';
-});
-
-let pendingRotated=null;
-function confirmPlacement(){
-  document.getElementById('confirm-dialog').classList.remove('visible');
-  if(!pendingRotated||!currentSnapOffset)return;
-  const snap={...currentSnapOffset};
-  const rot=[...pendingRotated];
-  placePiece(rot,snap,GameState.currentPlayer,GameState.selectedPieceIndex);
-}
-function cancelPlacement(){
-  document.getElementById('confirm-dialog').classList.remove('visible');
-  GameState.phase='place';
-  document.getElementById('phase-btn').textContent='✕ İptal';
-}
-
-function placePiece(rotated,offset,player,pieceIndex){
-  const piece=PIECE_DEFS[pieceIndex];
-  removeGhost();
-  const targets=rotated.map(c=>({gx:c.x+offset.x,gy:c.y+offset.y,gz:c.z+offset.z}));
-  const group=new THREE.Group();
-  const mat=getPieceMaterial(player,piece.units);
-  const geo=createRoundedBoxGeometry(UNIT-GAP*2,BEVEL);
-  const edgeG=new THREE.EdgesGeometry(new THREE.BoxGeometry(UNIT-GAP*2,UNIT-GAP*2,UNIT-GAP*2));
-  const edgeM=new THREE.LineBasicMaterial({color:0x000000,transparent:true,opacity:0.28});
-  const animMeshes=[];
-  targets.forEach(t=>{
-    const tp=gridToWorld(t.gx,t.gy,t.gz);
-    const mesh=new THREE.Mesh(geo,mat.clone());
-    const sp=selectedPieceGroup?selectedPieceGroup.position.clone():tp.clone().add(new THREE.Vector3(0,5,0));
-    mesh.position.copy(sp);
-    mesh.userData={type:'placed',gx:t.gx,gy:t.gy,gz:t.gz,player};
-    group.add(mesh);
-    const el=new THREE.LineSegments(edgeG,edgeM.clone());
-    el.position.copy(sp);
-    group.add(el);
-    animMeshes.push({mesh,el,tp});
-  });
-  scene.add(group);
-  if(selectedPieceGroup){scene.remove(selectedPieceGroup);selectedPieceGroup=null;}
-  const t0=performance.now(),DUR=400;
-  function step(){
-    const p=Math.min((performance.now()-t0)/DUR,1);
-    const ease=1-Math.pow(1-p,4);
-    animMeshes.forEach(({mesh,el,tp})=>{mesh.position.lerp(tp,ease);el.position.copy(mesh.position);});
-    if(p<1)requestAnimationFrame(step);
-    else finalizePlacement(targets,animMeshes,player,pieceIndex);
-  }
-  requestAnimationFrame(step);
-}
-
-function finalizePlacement(targets,animMeshes,player,pieceIndex){
-  targets.forEach(t=>placedCubes.push({gx:t.gx,gy:t.gy,gz:t.gz,player}));
-  animMeshes.forEach(({mesh})=>placedMeshes.push(mesh));
-  GameState.lastPlacedCubes=targets.map(t=>({gx:t.gx,gy:t.gy,gz:t.gz}));
-  GameState.usedPieces[player-1].push(pieceIndex);
-  const pts=calculateScore(targets,player,pieceIndex);
-  GameState.scores[player-1]+=pts;
-  document.getElementById('val-p1').textContent=GameState.scores[0];
-  document.getElementById('val-p2').textContent=GameState.scores[1];
-  const rem=10-GameState.usedPieces[player-1].length;
-  document.getElementById(`pieces-p${player}`).textContent=`${rem} taş`;
-  GameState.currentPlayer=player===1?2:1;
-  GameState.selectedPieceIndex=-1;GameState.phase='inspect';GameState.round++;
-  document.getElementById('turn-round').textContent=GameState.round;
-  const np=GameState.currentPlayer;
-  const n=document.getElementById('turn-name');n.textContent=`Oyuncu ${np}`;n.className=`turn-name p${np}`;
-  document.getElementById('score-p1').classList.toggle('active',np===1);
-  document.getElementById('score-p2').classList.toggle('active',np===2);
-  document.getElementById('preview-label').classList.remove('visible');
-  document.getElementById('rotation-hint').classList.remove('visible');
-  document.getElementById('phase-btn').textContent='Taş Seç →';
-  document.getElementById('game-phase').textContent='HAZIRLIK';
-  checkWinCondition();
-  // Son hamle vurgulama
-  if (lastMoveHighlightEnabled) drawLastMoveHighlight();
-  // Pin açıksa paneli yeni oyuncuya güncelle
-  if (panelPinned) {
-    panelViewingPlayer = np;
-    document.getElementById('tab-p1').classList.toggle('active', np===1);
-    document.getElementById('tab-p2').classList.toggle('active', np===2);
-    const label = document.getElementById('panel-player-label');
-    label.textContent = `Seçim: ${t('player'+np)}`;
-    label.className = `panel-player-label p${np}`;
-    buildPiecePanel(np);
-  }
-}
-
-function calculateScore(targets, player, pieceIndex) {
-  const opp = player === 1 ? 2 : 1;
-  const basePoints = targets.length;
-  let totalContact = 0;
-  let maxContactSingle = 0;
-
-  for (const t of targets) {
-    let contactHere = 0;
-    for (const [dx, dy, dz] of DIRS6) {
-      const nx = t.gx + dx, ny = t.gy + dy, nz = t.gz + dz;
-      if (placedCubes.some(c => c.gx === nx && c.gy === ny && c.gz === nz && c.player === opp)) {
-        totalContact++;
-        contactHere++;
-      }
-    }
-    if (contactHere > maxContactSingle) maxContactSingle = contactHere;
-  }
-
-  let contactBonus = 0;
-  if (maxContactSingle >= 2) {
-    contactBonus = 5;
-    showBonusToast('Yerleşim Bonusu +5 ⚡');
-  }
-
-  const tempAdded = targets.map(t => ({ gx: t.gx, gy: t.gy, gz: t.gz, player }));
-  const tempAll = [...placedCubes, ...tempAdded];
-  const contBonus = checkContinuityWith(tempAll, player);
-
-  const total = basePoints + totalContact + contactBonus + contBonus;
-
-  // Hamle özeti kartı güncelle
-  showMoveScore(targets, player, basePoints, totalContact, contactBonus, contBonus);
-
-  return total;
-}
-
-function showMoveScore(targets, player, basePoints, contactCount, contactBonus, contBonus) {
-  const chip = document.getElementById('last-score-chip');
-  const ptsEl = document.getElementById('last-score-pts');
-  const descEl = document.getElementById('last-score-desc');
-  if (!chip || !ptsEl || !descEl) return;
-
-  const total = basePoints + contactCount + contactBonus + contBonus;
-  const playerColor = player === 1 ? 'var(--p1)' : 'var(--p2)';
-
-  ptsEl.textContent = `+${total}`;
-  ptsEl.style.color = playerColor;
-
-  // Açıklama metni
-  const isT = currentLang === 'tr';
-  let lines = [];
-  lines.push(isT
-    ? `${basePoints} birimlik taş yerleştirildi`
-    : `${basePoints}-unit piece placed`);
-
-  if (contactCount > 0) {
-    lines.push(isT
-      ? `Rakibin ${contactCount} birimine değdi · +${contactCount}`
-      : `Touched ${contactCount} opponent unit${contactCount>1?'s':''} · +${contactCount}`);
-  }
-  if (contactBonus > 0) {
-    lines.push(isT
-      ? `Yerleşim Bonusu · +${contactBonus}`
-      : `Placement Bonus · +${contactBonus}`);
-  }
-  if (contBonus > 0) {
-    lines.push(isT
-      ? `Devamlılık Bonusu · +${contBonus}`
-      : `Continuity Bonus · +${contBonus}`);
-  }
-
-  // Formül
-  const parts = [basePoints];
-  if (contactCount) parts.push(contactCount);
-  if (contactBonus) parts.push(contactBonus);
-  if (contBonus) parts.push(contBonus);
-  const formula = parts.join(' + ') + ` = ${total}`;
-  lines.push(`<span style="color:${playerColor};font-weight:800;">${formula}</span>`);
-
-  descEl.innerHTML = lines.join('<br>');
-  chip.style.display = 'block';
-}
-
-function checkContinuityWith(allCubes, player) {
-  const pc = allCubes.filter(c => c.player === player);
-  let maxLen = 0;
-  for (const ax of [[1,0,0],[0,1,0],[0,0,1]]) {
-    for (const s of pc) {
-      let len = 1, cx = s.gx, cy = s.gy, cz = s.gz;
-      while (pc.some(c => c.gx===cx+ax[0]&&c.gy===cy+ax[1]&&c.gz===cz+ax[2])) {
-        len++; cx+=ax[0]; cy+=ax[1]; cz+=ax[2];
-      }
-      if (len > maxLen) maxLen = len;
-    }
-  }
-  if (maxLen >= 16) { showBonusToast('Devamlılık Bonusu +20 🎉'); return 20; }
-  if (maxLen >= 8)  { showBonusToast('Devamlılık Bonusu +10 ⭐'); return 10; }
-  return 0;
-}
-
-function checkWinCondition() {
-  // Kilit oyun kontrolü
-  for (let p = 1; p <= 2; p++) {
-    if (checkLockWin(p)) { showWinScreen(p, 'kilit'); return; }
-  }
-  // Her iki oyuncu tüm taşlarını kullandı
-  if (GameState.usedPieces[0].length === 10 && GameState.usedPieces[1].length === 10) {
-    showWinScreen(GameState.scores[0] > GameState.scores[1] ? 1 : 2, 'skor');
-    return;
-  }
-  // Mevcut oyuncunun yerleştirebileceği taşı kalmadı mı?
-  checkNoMovesLeft();
-}
-
-function canPlayerMove(player) {
-  const remaining = PIECE_DEFS.filter((_, i) => !GameState.usedPieces[player-1].includes(i));
-  if (remaining.length === 0) return false;
-
-  // Her kalan parça için tüm oryantasyonları dene — herhangi biri geçerliyse true
-  const rotations = [
-    {x:0,y:0,z:0}, {x:Math.PI/2,y:0,z:0}, {x:Math.PI,y:0,z:0}, {x:-Math.PI/2,y:0,z:0},
-    {x:0,y:Math.PI/2,z:0}, {x:0,y:Math.PI,z:0}, {x:0,y:-Math.PI/2,z:0},
-    {x:0,y:0,z:Math.PI/2}, {x:0,y:0,z:Math.PI}, {x:0,y:0,z:-Math.PI/2},
-    {x:Math.PI/2,y:Math.PI/2,z:0}, {x:Math.PI/2,y:-Math.PI/2,z:0},
-  ];
-
-  // Olası tüm dış pozisyonlar (gövde etrafı)
-  const candidates = [];
-  for (let x = -1; x <= 2; x++)
-    for (let y = -1; y <= 8; y++)
-      for (let z = -1; z <= 2; z++)
-        if (!isBoardOccupied(x,y,z) && !isPlacedOccupied(x,y,z))
-          candidates.push({x,y,z});
-
-  for (const piece of remaining) {
-    for (const rot of rotations) {
-      const rotated = getRotatedCubes(piece, rot);
-      for (const pos of candidates) {
-        // Parçanın her küpünü bu pozisyona referans al
-        for (const refCube of rotated) {
-          const offset = { x: pos.x - refCube.x, y: pos.y - refCube.y, z: pos.z - refCube.z };
-          if (isValidPlacement(rotated, offset)) return true;
-        }
-      }
-    }
-  }
-  return false;
-}
-
-function checkNoMovesLeft() {
-  const current = GameState.currentPlayer;
-  if (!canPlayerMove(current)) {
-    GameState.inspectMode = true;
-    showNoMovesToast(current);
-  }
-}
-
-function showNoMovesToast(player) {
-  const old = document.getElementById('no-moves-bar');
-  if (old) old.remove();
-
-  const bar = document.createElement('div');
-  bar.id = 'no-moves-bar';
-  bar.style.cssText = `
-    position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
-    background:#131509;border:1px solid #c8f060;border-radius:10px;
-    padding:14px 20px;display:flex;align-items:center;gap:14px;
-    z-index:40;box-shadow:0 4px 24px rgba(0,0,0,0.6);
-    font-family:'Courier New',monospace;
-  `;
-  const isTR = currentLang === 'tr';
-  const msg = isTR
-    ? `Oyuncu ${player} — Yerleştirilebilecek alan kalmadı`
-    : `Player ${player} — No valid moves remaining`;
-
-  bar.innerHTML = `
-    <span style="font-size:12px;color:#a8ad94;letter-spacing:0.12em;">${msg}</span>
-    <button onclick="endGameNow()" style="
-      background:#c8f060;color:#0a0b09;border:none;
-      padding:8px 16px;border-radius:6px;cursor:pointer;
-      font-family:'Courier New',monospace;font-size:12px;
-      font-weight:700;letter-spacing:0.15em;white-space:nowrap;
-    ">${isTR ? 'Oyunu Bitir' : 'End Game'}</button>
-    <button onclick="enterInspectMode()" style="
-      background:transparent;color:#a8ad94;border:1px solid #3a3f2a;
-      padding:8px 12px;border-radius:6px;cursor:pointer;
-      font-family:'Courier New',monospace;font-size:12px;
-      font-weight:700;letter-spacing:0.1em;white-space:nowrap;
-    ">${isTR ? 'İncele' : 'Inspect'}</button>
-  `;
-  document.body.appendChild(bar);
-}
-
-// Kaktüs bar'dan incelemeye gir (oyun henüz bitmedi, endGameNow gerekecek)
-function enterInspectMode() {
-  const bar = document.getElementById('no-moves-bar');
-  if (bar) bar.remove();
-  GameState.inspectMode = true;
-  const btn = document.getElementById('inspect-end-btn');
-  if (btn) btn.style.display = 'block';
-  updateInspectBtn();
-}
-
-function updateInspectBtn() {
-  const label = document.getElementById('inspect-end-label');
-  if (label) label.textContent = currentLang === 'tr' ? 'Yeni Oyun' : 'New Game';
-}
-
-function endGameNow() {
-  const bar = document.getElementById('no-moves-bar');
-  if (bar) bar.remove();
-  const btn = document.getElementById('inspect-end-btn');
-  if (btn) btn.style.display = 'none';
-  GameState.inspectMode = false;
-
-  // Elde kalan taşların puanını düş
-  let scores = [...GameState.scores];
-  for (let p = 0; p < 2; p++) {
-    const remaining = PIECE_DEFS.filter((_, i) => !GameState.usedPieces[p].includes(i));
-    const penalty = remaining.reduce((sum, piece) => sum + piece.units, 0);
-    scores[p] = Math.max(0, scores[p] - penalty);
-  }
-  GameState.scores = scores;
-  document.getElementById('val-p1').textContent = scores[0];
-  document.getElementById('val-p2').textContent = scores[1];
-  document.getElementById('final-p1').textContent = scores[0];
-  document.getElementById('final-p2').textContent = scores[1];
-  const winner = scores[0] > scores[1] ? 1 : scores[1] > scores[0] ? 2 : 0;
-  showWinScreen(winner, 'kaktus');
-}
-
-// Win ekranındaki "İncele" butonundan inceleme moduna gir
-function enterInspectFromWin() {
-  const ws = document.getElementById('win-screen');
-  ws.classList.remove('visible');
-  _fillInspectCard();
-  const btn = document.getElementById('inspect-end-btn');
-  if (btn) btn.style.display = 'block';
-  GameState.inspectMode = true;
-}
-
-// İnceleme kartındaki skor/başlık bilgilerini doldur
-function _fillInspectCard() {
-  const s = GameState.scores;
-  const winner = s[0] > s[1] ? 1 : s[1] > s[0] ? 2 : 0;
-
-  // Win type ve player etiketleri win screen'den kopyala
-  const winTypeEl = document.getElementById('win-type');
-  const winPlayerEl = document.getElementById('win-player');
-
-  const inspectType = document.getElementById('inspect-win-type');
-  const inspectPlayer = document.getElementById('inspect-win-player');
-  if (inspectType && winTypeEl) inspectType.textContent = winTypeEl.textContent;
-  if (inspectPlayer && winPlayerEl) {
-    inspectPlayer.textContent = winPlayerEl.textContent;
-    inspectPlayer.style.color = winner === 1 ? 'var(--p1)' : winner === 2 ? 'var(--p2)' : 'var(--accent)';
-  }
-
-  const sp1 = document.getElementById('inspect-score-p1');
-  const sp2 = document.getElementById('inspect-score-p2');
-  if (sp1) sp1.textContent = s[0];
-  if (sp2) sp2.textContent = s[1];
-}
-
-// KİLİT OYUN: Gövdenin etrafında kapalı döngü tespiti
-// Yatay tur: aynı Y seviyesinde gövdeyi çevreleyen kapalı zincir (min 12 birim)
-// Dikey tur: aynı X veya Z kolonunda gövdeyi baştan sona kaplayan zincir (min 20 birim)
-function checkLockWin(player) {
-  const pc = placedCubes.filter(c => c.player === player);
-  if (pc.length < 12) return false;
-
-  // ── YATAY TUR: Her Y seviyesinde gövdeyi çevreleyen halka var mı? ──
-  // Gövdenin 4 yüzeyindeki dış pozisyonlar:
-  // x=-1 (sol yüzey, z=0..1), x=2 (sağ yüzey, z=0..1)
-  // z=-1 (ön yüzey, x=0..1), z=2 (arka yüzey, x=0..1)
-  // Bunlar bağlı mı kontrol et (BFS kapalı döngü)
-  for (let y = 0; y <= 7; y++) {
-    // Bu Y seviyesindeki oyuncu küplerini al
-    const layer = pc.filter(c => c.gy === y);
-    if (layer.length < 4) continue;
-
-    // Gövdenin bu Y'de dış yüzeylerini çevreleyen küpler
-    // Döngü: x=-1,z=0 → x=-1,z=1 → z=2,x=0 → z=2,x=1 → x=2,z=1 → x=2,z=0 → z=-1,x=1 → z=-1,x=0 → geri
-    const ring = [
-      {gx:-1,gz:0},{gx:-1,gz:1},
-      {gx:0,gz:2},{gx:1,gz:2},
-      {gx:2,gz:1},{gx:2,gz:0},
-      {gx:1,gz:-1},{gx:0,gz:-1},
-    ];
-    const filled = ring.filter(r => layer.some(c => c.gx===r.gx && c.gz===r.gz));
-    // Tüm 8 pozisyon doluysa tam tur
-    if (filled.length === 8) return true;
-    // Alternatif: bitişik zincir kapalı döngü oluşturuyor mu?
-    if (hasClosedHorizontalLoop(pc, y)) return true;
-  }
-
-  // ── DİKEY TUR: Y=0'dan Y=7'ye kadar aynı kolon tamamen kaplı mı? ──
-  // Gövdenin herhangi bir dış kolonunda (x=-1 veya x=2, z=0..1) ya da
-  // (z=-1 veya z=2, x=0..1) tüm Y seviyeleri dolu mu?
-  const vertCols = [
-    {gx:-1,gz:0},{gx:-1,gz:1},{gx:2,gz:0},{gx:2,gz:1},
-    {gx:0,gz:-1},{gx:1,gz:-1},{gx:0,gz:2},{gx:1,gz:2},
-  ];
-  for (const col of vertCols) {
-    let consecutive = 0, maxConsec = 0;
-    for (let y = 0; y <= 7; y++) {
-      if (pc.some(c => c.gx===col.gx && c.gz===col.gz && c.gy===y)) {
-        consecutive++;
-        if (consecutive > maxConsec) maxConsec = consecutive;
-      } else { consecutive = 0; }
-    }
-    if (maxConsec >= 8) return true; // tüm dikey yüz kaplı
-  }
-
-  // Genel devamlılık (herhangi yönde 12+ yatay veya 20+ dikey)
-  const axes = [[1,0,0],[0,0,1]];
-  for (const ax of axes) {
-    for (const s of pc) {
-      let len=1,cx=s.gx,cy=s.gy,cz=s.gz;
-      while(pc.some(c=>c.gx===cx+ax[0]&&c.gy===cy&&c.gz===cz+ax[2])){len++;cx+=ax[0];cz+=ax[2];}
-      if(len>=12) return true;
-    }
-  }
-  for (const s of pc) {
-    let len=1,cy=s.gy,cx=s.gx,cz=s.gz;
-    while(pc.some(c=>c.gx===cx&&c.gy===cy+1&&c.gz===cz)){len++;cy++;}
-    if(len>=20) return true;
-  }
-
-  return false;
-}
-
-function hasClosedHorizontalLoop(pc, y) {
-  // BFS: bu Y seviyesindeki küplerden başla, komşuları takip et
-  // Başlangıç noktasına geri dönebiliyor musun ve en az 8 küp var mı?
-  const layer = pc.filter(c => c.gy === y);
-  if (layer.length < 8) return false;
-
-  const key = c => `${c.gx},${c.gz}`;
-  const set = new Set(layer.map(key));
-
-  for (const start of layer) {
-    // DFS ile kapalı döngü ara
-    const visited = new Set();
-    const stack = [{gx:start.gx, gz:start.gz, steps:0}];
-    while (stack.length) {
-      const {gx, gz, steps} = stack.pop();
-      const k = `${gx},${gz}`;
-      if (visited.has(k)) {
-        if (steps >= 12 && gx===start.gx && gz===start.gz) return true;
-        continue;
-      }
-      visited.add(k);
-      for (const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]) {
-        const nk = `${gx+dx},${gz+dz}`;
-        if (set.has(nk)) stack.push({gx:gx+dx,gz:gz+dz,steps:steps+1});
-      }
-    }
-  }
-  return false;
-}
-
-// ─── SON HAMLE VURGULAMA ─────────────────────────────────────────────────────
-let lastMoveHighlightMeshes = [];
-let lastMoveHighlightEnabled = false;
-
-function toggleLastMoveHighlight(enabled) {
-  lastMoveHighlightEnabled = enabled;
-  if (enabled) {
-    drawLastMoveHighlight();
-  } else {
-    clearLastMoveHighlight();
-  }
-}
-
-function clearLastMoveHighlight() {
-  lastMoveHighlightMeshes.forEach(m => scene.remove(m));
-  lastMoveHighlightMeshes = [];
-}
-
-function drawLastMoveHighlight() {
-  clearLastMoveHighlight();
-  if (!lastMoveHighlightEnabled) return;
-  if (GameState.lastPlacedCubes.length === 0) return;
-
-  // Kimin hamlesi? Sıra değişti, önceki oyuncu
-  const prevPlayer = GameState.currentPlayer === 1 ? 2 : 1;
-  const hlColor = prevPlayer === 1 ? 0xffb830 : 0xff6b4a;
-
-  const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(UNIT+0.02, UNIT+0.02, UNIT+0.02));
-  const hlMat = new THREE.LineBasicMaterial({
-    color: hlColor,
-    transparent: true,
-    opacity: 0.9,
-    linewidth: 2,
-  });
-
-  GameState.lastPlacedCubes.forEach(c => {
-    const lines = new THREE.LineSegments(edgeGeo, hlMat.clone());
-    lines.position.copy(gridToWorld(c.gx, c.gy, c.gz));
-    lines.userData.isHighlight = true;
-    scene.add(lines);
-    lastMoveHighlightMeshes.push(lines);
+// ── PROMPT ──────────────────────────────────────────
+const PROMPT_TEXT = `# Kişisel UX Accelerator & Design Thinking Facilitator
+
+Sen Aykut'un kişisel UX araştırma ve tasarım karar asistanısın.
+18 yöntem · Empathy → Ideation → Evaluation
+Dot Voting simülasyonu · Harris Profile · Insight Raporu
+
+Her konuşmada: proje türü, kapsam ve aşamayı sor.
+Maksimum 3 kart öner, projeye özel sorular üret.`;
+
+function copyPrompt() {
+  navigator.clipboard.writeText(PROMPT_TEXT).then(() => {
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 2000);
   });
 }
 
-// Animate loop'ta highlight pulse
-function updateHighlightPulse(t) {
-  if (!lastMoveHighlightEnabled || lastMoveHighlightMeshes.length === 0) return;
-  const pulse = 0.5 + 0.5 * Math.sin(t * 3);
-  lastMoveHighlightMeshes.forEach(m => {
-    if (m.material) m.material.opacity = 0.4 + pulse * 0.55;
-  });
+// ── SCROLL ──────────────────────────────────────────
+function scrollTo(id) {
+  document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
 }
 
-function showBonusToast(msg){
-  const t=document.getElementById('bonus-toast');
-  t.textContent=msg;t.classList.add('visible');
-  clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('visible'),2400);
-}
-
-function showWinScreen(player, type) {
-  const isTR = currentLang === 'tr';
-  const types = {
-    kilit: isTR ? '🔒 Kilit Oyun!' : '🔒 Lock Win!',
-    skor:  isTR ? '🏆 Skor Oyun!'  : '🏆 Score Win!',
-    kaktus:isTR ? '🌵 Kaktüs Oyun!': '🌵 Cactus Win!',
-  };
-  document.getElementById('win-type').textContent = types[type] || '';
-  const wp = document.getElementById('win-player');
-  if (player === 0) {
-    wp.textContent = isTR ? 'Berabere!' : 'Draw!';
-    wp.style.color = 'var(--accent)';
-  } else {
-    wp.textContent = isTR ? `Oyuncu ${player} Kazandı!` : `Player ${player} Wins!`;
-    wp.className = `win-player p${player}`;
-  }
-  document.getElementById('final-p1').textContent = GameState.scores[0];
-  document.getElementById('final-p2').textContent = GameState.scores[1];
-  // İncele ve Yeni Oyun buton etiketleri
-  const inspBtn = document.getElementById('win-inspect-btn');
-  const replayBtn = document.getElementById('win-replay-btn');
-  if (inspBtn)  inspBtn.textContent  = isTR ? 'İncele' : 'Inspect';
-  if (replayBtn) replayBtn.textContent = isTR ? 'Yeni Oyun' : 'New Game';
-  // Göster
-  const ws = document.getElementById('win-screen');
-  ws.classList.add('visible');
-}
-
-// Phase button — TEK listener, tüm akış burada
-document.getElementById('phase-btn').addEventListener('click',()=>{
-  if(GameState.phase==='inspect'){
-    openPiecePanel();
-    GameState.phase='select';
-    document.getElementById('phase-btn').textContent='Parça Seç';
-    document.getElementById('game-phase').textContent='TAŞ SEÇ';
-  } else if(GameState.phase==='place'||GameState.phase==='select'){
-    // İptal
-    deselectPiece(); removeGhost(); closePiecePanel();
-    GameState.phase='inspect';
-    document.getElementById('phase-btn').textContent='Taş Seç →';
-    document.getElementById('game-phase').textContent='HAZIRLIK';
-  }
-});
-
-// ─── MOBİL SİSTEM ─────────────────────────────────────────────────────────────
-const isMobile = () => window.innerWidth <= 768;
-let mobileOrbitActive = false;
-let mobileOrbitDir = 'left'; // left|right|up|down
-
-// 4 yön orbit
-function startMobileOrbitDir(dir) {
-  mobileOrbitActive = true;
-  mobileOrbitDir = dir;
-}
-function startMobileOrbit() { startMobileOrbitDir('left'); }
-function stopMobileOrbit() { mobileOrbitActive = false; }
-
-// Döndürme — sadece touchstart'tan çağır, çift tetiklemeyi önle
-let lastRotateTime = 0;
-function mobileRotateSafe(e, axis, dir) {
-  e.preventDefault();
-  const now = Date.now();
-  if (now - lastRotateTime < 200) return; // debounce 200ms
-  lastRotateTime = now;
-  mobileRotate(axis, dir);
-}
-
-function mobileRotate(axis, dir) {
-  const step = Math.PI / 2;
-  if (axis === 'x') previewRotation.x += dir * step;
-  if (axis === 'y') previewRotation.y += dir * step;
-  if (axis === 'z') previewRotation.z += dir * step;
-  // Ghost'u son bilinen pozisyonda anlık güncelle
-  if (lastMobileTouchX !== null) {
-    updateMobileGhost(lastMobileTouchX, lastMobileTouchY);
-  }
-}
-
-// Son dokunma pozisyonu — rotate sonrası ghost güncellemek için
-let lastMobileTouchX = null;
-let lastMobileTouchY = null;
-
-function mobileOpenPanel() {
-  openPiecePanel();
-  GameState.phase = 'select';
-}
-
-function setMobilePlaceMode(active) {
-  if (!isMobile()) return;
-  document.getElementById('mob-inspect-mode').style.display = active ? 'none' : 'block';
-  document.getElementById('mob-place-mode').style.display = active ? 'block' : 'none';
-  if (!active) {
-    const btn = document.getElementById('mobile-place-btn');
-    if (btn) { btn.classList.remove('enabled'); btn.textContent = currentLang === 'tr' ? 'Yerleştir' : 'Place'; }
-  }
-}
-
-function mobileCancelPlace() {
-  deselectPiece(); removeGhost();
-  GameState.phase = 'inspect';
-  setMobilePlaceMode(false);
-  updateMobileTurnUI();
-}
-
-function mobilePlacePiece() {
-  if (!snapValid || !currentSnapOffset) return; // ghost kırmızıysa çalışmaz
-  const piece = PIECE_DEFS[GameState.selectedPieceIndex];
-  pendingRotated = getRotatedCubes(piece, previewRotation);
-  placePiece(pendingRotated, { ...currentSnapOffset }, GameState.currentPlayer, GameState.selectedPieceIndex);
-  setMobilePlaceMode(false);
-}
-
-function updateMobileTurnUI() {
-  if (!isMobile()) return;
-  const p = GameState.currentPlayer;
-  const el = document.getElementById('mob-turn-name');
-  if (el) { el.textContent = t('player' + p); el.className = `mobile-turn-name p${p}`; }
-}
-
-function updateMobilePlaceBtn(valid) {
-  if (!isMobile()) return;
-  const btn = document.getElementById('mobile-place-btn');
-  if (!btn) return;
-  if (valid) { btn.classList.add('enabled'); btn.textContent = currentLang === 'tr' ? 'Yerleştir ✓' : 'Place ✓'; }
-  else { btn.classList.remove('enabled'); btn.textContent = currentLang === 'tr' ? 'Yerleştir' : 'Place'; }
-}
-
-function updateMobileGhost(clientX, clientY) {
-  if (GameState.selectedPieceIndex < 0) return;
-  const mx = (clientX / W()) * 2 - 1;
-  const my = -(clientY / H()) * 2 + 1;
-  raycaster.setFromCamera({ x: mx, y: my }, camera);
-  const hits = raycaster.intersectObjects([...boardCubes, ...placedMeshes], false);
-  const piece = PIECE_DEFS[GameState.selectedPieceIndex];
-  const rotated = getRotatedCubes(piece, previewRotation);
-  if (!hits.length) { removeGhost(); updateMobilePlaceBtn(false); return; }
-  const hit = hits[0];
-  const fn = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
-  fn.x = Math.round(fn.x); fn.y = Math.round(fn.y); fn.z = Math.round(fn.z);
-  const ud = hit.object.userData;
-  if (ud.gx === undefined) { removeGhost(); updateMobilePlaceBtn(false); return; }
-  const attachX = ud.gx + fn.x, attachY = ud.gy + fn.y, attachZ = ud.gz + fn.z;
-  const adjs = [{x:0,y:0,z:0},{x:1,y:0,z:0},{x:-1,y:0,z:0},{x:0,y:1,z:0},{x:0,y:-1,z:0},{x:0,y:0,z:1},{x:0,y:0,z:-1}];
-  let bestValid = null, bestInvalid = null, bestDist = Infinity;
-  for (const adj of adjs) {
-    const off = { x: attachX - rotated[0].x + adj.x, y: attachY - rotated[0].y + adj.y, z: attachZ - rotated[0].z + adj.z };
-    if (isValidPlacement(rotated, off)) { if (!bestValid) bestValid = off; break; }
-    else if (!hasCollision(rotated, off)) {
-      const d = Math.abs(adj.x)+Math.abs(adj.y)+Math.abs(adj.z);
-      if (d < bestDist) { bestDist = d; bestInvalid = off; }
-    }
-  }
-  if (bestValid) { showGhost(rotated, bestValid, true); updateMobilePlaceBtn(true); }
-  else if (bestInvalid) { showGhost(rotated, bestInvalid, false); updateMobilePlaceBtn(false); }
-  else { removeGhost(); updateMobilePlaceBtn(false); }
-}
-
-// selectPiece mobil mod geçişi — mevcut selectPiece fonksiyonuna ek
-const _origSelectPieceMobile = selectPiece;
-selectPiece = function(index, player) {
-  _origSelectPieceMobile(index, player);
-  if (isMobile()) {
-    setMobilePlaceMode(true);
-    GameState.phase = 'place';
-  }
-};
-
-// finalizePlacement sonrası mobil UI güncelle
-const _origFinalize = finalizePlacement;
-finalizePlacement = function(targets, animMeshes, player, pieceIndex) {
-  _origFinalize(targets, animMeshes, player, pieceIndex);
-  if (isMobile()) {
-    setMobilePlaceMode(false);
-    updateMobileTurnUI();
-  }
-};
-
-// Mobile panel bottom offset — mobile controls yüksekliğini ölç
-function updateMobilePanelBottom() {
-  if (window.innerWidth > 768) return;
-  const mc = document.getElementById('mobile-controls');
-  const panel = document.getElementById('piece-panel');
-  if (!mc || !panel) return;
-  const h = mc.getBoundingClientRect().height || mc.offsetHeight;
-  panel.style.bottom = (h + 4) + 'px';
-}
-
-setTimeout(()=>{
-  const loading=document.getElementById('loading');
-  loading.style.opacity='0';
-  setTimeout(()=>loading.style.display='none',500);
-  animate();
-  // Panel bottom'u hemen + DOM settle sonra tekrar
-  updateMobilePanelBottom();
-  setTimeout(updateMobilePanelBottom, 100);
-  setTimeout(updateMobilePanelBottom, 500);
-},1400);
-
-window.addEventListener('resize', updateMobilePanelBottom);
-
+// ── INIT ────────────────────────────────────────────
+buildCards('all');
 </script>
-
-<!-- Confirm Dialog -->
-<div id="confirm-dialog" style="
-  display:none;position:absolute;inset:0;background:rgba(0,0,0,0.65);
-  z-index:50;align-items:center;justify-content:center;
-">
-  <div style="
-    background:#131509;border:1px solid #3a3f2a;border-radius:14px;
-    padding:28px 32px;text-align:center;max-width:280px;
-    box-shadow:0 0 40px rgba(0,0,0,0.8);
-  ">
-    <div style="font-size:13px;letter-spacing:0.2em;color:#a8ad94;text-transform:uppercase;margin-bottom:10px;">Yerleştir?</div>
-    <div style="font-size:16px;font-weight:700;color:#f0f2e6;margin-bottom:22px;">Taşı bu konuma koy</div>
-    <div style="display:flex;gap:12px;justify-content:center;">
-      <button onclick="cancelPlacement()" style="
-        background:rgba(255,255,255,0.06);border:1px solid #3a3f2a;
-        color:#a8ad94;padding:10px 22px;border-radius:8px;cursor:pointer;
-        font-family:monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;
-      ">İptal</button>
-      <button onclick="confirmPlacement()" style="
-        background:#c8f060;border:none;color:#0a0b09;
-        padding:10px 22px;border-radius:8px;cursor:pointer;
-        font-family:monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;
-      ">✓ Onayla</button>
-    </div>
-  </div>
-</div>
-
-<!-- Bonus Toast -->
-<div id="bonus-toast" style="
-  position:absolute;top:90px;left:50%;transform:translateX(-50%);
-  background:#131509;border:1px solid #c8f060;border-radius:8px;
-  padding:10px 20px;font-size:14px;font-weight:700;color:#c8f060;
-  letter-spacing:0.12em;pointer-events:none;
-  opacity:0;transition:opacity 0.3s;white-space:nowrap;z-index:30;
-"></div>
-
-<!-- Win Screen -->
-<div id="win-screen" style="
-  display:none;position:absolute;inset:0;background:rgba(0,0,0,0.82);
-  z-index:60;align-items:center;justify-content:center;
-">
-  <div style="
-    background:#131509;border:1px solid #3a3f2a;border-radius:16px;
-    padding:36px 44px;text-align:center;min-width:300px;
-    box-shadow:0 0 60px rgba(0,0,0,0.9);
-  ">
-    <div id="win-type" style="font-size:26px;margin-bottom:10px;"></div>
-    <div id="win-player" style="font-size:22px;font-weight:900;letter-spacing:0.05em;margin-bottom:10px;"></div>
-    <div style="
-      background:rgba(255,255,255,0.04);border:1px solid #3a3f2a;border-radius:8px;
-      padding:12px 20px;margin-bottom:24px;
-    ">
-      <div style="display:flex;justify-content:space-between;gap:24px;">
-        <div style="text-align:center;">
-          <div style="font-size:10px;letter-spacing:0.2em;color:var(--p1);font-weight:700;margin-bottom:4px;">OYUNCU 1</div>
-          <div id="final-p1" style="font-size:26px;font-weight:900;color:#f0f2e6;">0</div>
-          <div style="font-size:9px;color:#b8bda8;letter-spacing:0.1em;">puan</div>
-        </div>
-        <div style="width:1px;background:#3a3f2a;"></div>
-        <div style="text-align:center;">
-          <div style="font-size:10px;letter-spacing:0.2em;color:var(--p2);font-weight:700;margin-bottom:4px;">OYUNCU 2</div>
-          <div id="final-p2" style="font-size:26px;font-weight:900;color:#f0f2e6;">0</div>
-          <div style="font-size:9px;color:#b8bda8;letter-spacing:0.1em;">puan</div>
-        </div>
-      </div>
-    </div>
-    <div style="display:flex;gap:10px;justify-content:center;">
-      <button onclick="enterInspectFromWin()" style="
-        background:rgba(255,255,255,0.07);border:1px solid #3a3f2a;
-        color:#f0f2e6;padding:11px 22px;border-radius:8px;cursor:pointer;
-        font-family:'Courier New',monospace;font-size:12px;
-        font-weight:700;letter-spacing:0.15em;transition:all 0.2s;
-      " id="win-inspect-btn">İncele</button>
-      <button onclick="location.reload()" style="
-        background:#c8f060;border:none;color:#0a0b09;
-        padding:11px 22px;border-radius:8px;cursor:pointer;
-        font-family:'Courier New',monospace;font-size:12px;
-        font-weight:700;letter-spacing:0.15em;
-      " id="win-replay-btn">Yeni Oyun</button>
-    </div>
-  </div>
-</div>
-
-<style>
-  /* Son hamle vurgulama */
-  #last-move-toggle {
-    position: absolute;
-    left: 20px;
-    bottom: 90px;
-    background: rgba(10,11,9,0.88);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    pointer-events: all;
-    cursor: pointer;
-    user-select: none;
-    transition: border-color 0.2s;
-  }
-  #last-move-toggle:hover { border-color: var(--accent); }
-  #last-move-chk {
-    width: 14px; height: 14px;
-    accent-color: var(--accent);
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  #last-move-toggle label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-muted);
-    cursor: pointer;
-    letter-spacing: 0.08em;
-    white-space: nowrap;
-  }
-  #confirm-dialog { display:flex!important; opacity:0; pointer-events:none; transition:opacity 0.2s; }
-  #confirm-dialog.visible { opacity:1; pointer-events:all; }
-  #bonus-toast.visible { opacity:1!important; }
-  #win-screen { display:flex!important; opacity:0; pointer-events:none; transition:opacity 0.3s; }
-  #win-screen.visible { opacity:1; pointer-events:all; }
-  .win-player.p1 { color:var(--p1); }
-  .win-player.p2 { color:var(--p2); }
-</style>
-
-<!-- Kural Modalı -->
-<div id="rules-modal" style="
-  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);
-  z-index:80;align-items:center;justify-content:center;
-">
-  <div style="
-    background:#131509;border:1px solid #3a3f2a;border-radius:16px;
-    width:min(540px,92vw);max-height:85vh;overflow-y:auto;
-    box-shadow:0 8px 48px rgba(0,0,0,0.8);
-    scrollbar-width:thin;scrollbar-color:#3a3f2a transparent;
-  ">
-    <!-- Modal Header -->
-    <div style="
-      display:flex;align-items:center;justify-content:space-between;
-      padding:20px 24px 16px;border-bottom:1px solid #3a3f2a;
-      position:sticky;top:0;background:#131509;z-index:1;
-    ">
-      <div style="font-size:16px;font-weight:900;color:#c8f060;letter-spacing:0.15em;" data-i18n="rules_title">KAKTÜS — KURALLAR</div>
-      <button onclick="closeRulesModal()" style="
-        background:none;border:none;color:#a8ad94;font-size:20px;
-        cursor:pointer;font-family:monospace;padding:2px 8px;
-      ">✕</button>
-    </div>
-
-    <!-- Sekmeler -->
-    <div style="display:flex;border-bottom:1px solid #3a3f2a;">
-      <button class="rules-tab active" id="rtab-rules" onclick="switchRulesTab('rules')" style="
-        flex:1;padding:12px;background:none;border:none;border-bottom:2px solid #c8f060;
-        color:#f0f2e6;font-family:'Courier New',monospace;font-size:11px;font-weight:700;
-        letter-spacing:0.15em;cursor:pointer;
-      " data-i18n="tab_rules">KURALLAR</button>
-      <button class="rules-tab" id="rtab-example" onclick="switchRulesTab('example')" style="
-        flex:1;padding:12px;background:none;border:none;border-bottom:2px solid transparent;
-        color:#a8ad94;font-family:'Courier New',monospace;font-size:11px;font-weight:700;
-        letter-spacing:0.15em;cursor:pointer;
-      " data-i18n="tab_example">ÖRNEK OYUN</button>
-    </div>
-
-    <!-- Kurallar içeriği -->
-    <div id="rules-content" style="padding:20px 24px;">
-      <div id="rules-text"></div>
-    </div>
-
-    <!-- Örnek oyun içeriği -->
-    <div id="example-content" style="padding:20px 24px;display:none;">
-      <div id="example-text"></div>
-    </div>
-  </div>
-</div>
-
-<style>
-  #rules-modal { display:flex!important; opacity:0; pointer-events:none; transition:opacity 0.25s; }
-  #rules-modal.visible { opacity:1; pointer-events:all; }
-  .rules-section { margin-bottom:20px; }
-  .rules-section h3 {
-    font-size:11px;letter-spacing:0.2em;text-transform:uppercase;
-    color:#c8f060;margin-bottom:10px;font-weight:700;
-  }
-  .rules-section p, .rules-section li {
-    font-size:12px;color:#a8ad94;line-height:1.8;font-weight:600;
-    margin-bottom:6px;
-  }
-  .rules-section ul { padding-left:16px; }
-  .rules-badge {
-    display:inline-block;background:rgba(200,240,96,0.12);
-    border:1px solid rgba(200,240,96,0.3);border-radius:4px;
-    padding:2px 8px;color:#c8f060;font-size:11px;font-weight:700;
-    margin-right:6px;letter-spacing:0.1em;
-  }
-  .example-step {
-    background:rgba(255,255,255,0.03);border:1px solid #3a3f2a;
-    border-radius:8px;padding:14px 16px;margin-bottom:12px;
-  }
-  .example-step .step-num {
-    font-size:10px;letter-spacing:0.2em;color:#c8f060;
-    text-transform:uppercase;margin-bottom:6px;font-weight:700;
-  }
-  .example-step p { font-size:12px;color:#a8ad94;line-height:1.7;font-weight:600; }
-  .coming-soon {
-    text-align:center;padding:32px 20px;color:#a8ad94;
-    font-size:12px;letter-spacing:0.1em;
-  }
-</style>
-  <!-- MOBİL KONTROL PANELİ -->
-<div id="mobile-controls">
-  <div class="mobile-ctrl-bar">
-
-    <!-- Mod: İnceleme (taş seçilmemiş) -->
-    <div id="mob-inspect-mode">
-      <div class="mobile-top-row">
-        <div class="mobile-turn-info">
-          <div class="mobile-turn-label" data-i18n="turn_label">Sıra</div>
-          <div class="mobile-turn-name p1" id="mob-turn-name">Oyuncu 1</div>
-        </div>
-        <button id="mobile-phase-btn" onclick="mobileOpenPanel()">Taş Seç →</button>
-      </div>
-      <!-- Son hamle + ipucu satırı -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px;">
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-          <input type="checkbox" id="mob-last-move-chk"
-            onchange="toggleLastMoveHighlight(this.checked);document.getElementById('last-move-chk').checked=this.checked;"
-            style="width:13px;height:13px;accent-color:var(--accent);">
-          <span style="font-size:10px;color:var(--text-muted);letter-spacing:0.08em;" data-i18n="highlight_last">Son hamleyi vurgula</span>
-        </label>
-        <span style="font-size:10px;color:var(--text-muted);letter-spacing:0.08em;">1 parmak döndür · 2 parmak zoom</span>
-      </div>
-    </div>
-
-    <!-- Mod: Yerleştirme (taş seçildi) -->
-    <div id="mob-place-mode" style="display:none;">
-
-      <!-- Döndürme grid -->
-      <div id="mobile-rotate-grid" class="visible" style="margin-bottom:8px;">
-        <div class="rot-btn-group">
-          <div class="rot-label">X</div>
-          <div class="rot-btn-pair">
-            <button class="rot-btn" ontouchstart="mobileRotateSafe(event,'x',-1)">−</button>
-            <button class="rot-btn" ontouchstart="mobileRotateSafe(event,'x',1)">+</button>
-          </div>
-        </div>
-        <div class="rot-btn-group">
-          <div class="rot-label">Y</div>
-          <div class="rot-btn-pair">
-            <button class="rot-btn" ontouchstart="mobileRotateSafe(event,'y',-1)">−</button>
-            <button class="rot-btn" ontouchstart="mobileRotateSafe(event,'y',1)">+</button>
-          </div>
-        </div>
-        <div class="rot-btn-group">
-          <div class="rot-label">Z</div>
-          <div class="rot-btn-pair">
-            <button class="rot-btn" ontouchstart="mobileRotateSafe(event,'z',-1)">−</button>
-            <button class="rot-btn" ontouchstart="mobileRotateSafe(event,'z',1)">+</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Alt satır: Yerleştir + Vazgeç -->
-      <div style="display:flex;gap:8px;">
-        <button id="mobile-place-btn" class="visible" style="flex:3;" ontouchstart="mobilePlacePiece()">
-          Yerleştir
-        </button>
-        <button id="mobile-cancel-btn" style="display:block;flex:1;" ontouchstart="mobileCancelPlace()">✕</button>
-      </div>
-
-      <!-- İpucu -->
-      <div style="font-size:10px;color:var(--text-muted);text-align:center;margin-top:6px;letter-spacing:0.08em;">
-        1 parmak kaydır · 2 parmak gövde döndür · Yeşil = hazır
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<!-- Son hamle vurgulama -->
-<div id="last-move-toggle">
-  <input type="checkbox" id="last-move-chk" onchange="toggleLastMoveHighlight(this.checked)">
-  <label for="last-move-chk" data-i18n="highlight_last">Son hamleyi vurgula</label>
-</div>
-
 </body>
 </html>
