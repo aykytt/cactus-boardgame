@@ -1215,32 +1215,19 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
       <div class="score-card p1 active" id="score-p1">
         <div class="player-label" data-i18n="player1">Oyuncu 1</div>
         <div class="score-value" id="val-p1">0</div>
-        <div class="pieces-left" id="pieces-p1" data-i18n-tpl="pieces">10 taş</div>
+        <div class="pieces-left" id="pieces-p1" data-i18n-tpl="pieces">10 pieces</div>
       </div>
       <div class="turn-indicator" id="turn-dot"></div>
       <div class="score-card p2" id="score-p2">
         <div class="player-label" data-i18n="player2">Oyuncu 2</div>
         <div class="score-value" id="val-p2">0</div>
-        <div class="pieces-left" id="pieces-p2" data-i18n-tpl="pieces">10 taş</div>
+        <div class="pieces-left" id="pieces-p2" data-i18n-tpl="pieces">10 pieces</div>
       </div>
     </div>
 
     <div style="display:flex;align-items:center;gap:8px;">
-      <!-- TR/EN toggle -->
-      <div style="display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-left:6px;">
-        <button id="lang-tr" onclick="setLang('tr')" style="
-          background:var(--accent);color:#0a0b09;border:none;
-          padding:5px 10px;font-family:monospace;font-size:11px;font-weight:700;
-          cursor:pointer;letter-spacing:0.1em;transition:all 0.2s;
-        ">TR</button>
-        <button id="lang-en" onclick="setLang('en')" style="
-          background:transparent;color:var(--text-muted);border:none;
-          padding:5px 10px;font-family:monospace;font-size:11px;font-weight:700;
-          cursor:pointer;letter-spacing:0.1em;transition:all 0.2s;
-        ">EN</button>
-      </div>
       <!-- game-phase gizli ama JS için tutuluyor -->
-      <div class="game-title" id="game-phase" style="display:none;">HAZIRLIK</div>
+      <div class="game-title" id="game-phase" style="display:none;">ready</div>
     </div>
   </div>
 
@@ -1252,7 +1239,7 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
     </div>
     <div class="info-chip">
       <strong id="turn-round">1</strong>
-      Hamle
+      Move
     </div>
 
     <!-- Son hamle puan özeti -->
@@ -1302,33 +1289,32 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
       <div class="turn-name p1" id="turn-name">Oyuncu 1</div>
     </div>
 
-    <button id="phase-btn" onclick="openPiecePanel()">Taş Seç →</button>
+    <button id="phase-btn" onclick="openPiecePanel()">Select Piece →</button>
 
     <div id="controls-hint">
-      <span>Sürükle</span> döndür &nbsp;
+      <span>Drag</span> rotate &nbsp;
       <span>Scroll</span> zoom<br>
       <span>Q/E</span> X &nbsp; <span>W/S</span> Y &nbsp; <span>A/D</span> Z
     </div>
   </div>
 <!-- Piece Panel -->
 <div id="piece-panel">
-  <!-- Tab bar -->
   <div class="panel-tabs">
-    <button class="panel-tab p1-tab active" id="tab-p1" onclick="switchPanelTab(1)">● O1 Taşları</button>
-    <button class="panel-tab p2-tab" id="tab-p2" onclick="switchPanelTab(2)">● O2 Taşları</button>
-    <button id="panel-pin-btn" onclick="togglePanelPin()" title="Paneli sabitle">📌</button>
+    <button class="panel-tab p1-tab active" id="tab-p1" onclick="switchPanelTab(1)">● P1 Pieces</button>
+    <button class="panel-tab p2-tab" id="tab-p2" onclick="switchPanelTab(2)">● P2 Pieces</button>
+    <button id="panel-pin-btn" onclick="togglePanelPin()" title="Pin panel">📌</button>
     <button class="panel-tab" style="flex:0;padding:10px 10px;" onclick="closePiecePanel()">✕</button>
   </div>
-  <div class="panel-player-label p1" id="panel-player-label">Seçim: Oyuncu 1</div>
+  <div class="panel-player-label p1" id="panel-player-label">Selection: Player 1</div>
   <div id="piece-list"></div>
 </div>
 
 <!-- Floating labels -->
-<div id="preview-label">Taş Seçildi — Döndür & Yerleştir</div>
+<div id="preview-label">Piece Selected — Rotate & Place</div>
 <div id="rotation-hint">
-  <span>Q</span>/<span>E</span> X ekseni &nbsp;
-  <span>W</span>/<span>S</span> Y ekseni &nbsp;
-  <span>A</span>/<span>D</span> Z ekseni
+  <span>Q</span>/<span>E</span> X axis &nbsp;
+  <span>W</span>/<span>S</span> Y axis &nbsp;
+  <span>A</span>/<span>D</span> Z axis
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
@@ -1337,33 +1323,14 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
 let currentLang = 'en';
 
 const I18N = {
-  tr: {
-    player1: 'Oyuncu 1', player2: 'Oyuncu 2',
-    pieces: (n) => `${n} taş`,
-    turn_label: 'Sıra',
-    phase_inspect: 'hazırlik', phase_select: 'taş seç',
-    phase_place: 'yerleştir', phase_turn: 'döndür',
-    btn_select: 'Taş Seç →', btn_place: 'Yerleştir →', btn_cancel: '✕ İptal',
-    board_units: 'Tahta Birimi', move: 'Hamle',
-    highlight_last: 'Son hamleyi vurgula',
-    confirm_title: 'Yerleştir?', confirm_msg: 'Taşı bu konuma koy',
-    confirm_ok: '✓ Onayla', confirm_cancel: 'İptal',
-    win_kilit: '🔒 Kilit Oyun!', win_skor: '🏆 Skor Oyun!', win_kaktus: '🌵 Kaktüs Oyun!',
-    win_draw: 'Berabere!', win_player: (p) => `Oyuncu ${p} Kazandı!`,
-    replay: 'Yeniden Oyna',
-    rules_title: 'CACTUS — KURALLAR',
-    tab_rules: 'kurallar', tab_example: 'örnek oyun',
-    no_moves: (p) => `Oyuncu ${p} — Yerleştirilebilecek alan kalmadı`,
-    end_game: 'Oyunu Bitir', inspect: 'İncele',
-    preview_label: 'Taş Seçildi — Döndür & Yerleştir',
-  },
   en: {
     player1: 'Player 1', player2: 'Player 2',
     pieces: (n) => `${n} pieces`,
     turn_label: 'Turn',
-    phase_inspect: 'READY', phase_select: 'SELECT',
-    phase_place: 'PLACE', phase_turn: 'ROTATE',
+    phase_inspect: 'ready', phase_select: 'select',
+    phase_place: 'place', phase_turn: 'rotate',
     btn_select: 'Select Piece →', btn_place: 'Place →', btn_cancel: '✕ Cancel',
+    btn_view_pieces: 'Your Pieces →',
     board_units: 'Board Units', move: 'Move',
     highlight_last: 'Highlight last move',
     confirm_title: 'Place here?', confirm_msg: 'Place the piece at this position',
@@ -1372,10 +1339,11 @@ const I18N = {
     win_draw: 'Draw!', win_player: (p) => `Player ${p} Wins!`,
     replay: 'Play Again',
     rules_title: 'CACTUS — RULES',
-    tab_rules: 'RULES', tab_example: 'EXAMPLE',
+    tab_rules: 'rules', tab_example: 'example',
     no_moves: (p) => `Player ${p} — No valid moves remaining`,
     end_game: 'End Game', inspect: 'Inspect',
     preview_label: 'Piece Selected — Rotate & Place',
+    panel_selection: 'Selection:',
   }
 };
 
@@ -1531,15 +1499,11 @@ function switchRulesTab(tab) {
 }
 
 function renderRulesContent() {
-  const lang = currentLang;
-
-  // Kurallar tab başlıkları
   document.getElementById('rtab-rules').textContent = t('tab_rules');
   document.getElementById('rtab-example').textContent = t('tab_example');
   document.querySelector('[data-i18n="rules_title"]').textContent = t('rules_title');
 
-  // Kurallar içeriği
-  const rulesData = RULES_CONTENT[lang];
+  const rulesData = RULES_CONTENT['en'];
   let html = '';
   rulesData.sections.forEach(sec => {
     html += `<div class="rules-section"><h3>${sec.title}</h3><ul>`;
@@ -2142,7 +2106,7 @@ function switchPanelTab(player) {
   // Label
   const label = document.getElementById('panel-player-label');
   const isCurrent = player === GameState.currentPlayer;
-  label.textContent = isCurrent ? `Seçim: Oyuncu ${player}` : `📋 Oyuncu ${player} — İnceleme`;
+  label.textContent = isCurrent ? `Selection: ${t('player'+player)}` : `📋 ${t('player'+player)} — View`;
   label.className = `panel-player-label p${player}`;
   // Listeyi yeniden oluştur
   panelBuilt = false; // force rebuild
@@ -2181,7 +2145,7 @@ function buildPiecePanel(player) {
     const info = document.createElement('div');
     info.className = 'piece-info';
     const usedLabel = used ? ' <span style="color:var(--text-muted);font-size:9px;">kullanıldı</span>' : '';
-    info.innerHTML = `<div class="piece-name">${piece.name}${usedLabel}</div><div class="piece-units">${piece.units} birim</div>`;
+    info.innerHTML = `<div class="piece-name">${piece.name}${usedLabel}</div><div class="piece-units">${piece.units} units</div>`;
 
     const pts = document.createElement('div');
     pts.className = 'piece-pts';
@@ -2233,15 +2197,23 @@ function togglePanelPin() {
 function openPiecePanel() {
   panelOpenCount++;
   const p = GameState.currentPlayer;
+  const myTurnNow = isMyTurn();
+  // Panel her zaman açılır — sadece görüntüleme modu değişir
   panelViewingPlayer = p;
   document.getElementById('tab-p1').classList.toggle('active', p===1);
   document.getElementById('tab-p2').classList.toggle('active', p===2);
   const label = document.getElementById('panel-player-label');
-  label.textContent = `Seçim: Oyuncu ${p}`;
+  label.textContent = `${t('panel_selection')} ${t('player'+p)}`;
   label.className = `panel-player-label p${p}`;
   panelBuilt = false;
   buildPiecePanel(p);
   document.getElementById('piece-panel').classList.add('open');
+
+  // Sıra karşıdayken buton adı ve phase değişmez
+  if (gameMode !== 'offline' && !myTurnNow) {
+    document.getElementById('phase-btn').textContent = t('btn_view_pieces');
+    GameState.phase = 'inspect'; // place moduna geçme
+  }
 }
 
 function closePiecePanel() {
@@ -2326,8 +2298,8 @@ document.addEventListener('keydown', (e) => {
   if (k==='escape') {
     deselectPiece(); removeGhost();
     GameState.phase = 'inspect';
-    document.getElementById('phase-btn').textContent = 'Taş Seç →';
-    document.getElementById('game-phase').textContent = 'HAZIRLIK';
+    document.getElementById('phase-btn').textContent = t('btn_select');
+    document.getElementById('game-phase').textContent = t('phase_inspect');
   }
 });
 
@@ -2708,7 +2680,7 @@ function finalizePlacement(targets,animMeshes,player,pieceIndex){
   document.getElementById('val-p1').textContent=GameState.scores[0];
   document.getElementById('val-p2').textContent=GameState.scores[1];
   const rem=10-GameState.usedPieces[player-1].length;
-  document.getElementById(`pieces-p${player}`).textContent=`${rem} taş`;
+  document.getElementById(`pieces-p${player}`).textContent=t('pieces', rem);
   GameState.currentPlayer=player===1?2:1;
   GameState.selectedPieceIndex=-1;GameState.phase='inspect';GameState.round++;
   // Notasyon: bu hamleyi kaydet
@@ -2726,23 +2698,24 @@ function finalizePlacement(targets,animMeshes,player,pieceIndex){
   }); } catch(e){}
   document.getElementById('turn-round').textContent=GameState.round;
   const np=GameState.currentPlayer;
-  const n=document.getElementById('turn-name');n.textContent=`Oyuncu ${np}`;n.className=`turn-name p${np}`;
+  const npName = np === 1 ? p1Name : p2Name;
+  const n=document.getElementById('turn-name');
+  n.textContent = npName;
+  n.className=`turn-name p${np}`;
   document.getElementById('score-p1').classList.toggle('active',np===1);
   document.getElementById('score-p2').classList.toggle('active',np===2);
   document.getElementById('preview-label').classList.remove('visible');
   document.getElementById('rotation-hint').classList.remove('visible');
-  document.getElementById('phase-btn').textContent='Taş Seç →';
-  document.getElementById('game-phase').textContent='HAZIRLIK';
+  document.getElementById('phase-btn').textContent = t('btn_select');
+  document.getElementById('game-phase').textContent = t('phase_inspect');
   checkWinCondition();
-  // Son hamle vurgulama
   if (lastMoveHighlightEnabled) drawLastMoveHighlight();
-  // Pin açıksa paneli yeni oyuncuya güncelle
   if (panelPinned) {
     panelViewingPlayer = np;
     document.getElementById('tab-p1').classList.toggle('active', np===1);
     document.getElementById('tab-p2').classList.toggle('active', np===2);
     const label = document.getElementById('panel-player-label');
-    label.textContent = `Seçim: ${t('player'+np)}`;
+    label.textContent = `${t('panel_selection')} ${t('player'+np)}`;
     label.className = `panel-player-label p${np}`;
     buildPiecePanel(np);
   }
@@ -2797,26 +2770,18 @@ function showMoveScore(targets, player, basePoints, contactCount, contactBonus, 
   ptsEl.style.color = playerColor;
 
   // Açıklama metni
-  const isT = currentLang === 'tr';
+  const isT = false;
   let lines = [];
-  lines.push(isT
-    ? `${basePoints} birimlik taş yerleştirildi`
-    : `${basePoints}-unit piece placed`);
+  lines.push(`${basePoints}-unit piece placed`);
 
   if (contactCount > 0) {
-    lines.push(isT
-      ? `Rakibin ${contactCount} birimine değdi · +${contactCount}`
-      : `Touched ${contactCount} opponent unit${contactCount>1?'s':''} · +${contactCount}`);
+    lines.push(`Touched ${contactCount} opponent unit${contactCount>1?'s':''} · +${contactCount}`);
   }
   if (contactBonus > 0) {
-    lines.push(isT
-      ? `Yerleşim Bonusu · +${contactBonus}`
-      : `Placement Bonus · +${contactBonus}`);
+    lines.push(`Placement Bonus · +${contactBonus}`);
   }
   if (contBonus > 0) {
-    lines.push(isT
-      ? `Devamlılık Bonusu · +${contBonus}`
-      : `Continuity Bonus · +${contBonus}`);
+    lines.push(`Continuity Bonus · +${contBonus}`);
   }
 
   // Formül
@@ -2855,10 +2820,13 @@ function checkWinCondition() {
   }
   // Her iki oyuncu tüm taşlarını kullandı
   if (GameState.usedPieces[0].length === 10 && GameState.usedPieces[1].length === 10) {
-    showWinScreen(GameState.scores[0] > GameState.scores[1] ? 1 : 2, 'skor');
+    const winner = GameState.scores[0] > GameState.scores[1] ? 1 :
+                   GameState.scores[1] > GameState.scores[0] ? 2 : 0;
+    showWinScreen(winner, 'skor');
     return;
   }
-  // Mevcut oyuncunun yerleştirebileceği taşı kalmadı mı?
+  // Sırası yeni gelen oyuncunun oynayacak yeri var mı?
+  // Kontrol sıra geçtikten SONRA, yani yeni oyuncuya gelince yapılır
   checkNoMovesLeft();
 }
 
@@ -2918,10 +2886,7 @@ function showNoMovesToast(player) {
     z-index:40;box-shadow:0 4px 24px rgba(0,0,0,0.6);
     font-family:'Courier New',monospace;
   `;
-  const isTR = currentLang === 'tr';
-  const msg = isTR
-    ? `Oyuncu ${player} — Yerleştirilebilecek alan kalmadı`
-    : `Player ${player} — No valid moves remaining`;
+  const msg = `Player ${player} — No valid moves remaining`;
 
   bar.innerHTML = `
     <span style="font-size:12px;color:#a8ad94;letter-spacing:0.12em;">${msg}</span>
@@ -3227,13 +3192,13 @@ document.getElementById('phase-btn').addEventListener('click',()=>{
     openPiecePanel();
     GameState.phase='select';
     document.getElementById('phase-btn').textContent='Parça Seç';
-    document.getElementById('game-phase').textContent='TAŞ SEÇ';
+    document.getElementById('game-phase').textContent=t('phase_select');
   } else if(GameState.phase==='place'||GameState.phase==='select'){
     // İptal
     deselectPiece(); removeGhost(); closePiecePanel();
     GameState.phase='inspect';
-    document.getElementById('phase-btn').textContent='Taş Seç →';
-    document.getElementById('game-phase').textContent='HAZIRLIK';
+    document.getElementById('phase-btn').textContent=t('btn_select');
+    document.getElementById('game-phase').textContent=t('phase_inspect');
   }
 });
 
@@ -3286,7 +3251,7 @@ function setMobilePlaceMode(active) {
   document.getElementById('mob-place-mode').style.display = active ? 'block' : 'none';
   if (!active) {
     const btn = document.getElementById('mobile-place-btn');
-    if (btn) { btn.classList.remove('enabled'); btn.textContent = currentLang === 'tr' ? 'Yerleştir' : 'Place'; }
+    if (btn) { btn.classList.remove('enabled'); btn.textContent = 'Place'; }
   }
 }
 
@@ -3318,8 +3283,8 @@ function updateMobilePlaceBtn(valid) {
   if (!isMobile()) return;
   const btn = document.getElementById('mobile-place-btn');
   if (!btn) return;
-  if (valid) { btn.classList.add('enabled'); btn.textContent = currentLang === 'tr' ? 'Yerleştir ✓' : 'Place ✓'; }
-  else { btn.classList.remove('enabled'); btn.textContent = currentLang === 'tr' ? 'Yerleştir' : 'Place'; }
+  if (valid) { btn.classList.add('enabled'); btn.textContent = 'Place ✓'; }
+  else { btn.classList.remove('enabled'); btn.textContent = 'Place'; }
 }
 
 function updateMobileGhost(clientX, clientY) {
@@ -3761,7 +3726,7 @@ window.addEventListener('beforeunload', () => {
     padding:28px 32px;text-align:center;max-width:280px;
     box-shadow:0 0 40px rgba(0,0,0,0.8);
   ">
-    <div style="font-size:13px;letter-spacing:0.2em;color:#a8ad94;text-transform:uppercase;margin-bottom:10px;">Yerleştir?</div>
+    <div style="font-size:13px;letter-spacing:0.2em;color:#a8ad94;text-transform:uppercase;margin-bottom:10px;">Place here?</div>
     <div style="font-size:16px;font-weight:700;color:#f0f2e6;margin-bottom:22px;">Taşı bu konuma koy</div>
     <div style="display:flex;gap:12px;justify-content:center;">
       <button onclick="cancelPlacement()" style="
@@ -3970,7 +3935,7 @@ window.addEventListener('beforeunload', () => {
           <div class="mobile-turn-label" data-i18n="turn_label">Sıra</div>
           <div class="mobile-turn-name p1" id="mob-turn-name">Oyuncu 1</div>
         </div>
-        <button id="mobile-phase-btn" onclick="mobileOpenPanel()">Taş Seç →</button>
+        <button id="mobile-phase-btn" onclick="mobileOpenPanel()">Select Piece →</button>
       </div>
       <!-- Son hamle + ipucu satırı -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px;">
@@ -3980,7 +3945,7 @@ window.addEventListener('beforeunload', () => {
             style="width:13px;height:13px;accent-color:var(--accent);">
           <span style="font-size:10px;color:var(--text-muted);letter-spacing:0.08em;" data-i18n="highlight_last">Son hamleyi vurgula</span>
         </label>
-        <span style="font-size:10px;color:var(--text-muted);letter-spacing:0.08em;">1 parmak döndür · 2 parmak zoom</span>
+        <span style="font-size:10px;color:var(--text-muted);letter-spacing:0.08em;">1 finger rotate · 2 finger zoom</span>
       </div>
     </div>
 
@@ -4015,14 +3980,14 @@ window.addEventListener('beforeunload', () => {
       <!-- Alt satır: Yerleştir + Vazgeç -->
       <div style="display:flex;gap:8px;">
         <button id="mobile-place-btn" class="visible" style="flex:3;" ontouchstart="mobilePlacePiece()">
-          Yerleştir
+          Place
         </button>
         <button id="mobile-cancel-btn" style="display:block;flex:1;" ontouchstart="mobileCancelPlace()">✕</button>
       </div>
 
       <!-- İpucu -->
       <div style="font-size:10px;color:var(--text-muted);text-align:center;margin-top:6px;letter-spacing:0.08em;">
-        1 parmak kaydır · 2 parmak gövde döndür · Yeşil = hazır
+        1 finger slide · 2 finger rotate · green = ready
       </div>
 
     </div>
