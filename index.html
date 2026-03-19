@@ -1611,8 +1611,8 @@ const P2_COLORS = [
 
 // ─── SCENE SETUP ─────────────────────────────────────────────────────────────
 const container = document.getElementById('canvas-container');
-const W = () => container.clientWidth;
-const H = () => container.clientHeight;
+const W = () => container.clientWidth || window.innerWidth;
+const H = () => container.clientHeight || window.innerHeight;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
