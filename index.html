@@ -2253,8 +2253,8 @@ let previewRotation = { x:0, y:0, z:0 };
 function selectPiece(index, player) {
   // Sadece mevcut oyuncunun taşı seçilebilir
   if (player !== GameState.currentPlayer) return;
-  // Online modda sıra kontrolü — sadece kendi taşını seçebilirsin
-  if (gameMode !== 'offline' && player !== localPlayer) return;
+  // Online modda: sadece kendi taşını, sadece kendi sırandayken seçebilirsin
+  if (gameMode !== 'offline' && (!isMyTurn() || player !== localPlayer)) return;
   // Kullanılmış taş seçilemez
   if (GameState.usedPieces[player-1].includes(index)) return;
   document.querySelectorAll('.piece-item').forEach(el => el.classList.remove('selected'));
