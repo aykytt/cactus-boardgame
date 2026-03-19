@@ -2186,7 +2186,7 @@ function togglePanelPin() {
   // Pin açıkken phase-btn "Parça Seç"e döner
   const phaseBtn = document.getElementById('phase-btn');
   if (panelPinned) {
-    phaseBtn.textContent = currentLang === 'tr' ? 'Parça Seç' : 'Select Piece';
+    phaseBtn.textContent = t('btn_select');
     GameState.phase = 'select';
   } else {
     phaseBtn.textContent = t('btn_select');
@@ -2934,19 +2934,9 @@ function endGameNow() {
   if (btn) btn.style.display = 'none';
   GameState.inspectMode = false;
 
-  // Elde kalan taşların puanını düş
-  let scores = [...GameState.scores];
-  for (let p = 0; p < 2; p++) {
-    const remaining = PIECE_DEFS.filter((_, i) => !GameState.usedPieces[p].includes(i));
-    const penalty = remaining.reduce((sum, piece) => sum + piece.units, 0);
-    scores[p] = Math.max(0, scores[p] - penalty);
-  }
-  GameState.scores = scores;
-  document.getElementById('val-p1').textContent = scores[0];
-  document.getElementById('val-p2').textContent = scores[1];
-  document.getElementById('final-p1').textContent = scores[0];
-  document.getElementById('final-p2').textContent = scores[1];
-  const winner = scores[0] > scores[1] ? 1 : scores[1] > scores[0] ? 2 : 0;
+  // Kazananı ham skorlara göre belirle — ceza showWinScreen'de uygulanacak
+  const s = GameState.scores;
+  const winner = s[0] > s[1] ? 1 : s[1] > s[0] ? 2 : 0;
   showWinScreen(winner, 'kaktus');
 }
 
@@ -3141,46 +3131,109 @@ function showBonusToast(msg){
   clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('visible'),2400);
 }
 
+// Ceza hesabı — elde kalan her taşın birim sayısı kadar düşülür
+function calculatePenalties() {
+  const penalties = [0, 0];
+  for (let p = 0; p < 2; p++) {
+    const remaining = PIECE_DEFS.filter((_, i) => !GameState.usedPieces[p].includes(i));
+    penalties[p] = remaining.reduce((sum, piece) => sum + piece.units, 0);
+  }
+  return penalties;
+}
+
 function showWinScreen(player, type) {
-  const isTR = currentLang === 'tr';
+  // Ceza hesapla
+  const penalties = calculatePenalties();
+  const rawScores = [...GameState.scores];
+  const finalScores = [
+    Math.max(0, rawScores[0] - penalties[0]),
+    Math.max(0, rawScores[1] - penalties[1]),
+  ];
+
+  // Skorları güncelle
+  GameState.scores = finalScores;
+  document.getElementById('val-p1').textContent = finalScores[0];
+  document.getElementById('val-p2').textContent = finalScores[1];
+
   const types = {
-    kilit: isTR ? '🔒 Kilit Oyun!' : '🔒 Lock Win!',
-    skor:  isTR ? '🏆 Skor Oyun!'  : '🏆 Score Win!',
-    kaktus:isTR ? '🌵 Kaktüs Oyun!': '🌵 Cactus Win!',
+    kilit: '🔒 Lock Win!',
+    skor:  '🏆 Score Win!',
+    kaktus:'🌵 Cactus Win!',
   };
   document.getElementById('win-type').textContent = types[type] || '';
+
   const wp = document.getElementById('win-player');
-  if (player === 0) {
-    wp.textContent = isTR ? 'Berabere!' : 'Draw!';
+  // Kazananı ceza sonrası belirle
+  const winner = finalScores[0] > finalScores[1] ? 1 :
+                 finalScores[1] > finalScores[0] ? 2 : 0;
+  if (winner === 0) {
+    wp.textContent = 'Draw!';
     wp.style.color = 'var(--accent)';
   } else {
-    wp.textContent = isTR ? `Oyuncu ${player} Kazandı!` : `Player ${player} Wins!`;
-    wp.className = `win-player p${player}`;
+    wp.textContent = `Player ${winner} Wins!`;
+    wp.className = `win-player p${winner}`;
   }
-  document.getElementById('final-p1').textContent = GameState.scores[0];
-  document.getElementById('final-p2').textContent = GameState.scores[1];
-  // İncele ve Yeni Oyun buton etiketleri
+
+  document.getElementById('final-p1').textContent = finalScores[0];
+  document.getElementById('final-p2').textContent = finalScores[1];
+
+  // Ceza breakdown göster
+  const hasPenalty = penalties[0] > 0 || penalties[1] > 0;
+  const breakdown = document.getElementById('penalty-breakdown');
+  const lines = document.getElementById('penalty-lines');
+  if (breakdown && lines) {
+    if (hasPenalty) {
+      breakdown.style.display = 'block';
+      let html = '';
+      // Oyuncular için satır
+      const p1Name_disp = p1Name || 'Player 1';
+      const p2Name_disp = p2Name || 'Player 2';
+      html += `<div style="color:#c8c9b8;">${p1Name_disp}: ${rawScores[0]} pts`;
+      if (penalties[0] > 0) html += ` <span style="color:#ff6b4a;">− ${penalties[0]} penalty</span> = <span style="color:#c8f060;">${finalScores[0]}</span>`;
+      html += `</div>`;
+      html += `<div style="color:#c8c9b8;">${p2Name_disp}: ${rawScores[1]} pts`;
+      if (penalties[1] > 0) html += ` <span style="color:#ff6b4a;">− ${penalties[1]} penalty</span> = <span style="color:#c8f060;">${finalScores[1]}</span>`;
+      html += `</div>`;
+      // Ceza nedenini açıkla
+      for (let p = 0; p < 2; p++) {
+        if (penalties[p] > 0) {
+          const rem = PIECE_DEFS.filter((_, i) => !GameState.usedPieces[p].includes(i));
+          const name = p === 0 ? p1Name_disp : p2Name_disp;
+          const pieceSummary = rem.map(pc => `${pc.units}u`).join(' + ');
+          html += `<div style="color:#6a6f58;font-size:10px;margin-top:2px;">${name} unused: ${pieceSummary} = −${penalties[p]}</div>`;
+        }
+      }
+      lines.innerHTML = html;
+    } else {
+      breakdown.style.display = 'none';
+    }
+  }
+
   const inspBtn = document.getElementById('win-inspect-btn');
   const replayBtn = document.getElementById('win-replay-btn');
-  if (inspBtn)  inspBtn.textContent  = isTR ? 'İncele' : 'Inspect';
-  if (replayBtn) replayBtn.textContent = isTR ? 'Yeni Oyun' : 'New Game';
-  // Göster
+  if (inspBtn)  inspBtn.textContent  = 'Inspect';
+  if (replayBtn) replayBtn.textContent = 'New Game';
+
   const ws = document.getElementById('win-screen');
   ws.classList.add('visible');
-  // Mixpanel: oyun bitti — tüm metrikler
+
+  // Mixpanel
   try {
     const sessionSec = Math.round((Date.now() - gameStartTime) / 1000);
     mixpanel.track('game_end', {
-      winner: player,
+      winner,
       win_type: type,
       total_moves: GameState.round,
-      score_p1: GameState.scores[0],
-      score_p2: GameState.scores[1],
+      score_p1_raw: rawScores[0],
+      score_p2_raw: rawScores[1],
+      score_p1_final: finalScores[0],
+      score_p2_final: finalScores[1],
+      penalty_p1: penalties[0],
+      penalty_p2: penalties[1],
       session_seconds: sessionSec,
       invalid_attempts: invalidAttempts,
       panel_opens: panelOpenCount,
       platform: isMobile() ? 'mobile' : 'desktop',
-      lang: currentLang,
       game_notation: gameNotation.join(' | '),
     });
   } catch(e){}
@@ -3191,7 +3244,7 @@ document.getElementById('phase-btn').addEventListener('click',()=>{
   if(GameState.phase==='inspect'){
     openPiecePanel();
     GameState.phase='select';
-    document.getElementById('phase-btn').textContent='Parça Seç';
+    document.getElementById('phase-btn').textContent=t('btn_select');
     document.getElementById('game-phase').textContent=t('phase_select');
   } else if(GameState.phase==='place'||GameState.phase==='select'){
     // İptal
@@ -3727,18 +3780,18 @@ window.addEventListener('beforeunload', () => {
     box-shadow:0 0 40px rgba(0,0,0,0.8);
   ">
     <div style="font-size:13px;letter-spacing:0.2em;color:#a8ad94;text-transform:uppercase;margin-bottom:10px;">Place here?</div>
-    <div style="font-size:16px;font-weight:700;color:#f0f2e6;margin-bottom:22px;">Taşı bu konuma koy</div>
+    <div style="font-size:16px;font-weight:700;color:#f0f2e6;margin-bottom:22px;">Place the piece at this position</div>
     <div style="display:flex;gap:12px;justify-content:center;">
       <button onclick="cancelPlacement()" style="
         background:rgba(255,255,255,0.06);border:1px solid #3a3f2a;
         color:#a8ad94;padding:10px 22px;border-radius:8px;cursor:pointer;
         font-family:monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;
-      ">İptal</button>
+      ">Cancel</button>
       <button onclick="confirmPlacement()" style="
         background:#c8f060;border:none;color:#0a0b09;
         padding:10px 22px;border-radius:8px;cursor:pointer;
         font-family:monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;
-      ">✓ Onayla</button>
+      ">✓ Confirm</button>
     </div>
   </div>
 </div>
@@ -3759,42 +3812,54 @@ window.addEventListener('beforeunload', () => {
 ">
   <div style="
     background:#131509;border:1px solid #3a3f2a;border-radius:16px;
-    padding:36px 44px;text-align:center;min-width:300px;
+    padding:36px 44px;text-align:center;min-width:320px;max-width:400px;
     box-shadow:0 0 60px rgba(0,0,0,0.9);
   ">
     <div id="win-type" style="font-size:26px;margin-bottom:10px;"></div>
-    <div id="win-player" style="font-size:22px;font-weight:900;letter-spacing:0.05em;margin-bottom:10px;"></div>
+    <div id="win-player" style="font-size:22px;font-weight:900;letter-spacing:0.05em;margin-bottom:16px;"></div>
+
+    <!-- Final skor -->
     <div style="
       background:rgba(255,255,255,0.04);border:1px solid #3a3f2a;border-radius:8px;
-      padding:12px 20px;margin-bottom:24px;
+      padding:14px 20px;margin-bottom:10px;
     ">
       <div style="display:flex;justify-content:space-between;gap:24px;">
         <div style="text-align:center;">
-          <div style="font-size:10px;letter-spacing:0.2em;color:var(--p1);font-weight:700;margin-bottom:4px;">OYUNCU 1</div>
-          <div id="final-p1" style="font-size:26px;font-weight:900;color:#f0f2e6;">0</div>
-          <div style="font-size:9px;color:#b8bda8;letter-spacing:0.1em;">puan</div>
+          <div style="font-size:10px;letter-spacing:0.2em;color:var(--p1);font-weight:700;margin-bottom:4px;">PLAYER 1</div>
+          <div id="final-p1" style="font-size:28px;font-weight:900;color:#f0f2e6;">0</div>
+          <div style="font-size:9px;color:#b8bda8;letter-spacing:0.1em;">pts</div>
         </div>
         <div style="width:1px;background:#3a3f2a;"></div>
         <div style="text-align:center;">
-          <div style="font-size:10px;letter-spacing:0.2em;color:var(--p2);font-weight:700;margin-bottom:4px;">OYUNCU 2</div>
-          <div id="final-p2" style="font-size:26px;font-weight:900;color:#f0f2e6;">0</div>
-          <div style="font-size:9px;color:#b8bda8;letter-spacing:0.1em;">puan</div>
+          <div style="font-size:10px;letter-spacing:0.2em;color:var(--p2);font-weight:700;margin-bottom:4px;">PLAYER 2</div>
+          <div id="final-p2" style="font-size:28px;font-weight:900;color:#f0f2e6;">0</div>
+          <div style="font-size:9px;color:#b8bda8;letter-spacing:0.1em;">pts</div>
         </div>
       </div>
     </div>
+
+    <!-- Ceza breakdown — JS tarafından doldurulur, yoksa gizli -->
+    <div id="penalty-breakdown" style="display:none;
+      background:rgba(255,255,255,0.02);border:1px solid #2a2e1a;border-radius:6px;
+      padding:10px 14px;margin-bottom:18px;text-align:left;
+    ">
+      <div style="font-size:9px;letter-spacing:0.18em;color:#6a6f58;text-transform:uppercase;margin-bottom:8px;">Score breakdown</div>
+      <div id="penalty-lines" style="font-family:'Courier New',monospace;font-size:11px;color:#8a8f78;line-height:1.8;"></div>
+    </div>
+
     <div style="display:flex;gap:10px;justify-content:center;">
       <button onclick="enterInspectFromWin()" style="
         background:rgba(255,255,255,0.07);border:1px solid #3a3f2a;
         color:#f0f2e6;padding:11px 22px;border-radius:8px;cursor:pointer;
         font-family:'Courier New',monospace;font-size:12px;
         font-weight:700;letter-spacing:0.15em;transition:all 0.2s;
-      " id="win-inspect-btn">İncele</button>
+      " id="win-inspect-btn">Inspect</button>
       <button onclick="replayGame()" style="
         background:#c8f060;border:none;color:#0a0b09;
         padding:11px 22px;border-radius:8px;cursor:pointer;
         font-family:'Courier New',monospace;font-size:12px;
         font-weight:700;letter-spacing:0.15em;
-      " id="win-replay-btn">Yeni Oyun</button>
+      " id="win-replay-btn">New Game</button>
     </div>
   </div>
 </div>
