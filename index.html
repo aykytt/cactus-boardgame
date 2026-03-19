@@ -1472,13 +1472,12 @@ function renderRulesContent() {
   });
   document.getElementById('rules-text').innerHTML = html;
 
-  // Örnek oyun içeriği
-  const exData = EXAMPLE_CONTENT[lang];
+  const exData = EXAMPLE_CONTENT['en'];
   let exHtml = '';
   exData.forEach(step => {
     exHtml += `<div class="example-step"><div class="step-num">${step.num}</div><p>${step.text}</p></div>`;
   });
-  exHtml += `<div class="coming-soon">🎬 ${lang === 'tr' ? 'Animasyonlu örnek oyun yakında eklenecek.' : 'Animated example coming soon.'}</div>`;
+  exHtml += `<div class="coming-soon">🎬 Animated example coming soon.</div>`;
   document.getElementById('example-text').innerHTML = exHtml;
 }
 
@@ -2060,11 +2059,13 @@ function buildPiecePanel(player) {
     if (isCurrent) {
       item.addEventListener('click', () => {
         if (GameState.usedPieces[player-1].includes(i)) return;
+        // Online modda sıra kontrolü — sıra karşıdaysa hiçbir şey yapma
+        if (gameMode !== 'offline' && !isMyTurn()) return;
         selectPiece(i, player);
         closePiecePanel();
         GameState.phase = 'place';
         document.getElementById('phase-btn').textContent = t('btn_cancel');
-        document.getElementById('game-phase').textContent = 'yerleştir';
+        document.getElementById('game-phase').textContent = 'place';
       });
     }
 
@@ -2769,45 +2770,34 @@ function canPlayerMove(player) {
 function checkNoMovesLeft() {
   const current = GameState.currentPlayer;
   if (!canPlayerMove(current)) {
-    GameState.inspectMode = true;
-    showNoMovesToast(current);
+    endGameNow();
   }
 }
 
-function showNoMovesToast(player) {
-  const old = document.getElementById('no-moves-bar');
-  if (old) old.remove();
+function endGameNow() {
+  const bar = document.getElementById('no-moves-bar');
+  if (bar) bar.remove();
+  const btn = document.getElementById('inspect-end-btn');
+  if (btn) btn.style.display = 'none';
+  GameState.inspectMode = false;
 
-  const bar = document.createElement('div');
-  bar.id = 'no-moves-bar';
-  bar.style.cssText = `
-    position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
-    background:#131509;border:1px solid #c8f060;border-radius:10px;
-    padding:14px 20px;display:flex;align-items:center;gap:14px;
-    z-index:40;box-shadow:0 4px 24px rgba(0,0,0,0.6);
-    font-family:'Courier New',monospace;
-  `;
-  const msg = `Player ${player} — No valid moves remaining`;
+  const s = GameState.scores;
+  const winner = s[0] > s[1] ? 1 : s[1] > s[0] ? 2 : 0;
 
-  bar.innerHTML = `
-    <span style="font-size:12px;color:#a8ad94;letter-spacing:0.12em;">${msg}</span>
-    <button onclick="endGameNow()" style="
-      background:#c8f060;color:#0a0b09;border:none;
-      padding:8px 16px;border-radius:6px;cursor:pointer;
-      font-family:'Courier New',monospace;font-size:12px;
-      font-weight:700;letter-spacing:0.15em;white-space:nowrap;
-    ">End Game</button>
-    <button onclick="enterInspectMode()" style="
-      background:transparent;color:#a8ad94;border:1px solid #3a3f2a;
-      padding:8px 12px;border-radius:6px;cursor:pointer;
-      font-family:'Courier New',monospace;font-size:12px;
-      font-weight:700;letter-spacing:0.1em;white-space:nowrap;
-    ">Inspect</button>
-  `;
-  document.body.appendChild(bar);
+  // Online modda: game over event'ini Firebase'e yaz — her iki taraf görsün
+  if (gameMode !== 'offline' && roomRef) {
+    roomRef.child('gameOver').set({
+      winner,
+      type: 'kaktus',
+      scores: [s[0], s[1]],
+      usedPieces: [GameState.usedPieces[0], GameState.usedPieces[1]],
+      ts: Date.now(),
+    });
+  }
+
+  showWinScreen(winner, 'kaktus');
 }
 
-// Kaktüs bar'dan incelemeye gir (oyun henüz bitmedi, endGameNow gerekecek)
 function replayGame() {
   replayCount++;
   try { mixpanel.track('game_replay', { replay_number: replayCount, platform: isMobile()?'mobile':'desktop' }); } catch(e){}
@@ -2834,12 +2824,6 @@ function endGameNow() {
   const btn = document.getElementById('inspect-end-btn');
   if (btn) btn.style.display = 'none';
   GameState.inspectMode = false;
-
-  // Kazananı ham skorlara göre belirle — ceza showWinScreen'de uygulanacak
-  const s = GameState.scores;
-  const winner = s[0] > s[1] ? 1 : s[1] > s[0] ? 2 : 0;
-  showWinScreen(winner, 'kaktus');
-}
 
 // Win ekranındaki "İncele" butonundan inceleme moduna gir
 function enterInspectFromWin() {
@@ -3328,8 +3312,8 @@ const LOBBY_I18N = {
     roomWaiting: 'Arkadaş bekleniyor...', roomCancel: 'İptal',
     joinTitle: 'Kod Gir', joinDesc: 'Arkadaşından aldığın 4 harfli kodu gir',
     joinSubmit: 'Katıl', joinCancel: 'İptal',
-    errFour: '4 harfli kod gerekli', errNoConn: 'Bağlantı yok',
-    errNotFound: 'Kod bulunamadı', errStarted: 'Oyun zaten başladı', errExpired: 'Kodun süresi dolmuş',
+    errFour: '4-letter code required', errNoConn: 'No connection',
+    errNotFound: 'Code not found', errStarted: 'Game already started', errExpired: 'Code expired',
   }
 };
 
@@ -3435,14 +3419,14 @@ function lobbyShowJoin() { showScreen('join-screen'); setTimeout(()=>document.ge
 function joinInputChanged(el) { el.value=el.value.toUpperCase().replace(/[^A-Z]/g,''); document.getElementById('join-error').textContent=''; }
 async function joinSubmit() {
   const code = document.getElementById('join-code-input').value.trim().toUpperCase();
-  if(code.length!==4){ document.getElementById('join-error').textContent='4 harfli kod gerekli'; return; }
-  if(!window.db){ document.getElementById('join-error').textContent='Bağlantı yok'; return; }
+  if(code.length!==4){ document.getElementById('join-error').textContent='4-letter code required'; return; }
+  if(!window.db){ document.getElementById('join-error').textContent='No connection'; return; }
   const snap = await window.db.ref('rooms/'+code).get();
-  if(!snap.exists()){ document.getElementById('join-error').textContent='Kod bulunamadı'; return; }
+  if(!snap.exists()){ document.getElementById('join-error').textContent='Code not found'; return; }
   const room = snap.val();
-  if(room.status!=='waiting'){ document.getElementById('join-error').textContent='Oyun zaten başladı'; return; }
-  if(Date.now()>room.expires){ document.getElementById('join-error').textContent='Kodun süresi dolmuş'; return; }
-  const name=getLobbyName(); p2Name=name||'Oyuncu 2'; p1Name=room.host_name||'Oyuncu 1';
+  if(room.status!=='waiting'){ document.getElementById('join-error').textContent='Game already started'; return; }
+  if(Date.now()>room.expires){ document.getElementById('join-error').textContent='Code expired'; return; }
+  const name=getLobbyName(); p2Name=name||'Player 2'; p1Name=room.host_name||'Player 1';
   localPlayer=2; gameMode='online-guest'; roomId=code; roomRef=window.db.ref('rooms/'+code);
   await roomRef.child('guest_name').set(p2Name);
   await roomRef.child('status').set('playing');
@@ -3601,21 +3585,27 @@ function setupOnlineSync() {
   if (!roomRef) return;
   updateOnlineTurnUI();
 
+  // Hamle senkronizasyonu
   roomRef.child('state').on('value', snap => {
     const state = snap.val();
     if (!state || !state.lastMove) return;
     const lastMove = state.lastMove;
     if (lastMove.player === localPlayer) return;
-
-    // Rakibin hamlesini uygula
     applyRemoteMove(lastMove);
-
-    // Banner: "X played — your turn" göster, sonra kaybolur
     const oppName = localPlayer === 1 ? p2Name : p1Name;
     setTimeout(() => {
       showPlayedBanner(oppName);
       showYourTurnToast();
     }, 500);
+  });
+
+  // Oyun sonu — kaktüs her iki tarafta eş zamanlı göster
+  roomRef.child('gameOver').on('value', snap => {
+    const data = snap.val();
+    if (!data) return;
+    if (document.getElementById('win-screen').classList.contains('visible')) return;
+    if (data.usedPieces) GameState.usedPieces = data.usedPieces;
+    showWinScreen(data.winner, data.type || 'kaktus');
   });
 }
 
