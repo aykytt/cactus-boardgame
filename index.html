@@ -828,27 +828,31 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
     100% { transform: scale(1); opacity: 1; }
   }
 
-  /* ── ONLINE WAITING OVERLAY ── */
+  /* ── ONLINE TURN BANNER ── */
   #online-waiting {
     display: none;
     position: absolute;
-    inset: 0;
-    background: rgba(10,11,9,0.82);
-    backdrop-filter: blur(3px);
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10,11,9,0.88);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 10px 20px;
     z-index: 60;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
-    gap: 14px;
-    pointer-events: all;
+    gap: 10px;
+    pointer-events: none;
+    white-space: nowrap;
   }
   #online-waiting.visible { display: flex; }
 
   .ow-dot-row {
-    display: flex; gap: 8px;
+    display: flex; gap: 5px;
   }
   .ow-dot {
-    width: 8px; height: 8px;
+    width: 5px; height: 5px;
     background: var(--accent);
     border-radius: 50%;
     animation: owPulse 1.2s ease-in-out infinite;
@@ -861,9 +865,8 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
   }
   .ow-text {
     font-family: 'Courier New', monospace;
-    font-size: 12px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.12em;
     color: var(--text-muted);
   }
 
@@ -880,7 +883,6 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.2em;
-    text-transform: uppercase;
     padding: 10px 22px;
     border-radius: 100px;
     z-index: 70;
@@ -3485,7 +3487,7 @@ async function lobbyCreateRoom() {
     roomRef = window.db.ref('rooms/'+code);
     await roomRef.set({
       host_name: p1Name, guest_name: null, state: null,
-      created: Date.now(), expires: Date.now()+600000, status: 'waiting'
+      created: Date.now(), expires: Date.now()+7200000, status: 'waiting'
     });
     document.getElementById('room-code-text').textContent = code;
     showScreen('room-screen');
@@ -3605,14 +3607,14 @@ function isMyTurn() {
   return GameState.currentPlayer === localPlayer;
 }
 
-function showWaitingOverlay(opponentName) {
+function showWaitingBanner(opponentName) {
   const el = document.getElementById('online-waiting');
   const txt = document.getElementById('ow-text');
-  if (txt) txt.textContent = (opponentName || 'Opponent') + ' is thinking...';
+  if (txt) txt.textContent = (opponentName || 'opponent') + ' is thinking...';
   if (el) el.classList.add('visible');
 }
 
-function hideWaitingOverlay() {
+function hideWaitingBanner() {
   const el = document.getElementById('online-waiting');
   if (el) el.classList.remove('visible');
 }
@@ -3620,65 +3622,77 @@ function hideWaitingOverlay() {
 function showYourTurnToast() {
   const toast = document.getElementById('your-turn-toast');
   if (!toast) return;
-  const lang = typeof lobbyLang !== 'undefined' ? lobbyLang : 'en';
-  toast.textContent = lang === 'tr' ? 'SENİN SIRAN' : 'YOUR TURN';
+  toast.textContent = lobbyLang === 'tr' ? 'senin sıran' : 'your turn';
   toast.style.display = 'block';
   setTimeout(() => { toast.style.display = 'none'; }, 2200);
 }
 
 function updateOnlineTurnUI() {
   if (gameMode === 'offline') return;
-  const myTurn = isMyTurn();
-  if (myTurn) {
-    hideWaitingOverlay();
+  if (isMyTurn()) {
+    hideWaitingBanner();
   } else {
     const oppName = localPlayer === 1 ? p2Name : p1Name;
-    showWaitingOverlay(oppName);
+    showWaitingBanner(oppName);
   }
+}
+
+// Rakibin hamlesini sahneye uygula
+function applyRemoteMove(lastMove) {
+  if (!lastMove) return;
+  const { pieceIndex, targets, player } = lastMove;
+  if (player === localPlayer) return; // kendi hamlemiz — atla
+
+  // Taşı sahneye ekle (skipSync=true)
+  const rotated = targets.map(t => ({ x: t.gx, y: t.gy, z: t.gz }));
+  placePiece(rotated, { x: 0, y: 0, z: 0 }, player, pieceIndex, true);
 }
 
 function setupOnlineSync() {
   if (!roomRef) return;
 
-  // İlk durum: kim başlıyor?
-  // Host = P1 = ilk hamle hakkı
+  // Başlangıç UI — P1 (host) her zaman ilk oynar
   updateOnlineTurnUI();
 
-  // Her iki taraf da state'i dinliyor
+  // Her iki taraf state'i dinliyor
   roomRef.child('state').on('value', snap => {
     const state = snap.val();
     if (!state || !state.lastMove) return;
 
-    const { pieceIndex, targets, player } = state.lastMove;
+    const lastMove = state.lastMove;
 
     // Kendi hamlemizi tekrar uygulama
-    if (player === localPlayer) return;
+    if (lastMove.player === localPlayer) return;
 
-    // Rakibin hamlesini sahneye ekle
-    const rotated = targets.map(t => ({x:t.gx, y:t.gy, z:t.gz}));
-    placePiece(rotated, {x:0,y:0,z:0}, player, pieceIndex, true);
+    // Rakibin hamlesini uygula
+    applyRemoteMove(lastMove);
 
-    // Sıra bize geçti
+    // Kısa gecikme sonra sıra bize geçti
     setTimeout(() => {
       updateOnlineTurnUI();
       showYourTurnToast();
-    }, 500);
+    }, 600);
   });
 }
 
-// finalizePlacement wrapper — online modda state gönder, sıra kontrolü
+// finalizePlacement wrapper — online modda Firebase'e yaz
 const _origFinalizeFB = finalizePlacement;
 finalizePlacement = function(targets, animMeshes, player, pieceIndex, skipSync) {
   _origFinalizeFB(targets, animMeshes, player, pieceIndex);
 
+  // Online modda, kendi hamlemizi gönder
   if (gameMode !== 'offline' && roomRef && !skipSync && player === localPlayer) {
-    // State Firebase'e yaz
     roomRef.child('state').set({
       lastPlayer: player,
-      lastMove: { pieceIndex, targets, player },
+      lastMove: {
+        pieceIndex,
+        targets: targets.map(t => ({ gx: t.gx, gy: t.gy, gz: t.gz })),
+        player,
+      },
       round: GameState.round,
+      ts: Date.now(),
     });
-    // Sıra karşıya geçti — overlay göster
+    // Sıra karşıya geçti — banner göster
     updateOnlineTurnUI();
   }
 };
