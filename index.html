@@ -736,22 +736,23 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
   }
 
   .join-code-input {
-    flex: 1;
     background: rgba(255,255,255,0.06);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 10px;
     color: var(--accent);
     font-family: 'Courier New', monospace;
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 900;
-    letter-spacing: 0.3em;
-    padding: 14px 16px;
+    letter-spacing: 0.4em;
+    padding: 14px 20px;
     outline: none;
     text-align: center;
     text-transform: uppercase;
-    width: 100%;
+    width: 200px;
+    max-width: 90vw;
+    display: block;
   }
-  .join-code-input:focus { border-color: var(--accent); }
+  .join-code-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(200,240,96,0.15); }
 
   .join-error {
     font-family: 'Courier New', monospace;
@@ -3417,16 +3418,45 @@ function lobbyOffline() {
   gameMode = 'offline'; hideLobby(); startGameEngine();
 }
 async function lobbyCreateRoom() {
-  if (!window.db) { alert('Bağlantı yok — tek ekranda devam'); lobbyOffline(); return; }
-  const name = getLobbyName();
-  p1Name = name || 'Oyuncu 1'; localPlayer = 1; gameMode = 'online-host';
-  let code, snap;
-  do { code = generateRoomCode(); snap = await window.db.ref('rooms/'+code).get(); } while(snap.exists());
-  roomId = code; roomRef = window.db.ref('rooms/'+code);
-  await roomRef.set({ host_name:p1Name, guest_name:null, state:null, created:Date.now(), expires:Date.now()+600000, status:'waiting' });
-  document.getElementById('room-code-text').textContent = code;
-  showScreen('room-screen');
-  roomRef.child('guest_name').on('value', s => { if(s.val()){ p2Name=s.val(); roomRef.child('guest_name').off('value'); startCountdown(); } });
+  const btn = document.getElementById('btn-create');
+  const origText = document.getElementById('lbl-create').textContent;
+  document.getElementById('lbl-create').textContent = '...';
+  btn.disabled = true;
+
+  try {
+    if (!window.db) throw new Error('no-db');
+    const name = getLobbyName();
+    p1Name = name || 'Player 1'; localPlayer = 1; gameMode = 'online-host';
+
+    let code, snap, attempts = 0;
+    do {
+      code = generateRoomCode();
+      snap = await window.db.ref('rooms/'+code).get();
+      attempts++;
+      if (attempts > 20) throw new Error('too-many-attempts');
+    } while(snap.exists());
+
+    roomId = code;
+    roomRef = window.db.ref('rooms/'+code);
+    await roomRef.set({
+      host_name: p1Name, guest_name: null, state: null,
+      created: Date.now(), expires: Date.now()+600000, status: 'waiting'
+    });
+    document.getElementById('room-code-text').textContent = code;
+    showScreen('room-screen');
+    roomRef.child('guest_name').on('value', s => {
+      if(s.val()){ p2Name=s.val(); roomRef.child('guest_name').off('value'); startCountdown(); }
+    });
+  } catch(e) {
+    console.error('Create room error:', e);
+    document.getElementById('lbl-create').textContent = origText;
+    btn.disabled = false;
+    // Firebase bağlantı hatası — offline'a düş
+    if (e.message === 'no-db' || e.message?.includes('network') || e.message?.includes('fetch')) {
+      p1Name = getLobbyName() || 'Player 1';
+      gameMode = 'offline'; hideLobby(); startGameEngine();
+    }
+  }
 }
 function lobbyShowJoin() { showScreen('join-screen'); setTimeout(()=>document.getElementById('join-code-input').focus(),100); }
 function joinInputChanged(el) { el.value=el.value.toUpperCase().replace(/[^A-Z]/g,''); document.getElementById('join-error').textContent=''; }
