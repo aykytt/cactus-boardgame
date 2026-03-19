@@ -1303,7 +1303,7 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
-// ─── DİL SİSTEMİ ─────────────────────────────────────────────────────────────
+
 let currentLang = 'en';
 
 const I18N = {
@@ -1483,8 +1483,8 @@ const GameState = {
 };
 
 // ─── PIECE DEFINITIONS ────────────────────────────────────────────────────────
-// Her parça: küp koordinatları dizisi [x, y, z]
-// Orijin (0,0,0) parçanın referans noktası
+
+
 
 const PIECE_DEFS = [
   { id:0, name:'2-unit Rod',      units:2, cubes:[[0,0,0],[1,0,0]] },
@@ -1499,33 +1499,33 @@ const PIECE_DEFS = [
   { id:9, name:'8-unit Wall',     units:8, cubes:[[0,0,0],[0,1,0],[0,2,0],[0,3,0],[1,0,0],[1,1,0],[1,2,0],[1,3,0]] },
 ];
 
-// ─── RENK SİSTEMİ ────────────────────────────────────────────────────────────
-// P1 (soğuk): sarı-yeşilden koyu yeşile — doygun, net yeşil skalası
+
+
 const P1_COLORS = [
-  0xd4f04a, // 2 birim - çok açık sarı-yeşil
-  0xb8dc28, // 3 birim - açık yeşil-sarı
-  0x8fc820, // 4 birim - orta-açık yeşil
+  0xd4f04a,
+  0xb8dc28,
+  0x8fc820,
   0x70b018, // 4 birim (kare)
-  0x529a10, // 5 birim - orta yeşil
+  0x529a10,
   0x3d8410, // 5 birim (merdiven)
-  0x2d6c0c, // 6 birim - koyu yeşil
+  0x2d6c0c,
   0x205808, // 6 birim (merdiven)
-  0x1a5206, // 7 birim - koyu ama görünür
-  0x163e04, // 8 birim - en koyu, görünür koyu yeşil
+  0x1a5206,
+  0x163e04,
 ];
 
-// P2 (sıcak): açık sarıdan koyu kırmızıya — poster'daki sıcak palet
+
 const P2_COLORS = [
-  0xffe838, // 2 birim - parlak sarı
-  0xffcc20, // 3 birim - sarı
+  0xffe838,
+  0xffcc20,
   0xffaa00, // 4 birim - amber
   0xff8c00, // 4 birim (kare) - koyu amber
   0xf06800, // 5 birim - turuncu
   0xe05000, // 5 birim (merdiven)
   0xcc3800, // 6 birim - koyu turuncu
   0xb82800, // 6 birim (merdiven)
-  0xa01800, // 7 birim - kırmızı-turuncu
-  0x8a1208, // 8 birim - koyu kırmızı, görünür
+  0xa01800,
+  0x8a1208,
 ];
 
 // ─── SCENE SETUP ─────────────────────────────────────────────────────────────
@@ -1550,7 +1550,7 @@ const camera = new THREE.PerspectiveCamera(42, W() / H(), 0.1, 200);
 camera.position.set(8, 10, 16);
 camera.lookAt(0, 0, 0);
 
-// ─── LIGHTING — yüksek kalite ────────────────────────────────────────────────
+
 const ambientLight = new THREE.AmbientLight(0x8899aa, 0.45);
 scene.add(ambientLight);
 
@@ -1575,15 +1575,15 @@ const rimLight = new THREE.DirectionalLight(0xffeebb, 0.35);
 rimLight.position.set(2, -6, -10);
 scene.add(rimLight);
 
-// Nokta ışık — küplere derinlik katar
+
 const pointLight = new THREE.PointLight(0xfff0cc, 0.6, 25);
 pointLight.position.set(3, 5, 8);
 scene.add(pointLight);
 
 // ─── BOARD GEOMETRY ──────────────────────────────────────────────────────────
-const UNIT = 1.0;       // küp boyutu
-const GAP  = 0.04;      // küpler arası boşluk
-const BEVEL = 0.06;     // köşe yumuşatma
+const UNIT = 1.0;
+const GAP  = 0.04;
+const BEVEL = 0.06;
 
 // Renkler
 const MAT_DARK_GREEN = new THREE.MeshStandardMaterial({
@@ -1597,7 +1597,7 @@ const MAT_LIGHT_GREEN = new THREE.MeshStandardMaterial({
   metalness: 0.02,
 });
 
-// Parça materyali - doygun renkler, net yüzey
+
 function getPieceMaterial(player, units) {
   const idx = units - 2;
   const colors = player === 1 ? P1_COLORS : P2_COLORS;
@@ -1610,12 +1610,12 @@ function getPieceMaterial(player, units) {
   });
 }
 
-// Chamfered (yumuşatılmış köşeli) küp geometrisi
+
 function createRoundedBoxGeometry(size, radius) {
-  // BoxGeometry + subdivision yaklaşımı yerine THREE.js r128'de
-  // basit bir chamfer simüle ediyoruz: küçük scale trick
+
+
   const geo = new THREE.BoxGeometry(size, size, size, 2, 2, 2);
-  // Köşeleri içeri çekiyoruz
+
   const pos = geo.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     let x = pos.getX(i);
@@ -1637,14 +1637,14 @@ const boardGroup = new THREE.Group();
 scene.add(boardGroup);
 
 // Grid: x: 0,1  y: 0..7  z: 0,1
-// Yükseklik 8, genişlik 2x2
+
 const boardCubes = [];
 
 function isBoardDark(x, y, z) {
-  return y <= 0 || y >= 7; // alt ve üst 1 kat (toplam 4 küp her katman 2x2=4 → 2 kat × 4 = 8 küp = koyu)
-  // Ancak kural: üstteki 4 birim + alttaki 4 birim koyu
-  // 2x2 grid → 1 kat = 4 küp → y=0,1 alt iki kat olabilir ama kural 4 birim
-  // Yani sadece y=0 (alt kat, 4 küp) ve y=7 (üst kat, 4 küp) koyu
+  return y <= 0 || y >= 7;
+
+
+
 }
 
 const cubeGeo = createRoundedBoxGeometry(UNIT - GAP * 2, BEVEL);
@@ -1735,7 +1735,7 @@ container.addEventListener('wheel', (e) => {
   orbit.targetDist = Math.max(orbit.minDist, Math.min(orbit.maxDist, orbit.targetDist));
 }, { passive: true });
 
-// Touch events — unified (orbit + pinch zoom; mobil ghost touchmove ayrıca)
+
 let lastTouchDist = 0;
 let lastTouchX = 0;
 let lastTouchY = 0;
@@ -1749,7 +1749,7 @@ container.addEventListener('touchstart', (e) => {
     lastTwoFingerCx = null; lastTwoFingerCy = null;
     lastTouchX = e.touches[0].clientX;
     lastTouchY = e.touches[0].clientY;
-    // Mobil: parça seçiliyse ghost güncelle
+
     if (typeof isMobile === 'function' && isMobile() &&
         GameState.selectedPieceIndex >= 0 && GameState.phase === 'place' && !mobileOrbitActive) {
       lastMobileTouchX = e.touches[0].clientX;
@@ -1775,7 +1775,7 @@ container.addEventListener('touchmove', (e) => {
     const dy = y - lastTouchY;
 
     if (isMobile() && GameState.selectedPieceIndex >= 0 && GameState.phase === 'place') {
-      // Taş seçili + 1 parmak = ghost kaydır
+
       lastMobileTouchX = x;
       lastMobileTouchY = y;
       if (typeof updateMobileGhost === 'function') updateMobileGhost(x, y);
@@ -1798,7 +1798,7 @@ container.addEventListener('touchmove', (e) => {
     orbit.targetDist = Math.max(orbit.minDist, Math.min(orbit.maxDist, orbit.targetDist));
     lastTouchDist = dist;
 
-    // 2 parmak centroid orbit — taş seçiliyken gövde döndür
+
     if (isMobile() && GameState.selectedPieceIndex >= 0 && GameState.phase === 'place') {
       const cx = (t0x + t1x) / 2;
       const cy = (t0y + t1y) / 2;
@@ -1806,7 +1806,7 @@ container.addEventListener('touchmove', (e) => {
       if (lastTwoFingerCx !== null) {
         const ddx = cx - lastTwoFingerCx;
         const ddy = cy - lastTwoFingerCy;
-        // Duyarlılık: ekran genişliğine oranla normalize et
+
         const sensitivity = 2.5 / Math.min(window.innerWidth, window.innerHeight);
         orbit.targetRotY -= ddx * sensitivity;
         orbit.targetRotX -= ddy * sensitivity;
@@ -1824,7 +1824,7 @@ container.addEventListener('touchend', () => {
   lastTwoFingerCy = null;
 });
 
-// Safari pinch zoom fix — tüm ekranın zoom'unu engelle
+
 document.addEventListener('touchmove', (e) => {
   if (e.touches.length >= 2) {
     e.preventDefault();
@@ -1849,8 +1849,8 @@ const particleMat = new THREE.PointsMaterial({ color: 0xC8A97A, size: 0.06, tran
 const particles = new THREE.Points(particleGeo, particleMat);
 scene.add(particles);
 
-// ─── BOARD AUTO-ROTATE — KALDIRILDI (test sırasında zorlaştırıyor)
-// İleride opsiyonel toggle olarak geri eklenebilir
+
+
 const autoRotate = false;
 
 
@@ -1866,8 +1866,8 @@ function animate() {
   orbit.rotY += (orbit.targetRotY - orbit.rotY) * 0.08;
   orbit.distance += (orbit.targetDist - orbit.distance) * 0.08;
 
-  // Auto-rotate kapalı — sabit durur
-  // Mobile orbit: basılı tutunca 4 yönde döner
+
+
   if (typeof mobileOrbitActive !== 'undefined' && mobileOrbitActive) {
     const speed = 0.025;
     if (mobileOrbitDir === 'left')  orbit.targetRotY -= speed;
@@ -1899,7 +1899,7 @@ function animate() {
     }
   });
 
-  // Floating preview döndürme (smooth — mobilde daha yavaş)
+
   if (selectedPieceGroup) {
     const smoothFactor = isMobile() ? 0.06 : 0.12;
     selectedPieceGroup.rotation.x += (previewRotation.x - selectedPieceGroup.rotation.x) * smoothFactor;
@@ -1914,8 +1914,8 @@ function animate() {
   // Son hamle vurgulama pulse
   updateHighlightPulse(t);
 
-  // Mini preview renderer'lar — SVG'ye geçildi, artık yok
-  // miniScenes boş array, döngü yapmıyor
+
+
 
   renderer.render(scene, camera);
 }
@@ -1929,14 +1929,14 @@ window.addEventListener('resize', () => {
 
 // ─── PIECE PANEL ─────────────────────────────────────────────────────────────
 // SVG ikon sistemi — WebGL renderer yok, beyaz ekran yok
-const miniScenes = []; // boş — animate loop için uyumluluk
+const miniScenes = [];
 
 function getPieceSVG(piece, player) {
   const cols = player === 1 ? P1_COLORS : P2_COLORS;
   const idx = Math.min(piece.units - 2, cols.length - 1);
   const baseColor = cols[idx];
   const hex = '#' + baseColor.toString(16).padStart(6,'0');
-  // Dark yüzey: her channel'ı %35 karart ama minimum 0x0A garantile
+
   const r = (baseColor >> 16) & 0xFF;
   const g = (baseColor >>  8) & 0xFF;
   const b =  baseColor        & 0xFF;
@@ -1945,7 +1945,7 @@ function getPieceSVG(piece, player) {
   const db = Math.max(10, Math.floor(b * 0.65));
   const dark = '#' + [dr,dg,db].map(v=>v.toString(16).padStart(2,'0')).join('');
 
-  // İzometrik projeksiyon — her küp için 3 yüzey çiz
+
   const ISO = { sx: 7, sy: 4 }; // birim boyut
   const cubes = piece.cubes;
 
@@ -1962,7 +1962,7 @@ function getPieceSVG(piece, player) {
   const ox = -minX + ISO.sx + 2;
   const oy = -minY + ISO.sy*2 + 2;
 
-  // Y'ye göre sırala (painter's algorithm)
+
   const sorted = [...cubes].sort(([ax,ay,az],[bx,by,bz]) => (ay - by) || (az + ax) - (bz + bx));
 
   let paths = '';
@@ -1970,11 +1970,11 @@ function getPieceSVG(piece, player) {
     const px = (cx - cz) * ISO.sx + ox;
     const py = -(cy * ISO.sy * 2) + (cx + cz) * ISO.sy + oy;
     const sx = ISO.sx, sy = ISO.sy;
-    // Üst yüzey
+
     paths += `<polygon points="${px},${py} ${px+sx},${py+sy} ${px},${py+sy*2} ${px-sx},${py+sy}" fill="${hex}" stroke="#00000033" stroke-width="0.5"/>`;
-    // Sol yüzey
+
     paths += `<polygon points="${px-sx},${py+sy} ${px},${py+sy*2} ${px},${py+sy*4} ${px-sx},${py+sy*3}" fill="${dark}" stroke="#00000033" stroke-width="0.5"/>`;
-    // Sağ yüzey
+
     paths += `<polygon points="${px},${py+sy*2} ${px+sx},${py+sy} ${px+sx},${py+sy*3} ${px},${py+sy*4}" fill="${hex}cc" stroke="#00000033" stroke-width="0.5"/>`;
   });
 
@@ -1983,7 +1983,7 @@ function getPieceSVG(piece, player) {
 
 let panelBuilt = false;
 let panelPlayer = -1;
-let panelViewingPlayer = 1; // şuan hangi oyuncunun taşları gösteriliyor
+let panelViewingPlayer = 1;
 
 function switchPanelTab(player) {
   panelViewingPlayer = player;
@@ -1995,7 +1995,7 @@ function switchPanelTab(player) {
   const isCurrent = player === GameState.currentPlayer;
   label.textContent = isCurrent ? `Selection: ${t('player'+player)}` : `📋 ${t('player'+player)} — View`;
   label.className = `panel-player-label p${player}`;
-  // Listeyi yeniden oluştur
+
   panelBuilt = false; // force rebuild
   buildPiecePanel(player);
 }
@@ -2019,7 +2019,7 @@ function buildPiecePanel(player) {
     item.className = 'piece-item' + (used ? ' used' : '');
     item.dataset.index = i;
 
-    // Rakip taşlarını inceleme modunda seçilemez
+
     if (!isCurrent) {
       item.style.cursor = 'default';
       item.style.opacity = used ? '0.25' : '0.75';
@@ -2043,11 +2043,11 @@ function buildPiecePanel(player) {
     item.appendChild(info);
     item.appendChild(pts);
 
-    // Sadece mevcut oyuncunun kendi sırasında seçebilir
+
     if (isCurrent) {
       item.addEventListener('click', () => {
         if (GameState.usedPieces[player-1].includes(i)) return;
-        // Online modda sıra kontrolü — sıra karşıdaysa hiçbir şey yapma
+
         if (gameMode !== 'offline' && !isMyTurn()) return;
         selectPiece(i, player);
         closePiecePanel();
@@ -2072,7 +2072,7 @@ function togglePanelPin() {
   const btn = document.getElementById('panel-pin-btn');
   panel.classList.toggle('pinned', panelPinned);
   btn.classList.toggle('active', panelPinned);
-  // Pin açıkken phase-btn "Parça Seç"e döner
+
   const phaseBtn = document.getElementById('phase-btn');
   if (panelPinned) {
     phaseBtn.textContent = t('btn_select');
@@ -2098,10 +2098,10 @@ function openPiecePanel() {
   buildPiecePanel(p);
   document.getElementById('piece-panel').classList.add('open');
 
-  // Sıra bizdeyken → buton "✕ Cancel", phase 'select' (listener zaten hallediyor)
-  // Sıra karşıdayken → buton değişmez, phase değişmez
+
+
   if (gameMode !== 'offline' && !myTurnNow) {
-    // Sadece görüntüleme — buton ve phase'e dokunma
+
     return;
   }
 }
@@ -2111,16 +2111,16 @@ function closePiecePanel() {
   document.getElementById('piece-panel').classList.remove('open');
 }
 
-// ─── FLOATING PREVIEW (seçili parça sahnede) ─────────────────────────────────
+
 let selectedPieceGroup = null;
 let previewRotation = { x:0, y:0, z:0 };
 
 function selectPiece(index, player) {
-  // Sadece mevcut oyuncunun taşı seçilebilir
+
   if (player !== GameState.currentPlayer) return;
-  // Online modda: sadece kendi taşını, sadece kendi sırandayken seçebilirsin
+
   if (gameMode !== 'offline' && (!isMyTurn() || player !== localPlayer)) return;
-  // Kullanılmış taş seçilemez
+
   if (GameState.usedPieces[player-1].includes(index)) return;
   document.querySelectorAll('.piece-item').forEach(el => el.classList.remove('selected'));
   document.querySelector(`.piece-item[data-index="${index}"]`)?.classList.add('selected');
@@ -2152,7 +2152,7 @@ function selectPiece(index, player) {
   const center = new THREE.Vector3();
   box3.getCenter(center);
   group.position.sub(center);
-  // Floating preview pozisyonu: mobilde gövdenin sağ üstüne yakın, masaüstünde uzakta
+
   const previewX = isMobile() ? 2.8 : 5.5;
   const previewY = isMobile() ? 5.5 : 3;
   group.position.set(previewX, previewY, 0);
@@ -2173,7 +2173,7 @@ function deselectPiece() {
   document.getElementById('rotation-hint').classList.remove('visible');
 }
 
-// ─── KLAVYE — PARÇA DÖNDÜRME ─────────────────────────────────────────────────
+
 const ROT_STEP = Math.PI / 2;
 
 document.addEventListener('keydown', (e) => {
@@ -2194,7 +2194,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 
-// ─── MODÜL 3: SNAP & YERLEŞTİRME SİSTEMİ ────────────────────────────────────
+
 
 const placedCubes = [];
 const placedMeshes = [];
@@ -2220,19 +2220,19 @@ function getRotatedCubes(pieceDef,rotation) {
   });
 }
 const DIRS6=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
-// Koyu bölge (başlangıç zonu): y=0 veya y=7
+
 function isDarkZone(gy) { return gy===0||gy===7; }
 
-// İlk hamle: parçanın en az 1 küpü koyu bölgeye (y=0 veya y=7 KATMANI) BİTİŞİK olmalı
-// Parça gövdenin dışında, dolayısıyla komşu gövde küpü y=0 ya da y=7 ise geçerli
+
+
 function touchesStartZone(cubes,offset){
   for(const c of cubes){
     const wx=c.x+offset.x, wy=c.y+offset.y, wz=c.z+offset.z;
     for(const[dx,dy,dz]of DIRS6){
       const nx=wx+dx, ny=wy+dy, nz=wz+dz;
-      // Komşu gövde içinde mi?
+
       if(isBoardOccupied(nx,ny,nz)){
-        // O gövde küpü koyu zona (y=0 veya y=7) mı?
+
         if(ny===0||ny===7) return true;
       }
     }
@@ -2287,9 +2287,9 @@ function gridToWorld(gx, gy, gz) {
   return new THREE.Vector3((gx - 0.5) * UNIT, (gy - 3.5) * UNIT, (gz - 0.5) * UNIT);
 }
 
-// ─── NOTASYON SİSTEMİ ─────────────────────────────────────────────────────────
+
 // Her hamle: P{id}·R{rotIdx}·({gx},{gy},{gz})·{face}
-// Kullanıcıya gösterilmez, analitik ve replay için kaydedilir
+
 
 const FACE_FROM_NORMAL = (fn) => {
   if (fn.x === -1) return 'L';
@@ -2301,35 +2301,35 @@ const FACE_FROM_NORMAL = (fn) => {
   return '?';
 };
 
-// Aktif rotasyonu index'e çevir (0-23 arası)
+
 function getRotationIndex(rot) {
   const steps = Math.round;
   const rx = ((steps(rot.x / (Math.PI/2)) % 4) + 4) % 4;
   const ry = ((steps(rot.y / (Math.PI/2)) % 4) + 4) % 4;
   const rz = ((steps(rot.z / (Math.PI/2)) % 4) + 4) % 4;
-  return rx * 16 + ry * 4 + rz; // 0-63 arasında unique, yeterli
+  return rx * 16 + ry * 4 + rz;
 }
 
-// Bir hamleyi notasyon string'ine çevir
+
 function buildMoveNotation(pieceIndex, rotated, offset, faceNormal) {
   const rotIdx = getRotationIndex(previewRotation);
   const face   = faceNormal ? FACE_FROM_NORMAL(faceNormal) : '?';
-  // Referans küp: rotated[0] + offset = board koordinatı
+
   const gx = rotated[0].x + offset.x;
   const gy = rotated[0].y + offset.y;
   const gz = rotated[0].z + offset.z;
   return `P${pieceIndex}·R${rotIdx}·(${gx},${gy},${gz})·${face}`;
 }
 
-// Oyun notasyon geçmişi
-let gameNotation = [];   // ["P3·R0·(0,0,0)·F", "P7·R2·(1,0,0)·R", ...]
-let lastFaceNormal = null; // son ghost'un face normal'ı
 
-// ─── METRİK DEĞİŞKENLER ───────────────────────────────────────────────────────
+let gameNotation = [];   // ["P3·R0·(0,0,0)·F", "P7·R2·(1,0,0)·R", ...]
+let lastFaceNormal = null;
+
+
 let gameStartTime       = Date.now();
-let invalidAttempts     = 0;  // kırmızı ghost sayısı
-let panelOpenCount      = 0;  // panel kaç kez açıldı
-let replayCount         = 0;  // yeni oyun sayısı (aynı oturumda)
+let invalidAttempts     = 0;
+let panelOpenCount      = 0;
+let replayCount         = 0;
 
 
 let ghostGroup = null, currentSnapOffset = null, snapValid = false;
@@ -2353,7 +2353,7 @@ function showGhost(rotatedCubes, offset, valid) {
   scene.add(ghostGroup);
   snapValid = valid;
   currentSnapOffset = { ...offset };
-  // Metrik: kırmızı ghost sayısı
+
   if (!valid) invalidAttempts++;
 }
 
@@ -2363,14 +2363,14 @@ function removeGhost() {
   currentSnapOffset = null;
 }
 
-// Parçanın merkezini world koordinatına çevir
+
 function getPieceCenter(cubes, offset) {
   let sx = 0, sy = 0, sz = 0;
   for (const c of cubes) { sx += c.x + offset.x; sy += c.y + offset.y; sz += c.z + offset.z; }
   return new THREE.Vector3(sx / cubes.length, sy / cubes.length, sz / cubes.length);
 }
 
-// Mouse ray'ini bir plane'le kesiştir
+
 function raycastToPlane(mouseX, mouseY, planeNormal, planePoint) {
   const ray = new THREE.Ray();
   const ndcMouse = new THREE.Vector3(mouseX, mouseY, 0.5);
@@ -2383,20 +2383,20 @@ function raycastToPlane(mouseX, mouseY, planeNormal, planePoint) {
   return target;
 }
 
-// World pozisyonundan en yakın geçerli grid offset'i bul
+
 function worldToSnapOffset(worldPos, rotatedCubes) {
-  // Parça merkezini world pos'a yerleştir, grid'e yuvarla
-  // Parçanın kendi merkezi
+
+
   let cx = 0, cy = 0, cz = 0;
   for (const c of rotatedCubes) { cx += c.x; cy += c.y; cz += c.z; }
   cx /= rotatedCubes.length; cy /= rotatedCubes.length; cz /= rotatedCubes.length;
 
-  // worldPos'u grid'e çevir
+
   const gx = Math.round(worldPos.x / UNIT + 0.5);
   const gy = Math.round(worldPos.y / UNIT + 3.5);
   const gz = Math.round(worldPos.z / UNIT + 0.5);
 
-  // Offset: grid pozisyonu - parça merkezi (yuvarlanmış)
+
   const baseOffset = {
     x: Math.round(gx - cx),
     y: Math.round(gy - cy),
@@ -2409,7 +2409,7 @@ function worldToSnapOffset(worldPos, rotatedCubes) {
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-// Aktif snap plane — mouse hangi yüzeye girince o yüzeyin normali ve pozisyonu
+
 let activePlaneNormal = null;
 let activePlanePoint = null;
 
@@ -2430,12 +2430,12 @@ container.addEventListener('mousemove', (e) => {
     const hit = hits[0];
     const fn = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
     fn.x = Math.round(fn.x); fn.y = Math.round(fn.y); fn.z = Math.round(fn.z);
-    lastFaceNormal = fn.clone(); // notasyon için kaydet
+    lastFaceNormal = fn.clone();
 
     const ud = hit.object.userData;
     if (ud.gx === undefined) { removeGhost(); return; }
 
-    // Snap plane: hit yüzeyinin dış tarafından geçen düzlem
+
     const hitWorldPos = gridToWorld(ud.gx, ud.gy, ud.gz);
     const planePoint = hitWorldPos.clone().add(
       new THREE.Vector3(fn.x * UNIT, fn.y * UNIT, fn.z * UNIT)
@@ -2446,15 +2446,15 @@ container.addEventListener('mousemove', (e) => {
 
   if (!activePlaneNormal || !activePlanePoint) { removeGhost(); return; }
 
-  // Mouse ray'ini aktif plane ile kesiştir
+
   const worldPos = raycastToPlane(mx, my, activePlaneNormal, activePlanePoint);
   if (!worldPos || worldPos.length() > 100) { removeGhost(); return; }
 
   // Grid offset hesapla
   const baseOffset = worldToSnapOffset(worldPos, rotated);
 
-  // Geçerli offset'i ara — base + küçük ayarlamalar
-  // Gövdeye temas sağlamak için ±1 aralığında ara
+
+
   const adjustments = [
     {x:0,y:0,z:0},
     {x:1,y:0,z:0},{x:-1,y:0,z:0},
@@ -2476,7 +2476,7 @@ container.addEventListener('mousemove', (e) => {
       if (!bestValid) bestValid = offset;
       break;
     } else if (!hasCollision(rotated, offset)) {
-      // Gövdeye en yakın geçersizi bul
+
       const dist = Math.abs(adj.x) + Math.abs(adj.y) + Math.abs(adj.z);
       if (dist < bestInvalidDist) {
         bestInvalidDist = dist;
@@ -2497,11 +2497,11 @@ container.addEventListener('mousemove', (e) => {
 container.addEventListener('click',(e)=>{
   if(GameState.selectedPieceIndex<0||GameState.phase!=='place')return;
   if(!snapValid||!currentSnapOffset)return;
-  // Online modda sıra değilse tıklama engelle
+
   if(gameMode !== 'offline' && !isMyTurn()) return;
-  // Mobilde click ile yerleştirme YOK — sadece "Yerleştir" butonu
+
   if (isMobile()) return;
-  // Masaüstünde onay dialogu
+
   const piece=PIECE_DEFS[GameState.selectedPieceIndex];
   pendingRotated=getRotatedCubes(piece,previewRotation);
   GameState.phase='confirm';
@@ -2513,7 +2513,7 @@ let pendingRotated=null;
 function confirmPlacement(){
   document.getElementById('confirm-dialog').classList.remove('visible');
   if(!pendingRotated||!currentSnapOffset)return;
-  // Online modda sıra kontrolü
+
   if(gameMode !== 'offline' && !isMyTurn()) return;
   const snap={...currentSnapOffset};
   const rot=[...pendingRotated];
@@ -2577,7 +2577,7 @@ function finalizePlacement(targets,animMeshes,player,pieceIndex){
   const piece = PIECE_DEFS[pieceIndex];
   const notation = buildMoveNotation(pieceIndex, targets.map(t=>({x:t.gx,y:t.gy,z:t.gz})), {x:0,y:0,z:0}, lastFaceNormal);
   gameNotation.push(notation);
-  // Mixpanel: hamle yapıldı
+
   try { mixpanel.track('piece_placed', {
     player,
     piece_name: piece.name,
@@ -2641,7 +2641,7 @@ function calculateScore(targets, player, pieceIndex) {
 
   const total = basePoints + totalContact + contactBonus + contBonus;
 
-  // Hamle özeti kartı güncelle
+
   showMoveScore(targets, player, basePoints, totalContact, contactBonus, contBonus);
 
   return total;
@@ -2659,7 +2659,7 @@ function showMoveScore(targets, player, basePoints, contactCount, contactBonus, 
   ptsEl.textContent = `+${total}`;
   ptsEl.style.color = playerColor;
 
-  // Açıklama metni
+
   const isT = false;
   let lines = [];
   lines.push(`${basePoints}-unit piece placed`);
@@ -2674,7 +2674,7 @@ function showMoveScore(targets, player, basePoints, contactCount, contactBonus, 
     lines.push(`Continuity Bonus · +${contBonus}`);
   }
 
-  // Formül
+
   const parts = [basePoints];
   if (contactCount) parts.push(contactCount);
   if (contactBonus) parts.push(contactBonus);
@@ -2704,19 +2704,19 @@ function checkContinuityWith(allCubes, player) {
 }
 
 function checkWinCondition() {
-  // Kilit oyun kontrolü
+
   for (let p = 1; p <= 2; p++) {
     if (checkLockWin(p)) { showWinScreen(p, 'kilit'); return; }
   }
-  // Her iki oyuncu tüm taşlarını kullandı
+
   if (GameState.usedPieces[0].length === 10 && GameState.usedPieces[1].length === 10) {
     const winner = GameState.scores[0] > GameState.scores[1] ? 1 :
                    GameState.scores[1] > GameState.scores[0] ? 2 : 0;
     showWinScreen(winner, 'skor');
     return;
   }
-  // Sırası yeni gelen oyuncunun oynayacak yeri var mı?
-  // Kontrol sıra geçtikten SONRA, yani yeni oyuncuya gelince yapılır
+
+
   checkNoMovesLeft();
 }
 
@@ -2724,7 +2724,7 @@ function canPlayerMove(player) {
   const remaining = PIECE_DEFS.filter((_, i) => !GameState.usedPieces[player-1].includes(i));
   if (remaining.length === 0) return false;
 
-  // Her kalan parça için tüm oryantasyonları dene — herhangi biri geçerliyse true
+
   const rotations = [
     {x:0,y:0,z:0}, {x:Math.PI/2,y:0,z:0}, {x:Math.PI,y:0,z:0}, {x:-Math.PI/2,y:0,z:0},
     {x:0,y:Math.PI/2,z:0}, {x:0,y:Math.PI,z:0}, {x:0,y:-Math.PI/2,z:0},
@@ -2732,7 +2732,7 @@ function canPlayerMove(player) {
     {x:Math.PI/2,y:Math.PI/2,z:0}, {x:Math.PI/2,y:-Math.PI/2,z:0},
   ];
 
-  // Olası tüm dış pozisyonlar (gövde etrafı)
+
   const candidates = [];
   for (let x = -1; x <= 2; x++)
     for (let y = -1; y <= 8; y++)
@@ -2744,7 +2744,7 @@ function canPlayerMove(player) {
     for (const rot of rotations) {
       const rotated = getRotatedCubes(piece, rot);
       for (const pos of candidates) {
-        // Parçanın her küpünü bu pozisyona referans al
+
         for (const refCube of rotated) {
           const offset = { x: pos.x - refCube.x, y: pos.y - refCube.y, z: pos.z - refCube.z };
           if (isValidPlacement(rotated, offset)) return true;
@@ -2772,7 +2772,7 @@ function endGameNow() {
   const s = GameState.scores;
   const winner = s[0] > s[1] ? 1 : s[1] > s[0] ? 2 : 0;
 
-  // Online modda: game over event'ini Firebase'e yaz — her iki taraf görsün
+
   if (gameMode !== 'offline' && roomRef) {
     roomRef.child('gameOver').set({
       winner,
@@ -2806,14 +2806,6 @@ function updateInspectBtn() {
   if (label) label.textContent = 'New Game';
 }
 
-function endGameNow() {
-  const bar = document.getElementById('no-moves-bar');
-  if (bar) bar.remove();
-  const btn = document.getElementById('inspect-end-btn');
-  if (btn) btn.style.display = 'none';
-  GameState.inspectMode = false;
-
-// Win ekranındaki "İncele" butonundan inceleme moduna gir
 function enterInspectFromWin() {
   const ws = document.getElementById('win-screen');
   ws.classList.remove('visible');
@@ -2824,12 +2816,12 @@ function enterInspectFromWin() {
   try { mixpanel.track('inspect_entered', { total_moves: GameState.round, platform: isMobile()?'mobile':'desktop' }); } catch(e){}
 }
 
-// İnceleme kartındaki skor/başlık bilgilerini doldur
+
 function _fillInspectCard() {
   const s = GameState.scores;
   const winner = s[0] > s[1] ? 1 : s[1] > s[0] ? 2 : 0;
 
-  // Win type ve player etiketleri win screen'den kopyala
+
   const winTypeEl = document.getElementById('win-type');
   const winPlayerEl = document.getElementById('win-player');
 
@@ -2847,25 +2839,25 @@ function _fillInspectCard() {
   if (sp2) sp2.textContent = s[1];
 }
 
-// KİLİT OYUN: Gövdenin etrafında kapalı döngü tespiti
-// Yatay tur: aynı Y seviyesinde gövdeyi çevreleyen kapalı zincir (min 12 birim)
-// Dikey tur: aynı X veya Z kolonunda gövdeyi baştan sona kaplayan zincir (min 20 birim)
+
+
+
 function checkLockWin(player) {
   const pc = placedCubes.filter(c => c.player === player);
   if (pc.length < 12) return false;
 
-  // ── YATAY TUR: Her Y seviyesinde gövdeyi çevreleyen halka var mı? ──
-  // Gövdenin 4 yüzeyindeki dış pozisyonlar:
-  // x=-1 (sol yüzey, z=0..1), x=2 (sağ yüzey, z=0..1)
-  // z=-1 (ön yüzey, x=0..1), z=2 (arka yüzey, x=0..1)
-  // Bunlar bağlı mı kontrol et (BFS kapalı döngü)
+
+
+
+
+
   for (let y = 0; y <= 7; y++) {
-    // Bu Y seviyesindeki oyuncu küplerini al
+
     const layer = pc.filter(c => c.gy === y);
     if (layer.length < 4) continue;
 
-    // Gövdenin bu Y'de dış yüzeylerini çevreleyen küpler
-    // Döngü: x=-1,z=0 → x=-1,z=1 → z=2,x=0 → z=2,x=1 → x=2,z=1 → x=2,z=0 → z=-1,x=1 → z=-1,x=0 → geri
+
+
     const ring = [
       {gx:-1,gz:0},{gx:-1,gz:1},
       {gx:0,gz:2},{gx:1,gz:2},
@@ -2873,15 +2865,15 @@ function checkLockWin(player) {
       {gx:1,gz:-1},{gx:0,gz:-1},
     ];
     const filled = ring.filter(r => layer.some(c => c.gx===r.gx && c.gz===r.gz));
-    // Tüm 8 pozisyon doluysa tam tur
+
     if (filled.length === 8) return true;
-    // Alternatif: bitişik zincir kapalı döngü oluşturuyor mu?
+
     if (hasClosedHorizontalLoop(pc, y)) return true;
   }
 
-  // ── DİKEY TUR: Y=0'dan Y=7'ye kadar aynı kolon tamamen kaplı mı? ──
-  // Gövdenin herhangi bir dış kolonunda (x=-1 veya x=2, z=0..1) ya da
-  // (z=-1 veya z=2, x=0..1) tüm Y seviyeleri dolu mu?
+
+
+
   const vertCols = [
     {gx:-1,gz:0},{gx:-1,gz:1},{gx:2,gz:0},{gx:2,gz:1},
     {gx:0,gz:-1},{gx:1,gz:-1},{gx:0,gz:2},{gx:1,gz:2},
@@ -2894,10 +2886,10 @@ function checkLockWin(player) {
         if (consecutive > maxConsec) maxConsec = consecutive;
       } else { consecutive = 0; }
     }
-    if (maxConsec >= 8) return true; // tüm dikey yüz kaplı
+    if (maxConsec >= 8) return true;
   }
 
-  // Genel devamlılık (herhangi yönde 12+ yatay veya 20+ dikey)
+
   const axes = [[1,0,0],[0,0,1]];
   for (const ax of axes) {
     for (const s of pc) {
@@ -2916,8 +2908,8 @@ function checkLockWin(player) {
 }
 
 function hasClosedHorizontalLoop(pc, y) {
-  // BFS: bu Y seviyesindeki küplerden başla, komşuları takip et
-  // Başlangıç noktasına geri dönebiliyor musun ve en az 8 küp var mı?
+
+
   const layer = pc.filter(c => c.gy === y);
   if (layer.length < 8) return false;
 
@@ -2925,7 +2917,7 @@ function hasClosedHorizontalLoop(pc, y) {
   const set = new Set(layer.map(key));
 
   for (const start of layer) {
-    // DFS ile kapalı döngü ara
+
     const visited = new Set();
     const stack = [{gx:start.gx, gz:start.gz, steps:0}];
     while (stack.length) {
@@ -2968,7 +2960,7 @@ function drawLastMoveHighlight() {
   if (!lastMoveHighlightEnabled) return;
   if (GameState.lastPlacedCubes.length === 0) return;
 
-  // Kimin hamlesi? Sıra değişti, önceki oyuncu
+
   const prevPlayer = GameState.currentPlayer === 1 ? 2 : 1;
   const hlColor = prevPlayer === 1 ? 0xffb830 : 0xff6b4a;
 
@@ -2989,7 +2981,7 @@ function drawLastMoveHighlight() {
   });
 }
 
-// Animate loop'ta highlight pulse
+
 function updateHighlightPulse(t) {
   if (!lastMoveHighlightEnabled || lastMoveHighlightMeshes.length === 0) return;
   const pulse = 0.5 + 0.5 * Math.sin(t * 3);
@@ -3004,7 +2996,7 @@ function showBonusToast(msg){
   clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('visible'),2400);
 }
 
-// Ceza hesabı — elde kalan her taşın birim sayısı kadar düşülür
+
 function calculatePenalties() {
   const penalties = [0, 0];
   for (let p = 0; p < 2; p++) {
@@ -3023,7 +3015,7 @@ function showWinScreen(player, type) {
     Math.max(0, rawScores[1] - penalties[1]),
   ];
 
-  // Skorları güncelle
+
   GameState.scores = finalScores;
   document.getElementById('val-p1').textContent = finalScores[0];
   document.getElementById('val-p2').textContent = finalScores[1];
@@ -3036,7 +3028,7 @@ function showWinScreen(player, type) {
   document.getElementById('win-type').textContent = types[type] || '';
 
   const wp = document.getElementById('win-player');
-  // Kazananı ceza sonrası belirle
+
   const winner = finalScores[0] > finalScores[1] ? 1 :
                  finalScores[1] > finalScores[0] ? 2 : 0;
   if (winner === 0) {
@@ -3050,7 +3042,7 @@ function showWinScreen(player, type) {
   document.getElementById('final-p1').textContent = finalScores[0];
   document.getElementById('final-p2').textContent = finalScores[1];
 
-  // Ceza breakdown göster
+
   const hasPenalty = penalties[0] > 0 || penalties[1] > 0;
   const breakdown = document.getElementById('penalty-breakdown');
   const lines = document.getElementById('penalty-lines');
@@ -3058,7 +3050,7 @@ function showWinScreen(player, type) {
     if (hasPenalty) {
       breakdown.style.display = 'block';
       let html = '';
-      // Oyuncular için satır
+
       const p1Name_disp = p1Name || 'Player 1';
       const p2Name_disp = p2Name || 'Player 2';
       html += `<div style="color:#c8c9b8;">${p1Name_disp}: ${rawScores[0]} pts`;
@@ -3067,7 +3059,7 @@ function showWinScreen(player, type) {
       html += `<div style="color:#c8c9b8;">${p2Name_disp}: ${rawScores[1]} pts`;
       if (penalties[1] > 0) html += ` <span style="color:#ff6b4a;">− ${penalties[1]} penalty</span> = <span style="color:#c8f060;">${finalScores[1]}</span>`;
       html += `</div>`;
-      // Ceza nedenini açıkla
+
       for (let p = 0; p < 2; p++) {
         if (penalties[p] > 0) {
           const rem = PIECE_DEFS.filter((_, i) => !GameState.usedPieces[p].includes(i));
@@ -3112,9 +3104,9 @@ function showWinScreen(player, type) {
   } catch(e){}
 }
 
-// Phase button — TEK listener, tüm akış burada
+
 document.getElementById('phase-btn').addEventListener('click',()=>{
-  // Online modda sıra karşıdayken sadece panel görüntülenir, phase değişmez
+
   if (gameMode !== 'offline' && !isMyTurn()) {
     openPiecePanel();
     return;
@@ -3132,12 +3124,12 @@ document.getElementById('phase-btn').addEventListener('click',()=>{
   }
 });
 
-// ─── MOBİL SİSTEM ─────────────────────────────────────────────────────────────
+
 const isMobile = () => window.innerWidth <= 768;
 let mobileOrbitActive = false;
 let mobileOrbitDir = 'left'; // left|right|up|down
 
-// 4 yön orbit
+
 function startMobileOrbitDir(dir) {
   mobileOrbitActive = true;
   mobileOrbitDir = dir;
@@ -3145,7 +3137,7 @@ function startMobileOrbitDir(dir) {
 function startMobileOrbit() { startMobileOrbitDir('left'); }
 function stopMobileOrbit() { mobileOrbitActive = false; }
 
-// Döndürme — sadece touchstart'tan çağır, çift tetiklemeyi önle
+
 let lastRotateTime = 0;
 function mobileRotateSafe(e, axis, dir) {
   e.preventDefault();
@@ -3160,13 +3152,13 @@ function mobileRotate(axis, dir) {
   if (axis === 'x') previewRotation.x += dir * step;
   if (axis === 'y') previewRotation.y += dir * step;
   if (axis === 'z') previewRotation.z += dir * step;
-  // Ghost'u son bilinen pozisyonda anlık güncelle
+
   if (lastMobileTouchX !== null) {
     updateMobileGhost(lastMobileTouchX, lastMobileTouchY);
   }
 }
 
-// Son dokunma pozisyonu — rotate sonrası ghost güncellemek için
+
 let lastMobileTouchX = null;
 let lastMobileTouchY = null;
 
@@ -3194,7 +3186,7 @@ function mobileCancelPlace() {
 
 function mobilePlacePiece() {
   if (!snapValid || !currentSnapOffset) return;
-  // Online modda sıra kontrolü
+
   if (gameMode !== 'offline' && !isMyTurn()) return;
   const piece = PIECE_DEFS[GameState.selectedPieceIndex];
   pendingRotated = getRotatedCubes(piece, previewRotation);
@@ -3247,7 +3239,7 @@ function updateMobileGhost(clientX, clientY) {
   else { removeGhost(); updateMobilePlaceBtn(false); }
 }
 
-// selectPiece mobil mod geçişi — mevcut selectPiece fonksiyonuna ek
+
 const _origSelectPieceMobile = selectPiece;
 selectPiece = function(index, player) {
   _origSelectPieceMobile(index, player);
@@ -3257,7 +3249,7 @@ selectPiece = function(index, player) {
   }
 };
 
-// finalizePlacement sonrası mobil UI güncelle
+
 const _origFinalize = finalizePlacement;
 finalizePlacement = function(targets, animMeshes, player, pieceIndex) {
   _origFinalize(targets, animMeshes, player, pieceIndex);
@@ -3267,7 +3259,7 @@ finalizePlacement = function(targets, animMeshes, player, pieceIndex) {
   }
 };
 
-// Mobile panel bottom offset — mobile controls yüksekliğini ölç
+
 function updateMobilePanelBottom() {
   if (window.innerWidth > 768) return;
   const mc = document.getElementById('mobile-controls');
@@ -3277,7 +3269,7 @@ function updateMobilePanelBottom() {
   panel.style.bottom = (h + 4) + 'px';
 }
 
-// ─── LOBBY DİL SİSTEMİ ───────────────────────────────────────────────────────
+
 let lobbyLang = 'en';
 
 // roomCopyCode
@@ -3345,7 +3337,7 @@ async function lobbyCreateRoom() {
     console.error('Create room error:', e);
     document.getElementById('lbl-create').textContent = origText;
     btn.disabled = false;
-    // Firebase bağlantı hatası — offline'a düş
+
     if (e.message === 'no-db' || e.message?.includes('network') || e.message?.includes('fetch')) {
       p1Name = getLobbyName() || 'Player 1';
       gameMode = 'offline'; hideLobby(); startGameEngine();
@@ -3397,7 +3389,7 @@ function startGameEngine() {
   document.getElementById('canvas-container').style.display='block';
   document.getElementById('hud').style.display='flex';
 
-  // Renderer gerçek boyuta resize et
+
   requestAnimationFrame(() => {
     const w = window.innerWidth, h = window.innerHeight;
     if (renderer) {
@@ -3409,7 +3401,7 @@ function startGameEngine() {
     setTimeout(updateMobilePanelBottom, 500);
   });
 
-  // İsim etiketleri
+
   const p1l=document.querySelector('#score-p1 .player-label');
   const p2l=document.querySelector('#score-p2 .player-label');
   const tn=document.getElementById('turn-name');
@@ -3419,7 +3411,7 @@ function startGameEngine() {
   if(tn)  tn.textContent=p1Name;
   if(mtn) mtn.textContent=p1Name;
 
-  // Loading ekranı göster, sonra kapat
+
   const loading=document.getElementById('loading');
   loading.style.display='flex'; loading.style.opacity='1';
   setTimeout(()=>{
@@ -3536,7 +3528,7 @@ function setupOnlineSync() {
     }, 500);
   });
 
-  // Oyun sonu — kaktüs her iki tarafta eş zamanlı göster
+
   roomRef.child('gameOver').on('value', snap => {
     const data = snap.val();
     if (!data) return;
@@ -3546,7 +3538,7 @@ function setupOnlineSync() {
   });
 }
 
-// finalizePlacement wrapper — online modda Firebase'e yaz
+
 const _origFinalizeFB = finalizePlacement;
 finalizePlacement = function(targets, animMeshes, player, pieceIndex, skipSync) {
   _origFinalizeFB(targets, animMeshes, player, pieceIndex);
@@ -3567,14 +3559,15 @@ finalizePlacement = function(targets, animMeshes, player, pieceIndex, skipSync) 
 
 window.addEventListener('resize', updateMobilePanelBottom);
 
-// ─── LOBBY EVENT LISTENERS — script yüklendikten sonra bağla ──────────────────
+
 document.addEventListener('DOMContentLoaded', () => {
   const btnCreate  = document.getElementById('btn-create');
   const btnJoin    = document.getElementById('btn-join');
   const btnOffline = document.getElementById('btn-offline');
   const btnCopy    = document.getElementById('room-copy-btn');
   const btnRoomCancel = document.getElementById('room-cancel-text');
-  const btnJoinSubmit = document.getElementById('lbl-join-submit')?.parentElement;
+  const btnJoinSubmitEl = document.getElementById('lbl-join-submit');
+  const btnJoinSubmit = btnJoinSubmitEl ? btnJoinSubmitEl.closest('button') : null;
   const btnJoinCancel = document.getElementById('lbl-join-cancel');
   const joinInput  = document.getElementById('join-code-input');
 
@@ -3591,7 +3584,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Mixpanel: oyun yarıda bırakılınca
+
 window.addEventListener('beforeunload', () => {
   try {
     if (GameState.round > 0 && !document.getElementById('win-screen').classList.contains('visible')) {
