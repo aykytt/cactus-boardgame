@@ -1105,18 +1105,6 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
 <!-- ── LOBBY ── -->
 <div id="lobby">
 
-  <!-- TR/EN toggle - sağ üst -->
-  <div style="position:absolute;top:16px;right:16px;display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
-    <button id="lobby-lang-tr" onclick="setLobbyLang('tr')" style="
-      background:transparent;color:var(--text-muted);border:none;
-      padding:5px 11px;font-family:'Courier New',monospace;font-size:11px;
-      font-weight:700;cursor:pointer;letter-spacing:0.1em;transition:all 0.2s;">TR</button>
-    <button id="lobby-lang-en" onclick="setLobbyLang('en')" style="
-      background:var(--accent);color:#0a0b09;border:none;
-      padding:5px 11px;font-family:'Courier New',monospace;font-size:11px;
-      font-weight:700;cursor:pointer;letter-spacing:0.1em;transition:all 0.2s;">EN</button>
-  </div>
-
   <div class="lobby-logo">CACTUS</div>
   <div class="lobby-sub" id="lobby-sub-text">Strategy Game</div>
 
@@ -3292,64 +3280,13 @@ function updateMobilePanelBottom() {
 // ─── LOBBY DİL SİSTEMİ ───────────────────────────────────────────────────────
 let lobbyLang = 'en';
 
-const LOBBY_I18N = {
-  en: {
-    sub: 'Strategy Game', namePlaceholder: 'Your name (optional)', nameLabel: 'Player Name',
-    create: 'Create Game', join: 'Enter Code', offline: 'Play on One Screen',
-    roomTitle: 'Game Code', roomCopy: 'Copy', roomCopied: 'Copied ✓',
-    roomDesc: 'Share this code with your friend.<br>The game starts automatically when they join.',
-    roomWaiting: 'Waiting for friend...', roomCancel: 'Cancel',
-    joinTitle: 'Enter Code', joinDesc: 'Enter the 4-letter code from your friend',
-    joinSubmit: 'Join Game', joinCancel: 'Cancel',
-    errFour: '4-letter code required', errNoConn: 'No connection',
-    errNotFound: 'Code not found', errStarted: 'Game already started', errExpired: 'Code expired',
-  },
-  tr: {
-    sub: 'Strateji Oyunu', namePlaceholder: 'İsminiz (opsiyonel)', nameLabel: 'Oyuncu Adı',
-    create: 'Oyun Oluştur', join: 'Kod Gir', offline: 'Tek Ekranda Oyna',
-    roomTitle: 'Oyun Kodu', roomCopy: 'Kopyala', roomCopied: 'Kopyalandı ✓',
-    roomDesc: 'Bu kodu arkadaşına gönder.<br>Girdiğinde oyun otomatik başlayacak.',
-    roomWaiting: 'Arkadaş bekleniyor...', roomCancel: 'İptal',
-    joinTitle: 'Kod Gir', joinDesc: 'Arkadaşından aldığın 4 harfli kodu gir',
-    joinSubmit: 'Katıl', joinCancel: 'İptal',
-    errFour: '4-letter code required', errNoConn: 'No connection',
-    errNotFound: 'Code not found', errStarted: 'Game already started', errExpired: 'Code expired',
-  }
-};
-
-function setLobbyLang(lang) {
-  lobbyLang = lang;
-  currentLang = lang; // oyun diliyle senkronize
-  const L = LOBBY_I18N[lang];
-  document.getElementById('lobby-lang-tr').style.background = lang==='tr' ? 'var(--accent)' : 'transparent';
-  document.getElementById('lobby-lang-tr').style.color = lang==='tr' ? '#0a0b09' : 'var(--text-muted)';
-  document.getElementById('lobby-lang-en').style.background = lang==='en' ? 'var(--accent)' : 'transparent';
-  document.getElementById('lobby-lang-en').style.color = lang==='en' ? '#0a0b09' : 'var(--text-muted)';
-  document.getElementById('lobby-sub-text').textContent = L.sub;
-  document.getElementById('lobby-name').placeholder = L.namePlaceholder;
-  document.getElementById('lobby-name-label').textContent = L.nameLabel;
-  document.getElementById('lbl-create').textContent = L.create;
-  document.getElementById('lbl-join').textContent = L.join;
-  document.getElementById('lbl-offline').textContent = L.offline;
-  document.getElementById('room-title').textContent = L.roomTitle;
-  document.getElementById('room-copy-btn').textContent = L.roomCopy;
-  document.getElementById('room-desc').innerHTML = L.roomDesc;
-  document.getElementById('room-waiting-text').textContent = L.roomWaiting;
-  document.getElementById('room-cancel-text').textContent = L.roomCancel;
-  document.getElementById('join-title').textContent = L.joinTitle;
-  document.getElementById('join-desc').textContent = L.joinDesc;
-  document.getElementById('lbl-join-submit').textContent = L.joinSubmit;
-  document.getElementById('lbl-join-cancel').textContent = L.joinCancel;
-}
-
-// roomCopyCode dil duyarlı
+// roomCopyCode
 function roomCopyCode() {
   const code = document.getElementById('room-code-text').textContent;
-  const L = LOBBY_I18N[lobbyLang];
   navigator.clipboard.writeText(code).then(()=>{
     const btn = document.getElementById('room-copy-btn');
-    btn.textContent = L.roomCopied; btn.classList.add('copied');
-    setTimeout(()=>{ btn.textContent = L.roomCopy; btn.classList.remove('copied'); }, 2000);
+    btn.textContent = 'Copied ✓'; btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
   });
 }
 
@@ -3359,7 +3296,7 @@ let localPlayer = 1;
 let roomId     = null;
 let roomRef    = null;
 let p1Name = 'Player 1';
-let p2Name     = 'Oyuncu 2';
+let p2Name     = 'Player 2';
 
 function generateRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
