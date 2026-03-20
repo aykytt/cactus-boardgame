@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CACTUS — Case Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg:        #f2f3ee;
+  --surface:   #e8e9e2;
+  --surface2:  #dddec8;
+  --border:    #c8c9b8;
+  --border2:   #b0b19e;
+  --text:      #141510;
+  --text-2:    #2e3020;
+  --text-3:    #5a5e48;
+  --accent:    #2d5a00;
+  --accent-dim:#3d7a00;
+  --accent-bg: rgba(45,90,0,0.07);
+  --accent-border: rgba(45,90,0,0.22);
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.75;
+  padding-bottom: 100px;
+}
+
+.container {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+/* ── NAVIGATION ── */
+.toc {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(242,243,238,0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+}
+.toc-inner {
+  max-width: 780px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.toc-inner::-webkit-scrollbar { display:none; }
+.toc-link {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  color: var(--text-3);
+  text-decoration: none;
+  padding: 14px 14px;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+.toc-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.toc-logo {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0.2em;
+  padding: 14px 14px 14px 0;
+  margin-right: 8px;
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ── HEADER ── */
+.site-header {
+  padding: 64px 0 48px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 60px;
+}
+.badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  padding: 4px 10px;
+  border-radius: 3px;
+  margin-bottom: 20px;
+}
+.site-header h1 {
+  font-family: var(--mono);
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin-bottom: 16px;
+}
+.site-header h1 span {
+  font-size: 0.52em;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+  display: block;
+  margin-top: 6px;
+}
+.header-desc {
+  color: var(--text-2);
+  font-size: 15px;
+  max-width: 520px;
+  margin-bottom: 24px;
+}
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  color: var(--text-3);
+  border: 1px solid var(--border);
+  padding: 3px 8px;
+  border-radius: 2px;
+}
+
+/* ── SECTION ── */
+section { margin-bottom: 72px; }
+.section-label {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.25em;
+  color: var(--accent);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+section h2 {
+  font-family: var(--mono);
+  font-size: clamp(18px, 2.8vw, 24px);
+  font-weight: 500;
+  line-height: 1.3;
+  margin-bottom: 20px;
+  color: var(--text);
+}
+section p { color: var(--text-2); margin-bottom: 16px; }
+section p:last-child { margin-bottom: 0; }
+
+hr.divider { border: none; border-top: 1px solid var(--border); margin: 64px 0; }
+
+/* ── AUDIENCE PILLS ── */
+.audience-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--text-2);
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  padding: 6px 12px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+  font-weight: 500;
+}
+.audience-pill .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ── TIMELINE ── */
+.timeline { display: flex; flex-direction: column; gap: 0; margin: 32px 0; }
+.tl-item {
+  display: grid;
+  grid-template-columns: 64px 1px 1fr;
+  gap: 0 20px;
+  padding-bottom: 36px;
+  position: relative;
+}
+.tl-item:last-child { padding-bottom: 0; }
+.tl-year {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+  padding-top: 2px;
+  text-align: right;
+}
+.tl-line {
+  position: relative;
+  background: var(--border);
+  width: 1px;
+}
+.tl-line::before {
+  content: '';
+  position: absolute;
+  top: 6px; left: -3px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.tl-content { padding-top: 0; }
+.tl-content strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.tl-content p { font-size: 14px; color: var(--text-3); margin: 0; }
+
+/* ── TEAM ── */
+.team-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+.team-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  flex: 1;
+  min-width: 180px;
+}
+.team-name {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.team-role {
+  font-size: 14px;
+  color: var(--text-3);
+}
+
+/* ── ORCHESTRATION SECTION ── */
+.how-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 28px 0;
+}
+.how-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 18px 20px;
+}
+.how-card-label {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  color: var(--text-3);
+  margin-bottom: 10px;
+}
+.how-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.how-card p { font-size: 14px; color: var(--text-3); margin: 0; line-height: 1.6; }
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 28px 0;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 18px;
+  text-align: center;
+}
+.stat-value {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.stat-label {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  color: var(--text-3);
+}
+
+/* ── AI TABLE ── */
+.ai-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 14px;
+}
+.ai-table th {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.15em;
+  color: var(--text-3);
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 400;
+}
+.ai-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--surface2);
+  color: var(--text-2);
+  vertical-align: top;
+}
+.ai-table td:first-child {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text-3);
+  white-space: nowrap;
+  width: 160px;
+}
+.chip {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  padding: 2px 6px;
+  border-radius: 2px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+.chip-yes { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-border); }
+.chip-no  { background: var(--surface2); color: var(--text-3); border: 1px solid var(--border); }
+
+/* ── UX SECTION ── */
+.decision-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 24px; }
+.decision-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.dc-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  cursor: pointer;
+  background: var(--surface);
+  user-select: none;
+  transition: background 0.15s;
+}
+.dc-header:hover { background: var(--surface2); }
+.dc-number {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.dc-title { font-size: 14px; font-weight: 500; color: var(--text); flex: 1; }
+.dc-toggle {
+  font-size: 14px;
+  color: var(--text-3);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.decision-card.open .dc-toggle { transform: rotate(180deg); }
+.dc-body {
+  display: none;
+  padding: 20px 18px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.decision-card.open .dc-body { display: block; }
+.dc-flow { display: flex; flex-direction: column; gap: 14px; }
+.flow-item { display: flex; gap: 12px; }
+.flow-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+.flow-dot.problem  { background: #c85000; }
+.flow-dot.decision { background: var(--accent); }
+.flow-dot.outcome  { background: #5a6e40; }
+.flow-text { font-size: 14px; color: var(--text-2); line-height: 1.65; }
+.flow-text strong { color: var(--text); }
+.flow-text code {
+  font-family: var(--mono);
+  font-size: 14px;
+  background: var(--surface2);
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+
+/* ── DEV SECTION ── */
+.tech-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 24px 0;
+}
+.tech-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 18px;
+}
+.tech-label {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  color: var(--text-3);
+  margin-bottom: 6px;
+}
+.tech-value {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.code-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  padding: 16px 18px;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.8;
+  margin: 16px 0;
+  overflow-x: auto;
+}
+
+/* ── METRICS SECTION ── */
+.metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 24px 0;
+}
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 18px;
+}
+.metric-event {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.metric-desc { font-size: 14px; color: var(--text-2); line-height: 1.6; }
+.metric-params {
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text-3);
+  line-height: 1.8;
+}
+
+.insight-block {
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 6px;
+  padding: 18px 20px;
+  margin: 16px 0;
+  font-size: 14px;
+  color: var(--text-2);
+}
+.insight-block strong { color: var(--accent); }
+
+/* ── COMPLEXITY SECTION ── */
+.complexity-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 60px;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--surface2);
+}
+.complexity-row:last-child { border-bottom: none; }
+.cc-name { font-size: 14px; color: var(--text-2); }
+.cc-bar-wrap {
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.cc-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  opacity: 0.6;
+  transition: width 1s ease;
+}
+.cc-bar.highlight { opacity: 1; }
+.cc-exp {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text-3);
+  text-align: right;
+}
+
+.notation-example {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 18px 20px;
+  margin: 20px 0;
+}
+.ne-label {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  color: var(--text-3);
+  margin-bottom: 10px;
+}
+.ne-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ne-token {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+.ne-sep { color: var(--border2); font-size: 18px; }
+.ne-desc { font-size: 14px; color: var(--text-3); }
+
+/* ── STATUS ── */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 18px;
+  margin-bottom: 24px;
+}
+.status-live { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #3a8a00;
+  box-shadow: 0 0 0 3px rgba(58,138,0,0.2);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 3px rgba(58,138,0,0.2); }
+  50%      { box-shadow: 0 0 0 6px rgba(58,138,0,0.08); }
+}
+.status-date {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text-3);
+  letter-spacing: 0.1em;
+}
+
+.vision-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  padding: 20px 22px;
+  margin-top: 24px;
+}
+.vision-title {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+/* ── SCROLL REVEAL ── */
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .container { padding: 0 18px; }
+  .toc { padding: 0 18px; }
+  .how-grid, .tech-grid, .metric-grid { grid-template-columns: 1fr; }
+  .stat-row { grid-template-columns: 1fr 1fr; }
+  .complexity-row { grid-template-columns: 100px 1fr 50px; }
+  .team-card { min-width: 140px; }
+}
+</style>
+</head>
+<body>
+
+<!-- STICKY NAV -->
+<nav class="toc">
+  <div class="toc-inner">
+    <span class="toc-logo">CACTUS</span>
+    <a href="#story" class="toc-link">Story</a>
+    <a href="#orchestration" class="toc-link">Orchestration</a>
+    <a href="#ux" class="toc-link">UX/UI</a>
+    <a href="#dev" class="toc-link">Dev</a>
+    <a href="#product" class="toc-link">Product</a>
+    <a href="#complexity" class="toc-link">Complexity</a>
+    <a href="#status" class="toc-link">Status</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ── HEADER ── -->
+<header class="site-header reveal">
+  <div class="badge">Active Project — 2026</div>
+  <h1>CACTUS<br><span>Digital Strategy Game — Case Study</span></h1>
+  <p class="header-desc">
+    A 3D strategy board game designed in 2014, digitized in 2026. From physical prototype to production web application — documented as a design, development, and product process.
+  </p>
+  <div class="tag-row">
+    <span class="tag">Three.js</span>
+    <span class="tag">Firebase Realtime DB</span>
+    <span class="tag">Mixpanel</span>
+    <span class="tag">Vercel + GitHub CI/CD</span>
+    <span class="tag">Cross-Platform</span>
+    <span class="tag">WCAG AA/AAA</span>
+    <span class="tag">AI-Assisted Development</span>
+    <span class="tag">Scrum</span>
+  </div>
+</header>
+
+<!-- ── STORY ── -->
+<section id="story" class="reveal">
+  <div class="section-label">00 — Origin</div>
+  <h2>A physical game that couldn't ship.<br>Now it can.</h2>
+
+  <p>CACTUS started as a wooden board game — a 3D spatial strategy game designed for two players. It was never a side project. In 2014, it entered the <em>Konsept 2014 "Zeka Geliştirici Oyuncak Tasarımı"</em> competition organized by IMMIB, and reached the finals. The design was exhibited in the official IMMIB catalogue that year.</p>
+
+  <p>In 2018, CACTUS was exhibited in the main hall of the 87th İzmir International Fair. Not a design fair — an international trade exhibition. The game held its own.</p>
+
+  <p>Then it stalled. Physical production economics didn't work. The tooling cost for a wooden board game at commercial scale was prohibitive for an independent team. 3D printing was tested as an alternative — small batches were produced, the game was playable, but the unit economics never reached a point where commercialization made sense.</p>
+
+  <p>The design sat. The rules didn't change. The pieces didn't change. The game was still sound. It just had no viable path to reach players.</p>
+
+  <p>In 2026, that path opened. A browser-based 3D implementation removes every friction point that killed the physical version — no manufacturing, no inventory, no retail. The constraint that blocked the game for over a decade is simply gone.</p>
+
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-year">2014</div>
+      <div class="tl-line"></div>
+      <div class="tl-content">
+        <strong>Konsept 2014 — Finalist</strong>
+        <p>IMMIB national design competition, "Zeka Geliştirici Oyuncak Tasarımı" category. Exhibited in official catalogue.</p>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-year">2018</div>
+      <div class="tl-line"></div>
+      <div class="tl-content">
+        <strong>87th İzmir International Fair</strong>
+        <p>Exhibited in the main hall. Physical prototype, wooden construction.</p>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-year">2018–25</div>
+      <div class="tl-line"></div>
+      <div class="tl-content">
+        <strong>Production attempts</strong>
+        <p>3D printing iterations. Unit economics tested. Commercialization path did not clear.</p>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-year">2026</div>
+      <div class="tl-line"></div>
+      <div class="tl-content">
+        <strong>Digital — Production</strong>
+        <p>Full web implementation. Cross-platform, online multiplayer, real-time analytics. Live at cactus-boardgame.vercel.app.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="team-row">
+    <div class="team-card">
+      <div class="team-name">Melike Mühür</div>
+      <div class="team-role">Design</div>
+    </div>
+    <div class="team-card">
+      <div class="team-name">Neslihan Tepehan</div>
+      <div class="team-role">Design</div>
+    </div>
+    <div class="team-card">
+      <div class="team-name">Aykut Yıldırım</div>
+      <div class="team-role">UX / Development</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── ORCHESTRATION ── -->
+<section id="orchestration" class="reveal">
+  <div class="section-label">01 — How it was built</div>
+  <h2>AI wrote the code.<br>Every decision was human.</h2>
+
+  <div class="audience-pill"><span class="dot"></span>For everyone</div>
+
+  <p>This project was built using AI as the primary implementation tool. Claude (Anthropic) generated all code — Three.js rendering, game logic, Firebase integration, mobile gesture handling, cross-browser compatibility fixes. No line of production code was written by hand.</p>
+
+  <p>That's the easy part to describe. The harder part: what does that actually mean for how the project was run?</p>
+
+  <p>It means the work shifted entirely to decisions. What should the gesture model be? What does "valid placement" mean for a 3D piece on a 3D board? When should a continuity bonus trigger — and what is the correct definition of "unbroken sequence" in a 3D space? What accessibility standard applies, and is AA sufficient or do we need AAA? Which analytics events carry signal, and which are noise?</p>
+
+  <p>None of those questions have answers that can be generated. They require product judgment, design experience, and domain knowledge. AI handled implementation. The team handled everything else.</p>
+
+  <div class="how-grid">
+    <div class="how-card">
+      <div class="how-card-label">Human</div>
+      <div class="how-card-title">Scope, priorities, DoD</div>
+      <p>Product backlog maintained throughout. Definition of Done set per increment. No feature shipped without meeting playability and accessibility criteria.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-card-label">Human</div>
+      <div class="how-card-title">UX decisions</div>
+      <p>Every interaction model, gesture, flow, and feedback mechanism defined before implementation. Regressions identified and rolled back.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-card-label">Human</div>
+      <div class="how-card-title">Testing & QA</div>
+      <p>Cross-device testing on iOS, Android, desktop. Edge case identification. Bug reporting with exact reproduction steps.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-card-label">AI</div>
+      <div class="how-card-title">All implementation</div>
+      <p>Three.js, Firebase, Mixpanel, gesture handling, game logic, CSS, CI/CD configuration. Implementation only — no decisions.</p>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-value">3</div>
+      <div class="stat-label">Days to first playable build</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">30+</div>
+      <div class="stat-label">Iteration cycles</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">100+</div>
+      <div class="stat-label">Decision points logged</div>
+    </div>
+  </div>
+
+  <p>Three days to first playable build is the number that surprises people. The correct context: three days of execution backed by years of accumulated UX and product experience, plus a design that was already sound. Speed came from not having to figure out the game — only how to implement it correctly.</p>
+
+  <table class="ai-table">
+    <thead>
+      <tr>
+        <th>Area</th>
+        <th>Human</th>
+        <th>AI</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Scope & priorities</td>
+        <td><span class="chip chip-yes">Owner</span> Backlog, DoD, sprint scope</td>
+        <td><span class="chip chip-no">—</span></td>
+      </tr>
+      <tr>
+        <td>UX decisions</td>
+        <td><span class="chip chip-yes">Owner</span> Interaction model, gesture design, flow</td>
+        <td><span class="chip chip-no">—</span></td>
+      </tr>
+      <tr>
+        <td>Quality standards</td>
+        <td><span class="chip chip-yes">Owner</span> WCAG thresholds, cross-browser requirements</td>
+        <td><span class="chip chip-no">—</span></td>
+      </tr>
+      <tr>
+        <td>Testing</td>
+        <td><span class="chip chip-yes">Owner</span> Scenarios, edge cases, bug reporting</td>
+        <td><span class="chip chip-no">—</span></td>
+      </tr>
+      <tr>
+        <td>Implementation</td>
+        <td><span class="chip chip-no">—</span></td>
+        <td><span class="chip chip-yes">Exec</span> All code: Three.js, Firebase, CSS, JS</td>
+      </tr>
+      <tr>
+        <td>Trade-offs</td>
+        <td><span class="chip chip-yes">Selects</span> Evaluates and chooses direction</td>
+        <td><span class="chip chip-yes">Proposes</span> Generates options</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<hr class="divider">
+
+<!-- ── UX/UI ── -->
+<section id="ux" class="reveal">
+  <div class="section-label">02 — UX / UI</div>
+  <h2>Design decisions, not design deliverables.</h2>
+
+  <div class="audience-pill"><span class="dot"></span>For UX/UI designers</div>
+
+  <p>The UX process here didn't produce wireframes or prototypes in the traditional sense. Every UX decision was made live, against a working build, with immediate feedback. The fidelity was always production-level.</p>
+
+  <p>What follows is a record of the decisions that shaped the experience — their problem context, the chosen direction, and what changed.</p>
+
+  <div class="decision-grid">
+
+    <div class="decision-card">
+      <div class="dc-header" onclick="toggleCard(this)">
+        <span class="dc-number">D-01</span>
+        <span class="dc-title">Platform architecture — single file, zero friction</span>
+        <span class="dc-toggle">▼</span>
+      </div>
+      <div class="dc-body">
+        <div class="dc-flow">
+          <div class="flow-item">
+            <div class="flow-dot problem"></div>
+            <div class="flow-text"><strong>Constraint:</strong> The game needed to run in any browser, on desktop and mobile, without installation or app store friction. Installation is a conversion killer for unproven games.</div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-dot decision"></div>
+            <div class="flow-text"><strong>Decision:</strong> Single HTML file architecture. No build tooling. No dependencies to install. Three.js loaded via CDN. Deployed on Vercel with GitHub CI/CD — every commit auto-deploys.</div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-dot outcome"></div>
+            <div class="flow-text"><strong>Outcome:</strong> Any device, any browser, shareable via a single URL. Zero onboarding friction. Playtesters could start a game within 3 seconds of receiving a link.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="decision-card">
+      <div class="dc-header" onclick="toggleCard(this)">
+        <span class="dc-number">D-02</span>
+        <span class="dc-title">Mobile gesture model — separating exploration from commitment</span>
+        <span class="dc-toggle">▼</span>
+      </div>
+      <div class="dc-body">
+        <div class="dc-flow">
+          <div class="flow-item">
+            <div class="flow-dot problem"></div>
+            <div class="flow-text"><strong>Problem:</strong> On desktop, mouse hover provides feedback before commitment — users can explore positions before placing. On mobile, every touch is simultaneously a hover and a tap. The initial implementation treated any tap as a placement trigger, which broke the exploratory flow entirely.</div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-dot decision"></div>
+            <div class="flow-text"><strong>Decision:</strong> Separated ghost positioning from placement confirmation. One-finger drag updates the ghost in real time. Placement only fires when the user explicitly taps "Place" — and only when the ghost is green (valid). Two-finger drag rotates the 3D scene. This maps to existing platform conventions.</div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-dot outcome"></div>
+            <div class="flow-text"><strong>Outcome:</strong> Consistent with platform conventions. Users explore freely before committing. Accidental placements eliminated. Mobile experience is now equivalent to desktop, not a degraded version of it.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="decision-card">
+      <div class="dc-header" onclick="toggleCard(this)">
+        <span class="dc-number">D-03</span>
+        <span class="dc-title">Safari pinch-to-zoom — documented constraint, specific fix</span>
+        <span class="dc-toggle">▼</span>
+      </div>
+      <div class="dc-body">
+        <div class="dc-flow">
+          <div class="flow-item">
+            <div class="flow-dot problem"></div>
+            <div class="flow-text"><strong>Problem:</strong> On iOS Safari, two-finger pinch was zooming the entire browser viewport instead of the game scene. The standard <code>user-scalable=no</code> directive is ignored by Safari since iOS 10 — a known platform constraint with no simple workaround.</div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-dot decision"></div>
+            <div class="flow-text"><strong>Decision:</strong> Intercept two-finger <code>touchmove</code> events with <code>passive: false</code> and call <code>preventDefault()</code>. Combined with <code>maximum-scale=1.0</code> in the viewport meta, this prevents viewport zoom while keeping the in-game pinch-to-zoom functional at the Three.js level.</div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-dot outcome"></div>
+            <div class="flow-text"><strong>Outcome:</strong> Consistent experience across Chrome (Android), Safari (iOS), and all tested desktop browsers. No viewport jank on iOS.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="decision-card">
+      <div class="dc-header" onclick="toggleCard(this)">
+        <span class="dc-number">D-04</span>
+        <span class="dc-title">Accessibility — WCAG AA/AAA as Definition of Done</span>
+        <span class="dc-toggle">▼</span>
+      </div>
+      <div class="dc-body">
+        <div class="dc-flow">
+          <div class="flow-item">
+            <div class="flow-dot problem"></div>
+            <div class="flow-text"><strong>Constraint:</strong> A color-heavy 3D game risks failing basic readability under color vision deficiencies. The original design used a warm-to-cool gradient for both teams — visually clean, but potentially indistinguishable under deuteranopia (affects approximately 8% of males).</div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-dot decision"></div>
+            <div class="flow-text"><strong>Decision:</strong> WCAG AA/AAA contrast ratios set as DoD criteria — not aspirational. A Material Lab tool was built separately to simulate 5 color vision conditions (Deuteranopia, Protanopia, Tritanopia, Achromatopsia, Normal) across 24 color/material combinations, enabling informed decisions before applying changes to the main build.</div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-dot outcome"></div>
+            <div class="flow-text"><strong>Outcome:</strong> Color decisions are testable and defensible. The Material Lab functions as both a design tool and a process artifact that demonstrates the decision methodology.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="decision-card">
+      <div class="dc-header" onclick="toggleCard(this)">
+        <span class="dc-number">D-05</span>
+        <span class="dc-title">UI system scope — deliberate constraint</span>
+        <span class="dc-toggle">▼</span>
+      </div>
+      <div class="dc-body">
+        <div class="dc-flow">
+          <div class="flow-item">
+            <div class="flow-dot problem"></div>
+            <div class="flow-text"><strong>Trade-off:</strong> Building a full component system and design tokens upfront would slow core game development significantly. Shipping without any standards would create inconsistency that's expensive to fix later.</div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-dot decision"></div>
+            <div class="flow-text"><strong>Decision:</strong> Minimum viable UI system — CSS custom properties for color tokens, consistent spacing rhythm, WCAG-compliant contrast. No component library. UI decisions were explicitly not allowed to block gameplay progress. The debt was accepted and documented.</div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-dot outcome"></div>
+            <div class="flow-text"><strong>Outcome:</strong> Core game shipped in days, not weeks. UI debt is backlogged. The constraint proved the principle: accepting known debt explicitly is more productive than trying to eliminate all debt before shipping.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="decision-card">
+      <div class="dc-header" onclick="toggleCard(this)">
+        <span class="dc-number">D-06</span>
+        <span class="dc-title">Multiplayer architecture — online-first removes the physical constraint</span>
+        <span class="dc-toggle">▼</span>
+      </div>
+      <div class="dc-body">
+        <div class="dc-flow">
+          <div class="flow-item">
+            <div class="flow-dot problem"></div>
+            <div class="flow-text"><strong>Constraint:</strong> The physical game required both players to be in the same room. This is the single largest limitation of any physical board game — and the reason CACTUS never scaled beyond demo contexts.</div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-dot decision"></div>
+            <div class="flow-text"><strong>Decision:</strong> Firebase Realtime Database for online multiplayer. Room code system (4-letter, 2-hour TTL). Real-time move sync across both clients. Offline mode retained for same-screen play. Lobby handles mode selection, player naming, countdown, and sync initialization.</div>
+          </div>
+          <div class="flow-item">
+            <div class="flow-dot outcome"></div>
+            <div class="flow-text"><strong>Outcome:</strong> The constraint that blocked the game for a decade is eliminated. Two players anywhere can play a full match. This is also the primary product unlock — it changes who the game can reach.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── DEV ── -->
+<section id="dev" class="reveal">
+  <div class="section-label">03 — Development</div>
+  <h2>Technical architecture and implementation decisions.</h2>
+
+  <div class="audience-pill"><span class="dot"></span>For developers</div>
+
+  <p>The entire application is a single HTML file. No bundler, no framework, no build step. This was a deliberate architectural decision, not a limitation — it eliminates deployment complexity entirely and keeps the feedback loop between decision and deployed output as short as possible.</p>
+
+  <div class="tech-grid">
+    <div class="tech-card">
+      <div class="tech-label">Rendering</div>
+      <div class="tech-value">Three.js r128<br>CDN — no npm</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-label">Game logic</div>
+      <div class="tech-value">Vanilla JS<br>~4,000 lines</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-label">Multiplayer</div>
+      <div class="tech-value">Firebase Realtime DB<br>Europe-west region</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-label">Analytics</div>
+      <div class="tech-value">Mixpanel<br>EU endpoint, custom events</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-label">Hosting</div>
+      <div class="tech-value">Vercel<br>GitHub CI/CD auto-deploy</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-label">Target</div>
+      <div class="tech-value">Chrome, Safari, Firefox<br>iOS, Android, Desktop</div>
+    </div>
+  </div>
+
+  <p>The 3D board is a 2×2×8 grid of cubes — 32 total. Pieces attach to outward-facing surfaces. Placement validity is computed by raycasting from the mouse/touch position onto the active placement plane, snapping to the nearest valid grid offset, and running collision detection against both board cubes and previously placed pieces.</p>
+
+  <div class="code-block">
+// Board geometry: x ∈ {0,1}, y ∈ {0..7}, z ∈ {0,1}
+// Valid placement: attached to board surface, no collision with placed pieces
+// Ghost system: real-time preview (green=valid, red=invalid)
+// Rotation: 24 unique orientations per piece (via quaternion deduplication)
+// Move notation: P{id}·R{rotIdx}·({gx},{gy},{gz})·{face}
+  </div>
+
+  <p>Piece rotation generates all 24 orientations via quaternion application, then deduplicates by coordinate fingerprint. This avoids redundant rotations for symmetric pieces and keeps the valid move set precise.</p>
+
+  <p>The continuity bonus system tracks threshold state per player across the game session — not per-move. Once the 8-unit threshold is crossed, that bonus cannot trigger again for that player. The 16-unit threshold is tracked independently. This prevents re-triggering on subsequent moves that maintain but don't extend the sequence.</p>
+
+  <p>Firebase security rules restrict write access: rooms can be created when the path doesn't exist, joined when status is 'waiting', and game-over events can only be written when a game is in 'playing' state. This prevents room hijacking and stale writes.</p>
+
+  <div class="code-block">
+// Firebase Realtime DB rules (production)
+rooms/$roomId:
+  .read: true
+  .write: !data.exists() || status === 'waiting' || status === 'playing'
+  gameOver/.write: parent.status === 'playing'
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── PRODUCT ── -->
+<section id="product" class="reveal">
+  <div class="section-label">04 — Product & Analytics</div>
+  <h2>What we're measuring and why.</h2>
+
+  <div class="audience-pill"><span class="dot"></span>For product owners / decision makers</div>
+
+  <p>Standard page-view analytics are meaningless for a single-page game. A session that starts and ends on the same URL could be a 30-second bounce or a 25-minute match. The distinction matters entirely.</p>
+
+  <p>The instrumentation strategy here treats the game as a stateful session with discrete events. Every meaningful state transition is tracked with its full context.</p>
+
+  <div class="metric-grid">
+    <div class="metric-card">
+      <div class="metric-event">game_start</div>
+      <div class="metric-desc">Fired when the game engine initializes after lobby. Captures mode, platform, and session context.</div>
+      <div class="metric-params">platform · game_mode · replay_number</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-event">piece_placed</div>
+      <div class="metric-desc">Fired on every move. Full notation string — piece identity, rotation, board coordinates, attachment face.</div>
+      <div class="metric-params">player · piece_name · piece_units · move_number · notation · platform</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-event">game_end</div>
+      <div class="metric-desc">Fired at game conclusion. Raw scores, penalty deductions, win type, full session metrics.</div>
+      <div class="metric-params">winner · win_type · score_raw · score_final · penalty · session_seconds · game_notation</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-event">game_abandoned</div>
+      <div class="metric-desc">Fired on beforeunload if the game is active. Captures drop-off point and session length at abandonment.</div>
+      <div class="metric-params">move_number · scores · session_seconds · platform</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-event">inspect_entered</div>
+      <div class="metric-desc">Post-game board inspection mode. Signals engagement with the result beyond just seeing the score.</div>
+      <div class="metric-params">total_moves · platform</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-event">game_replay</div>
+      <div class="metric-desc">New game started without leaving. Strongest retention signal — player chose to play again immediately.</div>
+      <div class="metric-params">replay_number · platform</div>
+    </div>
+  </div>
+
+  <div class="insight-block">
+    <strong>The notation system enables sequence analysis.</strong> Every move is recorded as a structured string: piece ID, rotation index, board coordinates, attachment face. The full game is stored as an ordered sequence. This makes post-game analysis possible at the move level — not just session level. Which pieces are never played. At which move number do most games end. How often does the Lock Win condition occur relative to Score Win.
+  </div>
+
+  <p>The multiplayer decision was also a product decision. The physical game required both players in the same room — a constraint that limited every demo, every test, every potential player. Online multiplayer removes that constraint entirely. It changes the distribution model: the game can now be shared as a link, played asynchronously across cities, and tested with people who have never seen a physical copy.</p>
+
+  <p>Penalty scoring was added to close a game theory gap: without end-of-game penalties for unused pieces, a player could accumulate points conservatively while hoarding high-value pieces. The penalty — each unused piece deducted by its unit count — forces a trade-off between tactical caution and piece utilization. The win screen displays both raw and final scores with a breakdown, so the penalty's effect on the match outcome is visible.</p>
+</section>
+
+<hr class="divider">
+
+<!-- ── COMPLEXITY ── -->
+<section id="complexity" class="reveal">
+  <div class="section-label">05 — Game Complexity</div>
+  <h2>How many different games of CACTUS can be played?</h2>
+
+  <div class="audience-pill"><span class="dot"></span>For anyone who wants the deep version</div>
+
+  <p>Before this question can be answered, the game needs a notation system — a language for describing positions precisely enough to count them.</p>
+
+  <p>Every surface on the board is defined by two coordinates: which cube <strong>(x, y, z)</strong> and which face <strong>L/R/F/B/T/D</strong>. A complete move records piece identity, rotation index, attachment coordinates, and face direction.</p>
+
+  <div class="notation-example">
+    <div class="ne-label">Move Notation — Format</div>
+    <div class="ne-line">
+      <span class="ne-token">P2</span>
+      <span class="ne-sep">·</span>
+      <span class="ne-token">R4</span>
+      <span class="ne-sep">·</span>
+      <span class="ne-token">(0,0,0)</span>
+      <span class="ne-sep">·</span>
+      <span class="ne-token">F</span>
+    </div>
+    <div class="ne-desc" style="margin-top:10px;">4-unit L piece (P2) · 5th unique rotation (R4) · attached at cube (0,0,0) · front face</div>
+  </div>
+
+  <p>The board has 32 cubes in a 2×2×8 grid, with <strong>72 outward-facing surfaces</strong> as potential attachment points. 24 of these belong to the start zones (y=0 and y=7). The first move must contact a start zone surface.</p>
+
+  <p>Across all 10 pieces and all valid orientations, there are <strong>1,935 valid first-move options</strong>. This is the computed value — not an estimate.</p>
+
+  <p>Game tree size is estimated at approximately <strong>10³⁸</strong>. For reference:</p>
+
+  <div style="margin: 24px 0;">
+    <div class="complexity-row">
+      <div class="cc-name">Tic-tac-toe</div>
+      <div class="cc-bar-wrap"><div class="cc-bar" style="width:2%"></div></div>
+      <div class="cc-exp">~10⁵</div>
+    </div>
+    <div class="complexity-row">
+      <div class="cc-name">Checkers</div>
+      <div class="cc-bar-wrap"><div class="cc-bar" style="width:38%"></div></div>
+      <div class="cc-exp">~10³¹</div>
+    </div>
+    <div class="complexity-row">
+      <div class="cc-name" style="font-weight:600;color:var(--accent)">CACTUS</div>
+      <div class="cc-bar-wrap"><div class="cc-bar highlight" style="width:47%"></div></div>
+      <div class="cc-exp" style="color:var(--accent);font-weight:500">~10³⁸</div>
+    </div>
+    <div class="complexity-row">
+      <div class="cc-name">Chess</div>
+      <div class="cc-bar-wrap"><div class="cc-bar" style="width:100%"></div></div>
+      <div class="cc-exp">~10¹²³</div>
+    </div>
+  </div>
+
+  <p>CACTUS sits between Checkers and Chess in game tree complexity. This is a consequence of three-dimensional placement, 24 rotation states per piece, and the absence of piece repetition — each piece is placed exactly once per player.</p>
+
+  <p>The full analysis — board geometry, orientation counting, valid move computation, and game tree estimation — is documented in the <a href="cactus-complexity-report.html" style="color:var(--accent);">Complexity Report</a>.</p>
+</section>
+
+<hr class="divider">
+
+<!-- ── STATUS ── -->
+<section id="status" class="reveal">
+  <div class="section-label">06 — Current Status</div>
+  <h2>Live. In active development.</h2>
+
+  <div class="status-bar">
+    <div class="status-live">
+      <div class="status-dot"></div>
+      <span>Production — cactus-boardgame.vercel.app</span>
+    </div>
+    <div class="status-date">March 2026</div>
+  </div>
+
+  <p>The game is live and in a closed playtest phase. Analytics are running. The focus is on validating game mechanics, cross-device behavior, and interaction clarity before broader distribution.</p>
+
+  <p>What's working: offline same-screen play, online multiplayer via room codes, cross-platform gesture handling, real-time scoring with penalty calculation, and the full analytics pipeline. Firebase security rules are in production configuration.</p>
+
+  <p>What's in progress: online multiplayer sync edge cases, move replay system architecture, and broader playtesting.</p>
+
+  <div class="vision-block">
+    <div class="vision-title">On the roadmap</div>
+    <p>A <strong>move replay system</strong> — after a game ends, both players can step through each move from the beginning, viewing the exact board state at any point. No undo, no branching — pure post-game review. When the final move is reached, the game becomes playable again. This turns every match into a learning artifact, and enables the kind of session analysis that makes the notation system meaningful.</p>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<script>
+function toggleCard(header) {
+  const card = header.closest('.decision-card');
+  card.classList.toggle('open');
+}
+
+const revealEls = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+revealEls.forEach(el => observer.observe(el));
+
+// Animate complexity bars on scroll
+const barObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.querySelectorAll('.cc-bar').forEach(bar => {
+        const w = bar.style.width;
+        bar.style.width = '0%';
+        requestAnimationFrame(() => { bar.style.width = w; });
+      });
+    }
+  });
+}, { threshold: 0.3 });
+document.querySelectorAll('#complexity').forEach(s => barObserver.observe(s));
+</script>
+
+</body>
+</html>
