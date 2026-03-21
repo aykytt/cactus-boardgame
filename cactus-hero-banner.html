@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CACTUS — Hero Banner</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: transparent;
+  font-family: 'Courier New', monospace;
+}
+
+.hero {
+  background: #0a0b09;
+  border-radius: 0px;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  min-height: 340px;
+  width: 100%;
+}
+
+.hero-left {
+  flex: 1;
+  padding: 36px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.hero-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  color: #8a9e6a;
+  margin-bottom: 16px;
+  font-weight: 700;
+}
+
+.hero-title {
+  font-size: clamp(48px, 7vw, 80px);
+  font-weight: 700;
+  color: #f0f2e6;
+  letter-spacing: 0.2em;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.hero-sub {
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  color: #a0b080;
+  margin-bottom: 18px;
+  font-weight: 600;
+}
+
+.hero-tags {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.hero-tag {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: #9aae7a;
+  border: 1px solid #2e3a20;
+  padding: 4px 9px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.hero-desc {
+  font-family: 'DM Sans', 'Helvetica Neue', sans-serif;
+  font-size: 14px;
+  color: #b0b890;
+  line-height: 1.75;
+  max-width: 340px;
+  margin-bottom: 18px;
+  font-weight: 500;
+}
+
+.live-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c8f060;
+  flex-shrink: 0;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(200, 240, 96, 0.4); }
+  50%       { opacity: 0.7; box-shadow: 0 0 0 5px rgba(200, 240, 96, 0); }
+}
+
+.live-text {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: #8a9e6a;
+  font-weight: 700;
+}
+
+.hero-meta {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.hero-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hero-meta-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: #5a6e40;
+  font-weight: 700;
+}
+
+.hero-meta-value {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: #c8d8a8;
+  font-weight: 700;
+}
+
+.hero-divider {
+  width: 1px;
+  background: #1a2010;
+  flex-shrink: 0;
+}
+
+.hero-right {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0d0f08;
+  overflow: hidden;
+}
+
+.board-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+@media (max-width: 680px) {
+  .hero { flex-direction: column; min-height: auto; }
+  .hero-right { width: 100%; height: 260px; }
+  .hero-divider { width: 100%; height: 1px; }
+  .hero-left { padding: 36px 28px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">STRATEGY BOARD GAME</div>
+    <div class="hero-title">CACTUS</div>
+    <div class="hero-sub">3D · TWO PLAYER · BROWSER</div>
+
+    <div class="hero-tags">
+      <span class="hero-tag">ONLINE MULTIPLAYER</span>
+      <span class="hero-tag">FREE TO PLAY</span>
+    </div>
+
+    <div class="hero-desc">
+      A spatial strategy game. Place your pieces, block your opponent, claim the board. No download, no install.
+    </div>
+
+    <div class="live-row">
+      <div class="live-dot"></div>
+      <div class="live-text">LIVE — cactus-boardgame.vercel.app</div>
+    </div>
+
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">PLATFORM</div>
+        <div class="hero-meta-value">Browser</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">PLAYERS</div>
+        <div class="hero-meta-value">1 v 1</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">PRICE</div>
+        <div class="hero-meta-value">Free</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-divider"></div>
+
+  <div class="hero-right">
+    <div class="board-float">
+      <svg width="220" height="300" viewBox="0 0 220 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Board -->
+        <rect x="70" y="20" width="32" height="32" rx="2" fill="#1e2818" stroke="#2a3820" stroke-width="0.5"/>
+        <rect x="106" y="20" width="32" height="32" rx="2" fill="#1e2818" stroke="#2a3820" stroke-width="0.5"/>
+        <rect x="70" y="56" width="32" height="32" rx="2" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+        <rect x="106" y="56" width="32" height="32" rx="2" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+        <rect x="70" y="92" width="32" height="32" rx="2" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+        <rect x="106" y="92" width="32" height="32" rx="2" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+        <rect x="70" y="128" width="32" height="32" rx="2" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+        <rect x="106" y="128" width="32" height="32" rx="2" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+        <rect x="70" y="164" width="32" height="32" rx="2" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+        <rect x="106" y="164" width="32" height="32" rx="2" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+        <rect x="70" y="200" width="32" height="32" rx="2" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+        <rect x="106" y="200" width="32" height="32" rx="2" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+        <rect x="70" y="236" width="32" height="32" rx="2" fill="#1e2818" stroke="#2a3820" stroke-width="0.5"/>
+        <rect x="106" y="236" width="32" height="32" rx="2" fill="#1e2818" stroke="#2a3820" stroke-width="0.5"/>
+        <!-- Dark zone -->
+        <rect x="70" y="20" width="68" height="3" rx="1" fill="#c8f060" opacity="0.35"/>
+        <rect x="70" y="265" width="68" height="3" rx="1" fill="#c8f060" opacity="0.35"/>
+        <!-- P1 pieces green -->
+        <rect x="34" y="56" width="32" height="32" rx="2" fill="#7ab020" opacity="0.95"/>
+        <rect x="34" y="92" width="32" height="32" rx="2" fill="#8fc828" opacity="0.95"/>
+        <rect x="34" y="128" width="32" height="32" rx="2" fill="#6a9818" opacity="0.95"/>
+        <rect x="0" y="92" width="30" height="32" rx="2" fill="#5a8010" opacity="0.9"/>
+        <!-- P2 pieces orange -->
+        <rect x="142" y="92" width="32" height="32" rx="2" fill="#d85a30" opacity="0.95"/>
+        <rect x="142" y="128" width="32" height="32" rx="2" fill="#c84820" opacity="0.95"/>
+        <rect x="142" y="164" width="32" height="32" rx="2" fill="#b83818" opacity="0.95"/>
+        <rect x="178" y="128" width="30" height="32" rx="2" fill="#a82810" opacity="0.9"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
