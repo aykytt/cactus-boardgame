@@ -187,25 +187,7 @@ body {
       A spatial strategy game. Place your pieces, block your opponent, claim the board. No download, no install.
     </div>
 
-    <div class="live-row">
-      <div class="live-dot"></div>
-      <div class="live-text">LIVE — cactus-boardgame.vercel.app</div>
-    </div>
 
-    <div class="hero-meta">
-      <div class="hero-meta-item">
-        <div class="hero-meta-label">PLATFORM</div>
-        <div class="hero-meta-value">Browser</div>
-      </div>
-      <div class="hero-meta-item">
-        <div class="hero-meta-label">PLAYERS</div>
-        <div class="hero-meta-value">1 v 1</div>
-      </div>
-      <div class="hero-meta-item">
-        <div class="hero-meta-label">PRICE</div>
-        <div class="hero-meta-value">Free</div>
-      </div>
-    </div>
   </div>
 
   <div class="hero-divider"></div>
@@ -246,5 +228,13 @@ body {
   </div>
 </div>
 
+<script>
+function sendHeight() {
+  var h = document.body.scrollHeight;
+  window.parent.postMessage({ type: 'height', height: h }, '*');
+}
+window.addEventListener('load', sendHeight);
+window.addEventListener('resize', sendHeight);
+</script>
 </body>
 </html>
