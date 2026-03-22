@@ -523,6 +523,73 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
     gap: 0;
   }
 
+  @keyframes htpGlow { 0%,100%{opacity:0.6} 50%{opacity:1} }
+  @keyframes htpSlide { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes htpFade  { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes htpPop   { 0%{opacity:0;transform:scale(0.7)} 70%{transform:scale(1.08)} 100%{opacity:1;transform:scale(1)} }
+
+  /* PC slide layout */
+  @media (min-width: 720px) {
+    #htp-track > div {
+      flex-direction: row !important;
+      gap: 56px !important;
+      padding: 32px 80px !important;
+      justify-content: center !important;
+      align-items: center !important;
+    }
+    #htp-track > div > div:last-child {
+      max-width: 320px;
+    }
+  }
+
+  /* Info tip button */
+  .info-tip-btn {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    color: #5a6e40;
+    font-family: 'Courier New', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: color 0.18s;
+    letter-spacing: 0;
+  }
+  .info-tip-btn:hover { color: #a8b890; }
+  .tip-box {
+    position: absolute;
+    right: 34px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1c2214;
+    border: 1px solid #3a4030;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #a8b890;
+    letter-spacing: 0.04em;
+    line-height: 1.55;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s;
+    z-index: 30;
+    font-weight: 400;
+  }
+  @media (hover: hover) {
+    .info-tip-btn:hover .tip-box { opacity: 1; }
+  }
+
+  /* Nick screen flex */
+  #nick-create, #nick-enter { display: none; }
+  #nick-create.active, #nick-enter.active { display: flex; }
+
   .lobby-logo {
     font-size: 48px;
     font-weight: 900;
@@ -1102,40 +1169,292 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
 <body>
 
 
-<!-- ── LOBBY ── -->
-<div id="lobby">
+<!-- ══════════════════════════════════════
+     HOW TO PLAY
+══════════════════════════════════════ -->
+<div id="htp" style="position:fixed;inset:0;background:#0a0b09;z-index:95;display:flex;flex-direction:column;overflow:hidden;">
+  <div style="position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;padding:20px 28px;border-bottom:1px solid #2a3020;background:#0a0b09;z-index:2;">
+    <span style="font-size:12px;letter-spacing:0.28em;color:#7a8a60;font-weight:700;">HOW TO PLAY</span>
+  </div>
 
+  <div style="position:absolute;inset:61px 0 80px 0;overflow:hidden;">
+    <div id="htp-track" style="display:flex;height:100%;transition:transform 0.38s cubic-bezier(0.4,0,0.2,1);">
+
+      <!-- SLIDE 1/6: THE BOARD -->
+      <div style="flex-shrink:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:32px;">
+        <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="160" height="300" viewBox="0 0 160 300" fill="none">
+            <rect x="44" y="4"   width="30" height="30" rx="3" fill="#243018" stroke="#c8f060" stroke-width="1.5"/>
+            <rect x="78" y="4"   width="30" height="30" rx="3" fill="#243018" stroke="#c8f060" stroke-width="1.5"/>
+            <rect x="44" y="38"  width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="78" y="38"  width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="44" y="72"  width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="78" y="72"  width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="44" y="106" width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="78" y="106" width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="44" y="140" width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="78" y="140" width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="44" y="174" width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="78" y="174" width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="44" y="208" width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="78" y="208" width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="44" y="242" width="30" height="30" rx="3" fill="#243018" stroke="#c8f060" stroke-width="1.5"/>
+            <rect x="78" y="242" width="30" height="30" rx="3" fill="#243018" stroke="#c8f060" stroke-width="1.5"/>
+            <rect x="40" y="0"   width="72" height="38" rx="4" fill="none" stroke="#c8f060" stroke-width="2" stroke-dasharray="5 3" style="animation:htpGlow 2s ease-in-out infinite"/>
+            <rect x="40" y="238" width="72" height="38" rx="4" fill="none" stroke="#c8f060" stroke-width="2" stroke-dasharray="5 3" style="animation:htpGlow 2s ease-in-out 0.6s infinite"/>
+            <text x="118" y="22"  font-family="Courier New" font-size="11" fill="#c8f060" font-weight="700">START</text>
+            <text x="118" y="260" font-family="Courier New" font-size="11" fill="#c8f060" font-weight="700">START</text>
+          </svg>
+        </div>
+        <div style="max-width:320px;">
+          <div style="font-size:11px;letter-spacing:0.28em;color:#5a6e40;font-weight:700;margin-bottom:12px;">01 / 06</div>
+          <h2 style="font-size:22px;font-weight:700;color:#f0f2e6;margin-bottom:16px;">The Board</h2>
+          <p style="font-size:15px;color:#a8b890;line-height:1.8;">A tower of 32 cubes — 2 wide, 8 tall. The <strong style="color:#c8f060;">glowing top and bottom rows</strong> are the start zones. Every game must begin with contact there.</p>
+        </div>
+      </div>
+
+      <!-- SLIDE 2/6: FIRST MOVE -->
+      <div style="flex-shrink:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:32px;">
+        <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="200" height="240" viewBox="0 0 200 240" fill="none">
+            <rect x="80" y="10"  width="30" height="30" rx="3" fill="#243018" stroke="#c8f060" stroke-width="1.5"/>
+            <rect x="114" y="10" width="30" height="30" rx="3" fill="#243018" stroke="#c8f060" stroke-width="1.5"/>
+            <rect x="80" y="44"  width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="114" y="44" width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="80" y="78"  width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="114" y="78" width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="80" y="112" width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="114" y="112" width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="76" y="6" width="72" height="38" rx="4" fill="none" stroke="#c8f060" stroke-width="2" stroke-dasharray="5 3" style="animation:htpGlow 2s ease-in-out infinite"/>
+            <g style="animation:htpSlide 0.5s ease 0.3s both">
+              <rect x="30" y="10" width="30" height="30" rx="3" fill="#8fc828"/>
+              <rect x="30" y="44" width="30" height="30" rx="3" fill="#7ab020"/>
+            </g>
+            <g style="animation:htpFade 0.4s ease 0.85s both">
+              <line x1="62" y1="25" x2="78" y2="25" stroke="#c8f060" stroke-width="2.5" stroke-linecap="round"/>
+              <polygon points="78,20 78,30 86,25" fill="#c8f060"/>
+            </g>
+            <text x="100" y="175" font-family="Courier New" font-size="13" fill="#c8f060" text-anchor="middle" font-weight="700">touch the START zone</text>
+            <text x="100" y="193" font-family="Courier New" font-size="12" fill="#7a8a60" text-anchor="middle">any piece can be used</text>
+          </svg>
+        </div>
+        <div style="max-width:320px;">
+          <div style="font-size:11px;letter-spacing:0.28em;color:#5a6e40;font-weight:700;margin-bottom:12px;">02 / 06</div>
+          <h2 style="font-size:22px;font-weight:700;color:#f0f2e6;margin-bottom:16px;">First Move</h2>
+          <p style="font-size:15px;color:#a8b890;line-height:1.8;">Your first piece must <strong style="color:#c8f060;">touch the start zone</strong>. <strong style="color:#c8f060;">Any piece</strong> can be used. At least one unit must make contact.</p>
+        </div>
+      </div>
+
+      <!-- SLIDE 3/6: TOUCH RULE -->
+      <div style="flex-shrink:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:32px;">
+        <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="220" height="200" viewBox="0 0 220 200" fill="none">
+            <rect x="90" y="20"  width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="90" y="54"  width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="90" y="88"  width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="90" y="122" width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="90" y="54" width="30" height="30" rx="3" fill="#8fc828"/>
+            <rect x="90" y="88" width="30" height="30" rx="3" fill="#7ab020"/>
+            <g style="animation:htpSlide 0.45s ease 0.5s both">
+              <rect x="58" y="54" width="30" height="30" rx="3" fill="#d85a30"/>
+              <rect x="58" y="88" width="30" height="30" rx="3" fill="#c84820"/>
+              <rect x="24" y="88" width="30" height="30" rx="3" fill="#b83818"/>
+            </g>
+            <g style="animation:htpPop 0.3s ease 0.95s both">
+              <circle cx="89" cy="69"  r="7" fill="none" stroke="#c8f060" stroke-width="2"/>
+              <circle cx="89" cy="69"  r="3" fill="#c8f060"/>
+              <circle cx="89" cy="103" r="7" fill="none" stroke="#c8f060" stroke-width="2"/>
+              <circle cx="89" cy="103" r="3" fill="#c8f060"/>
+            </g>
+            <text x="110" y="168" font-family="Courier New" font-size="13" fill="#c8f060" text-anchor="middle" font-weight="700">must touch opponent</text>
+            <text x="110" y="186" font-family="Courier New" font-size="12" fill="#7a8a60" text-anchor="middle">every move, every turn</text>
+          </svg>
+        </div>
+        <div style="max-width:320px;">
+          <div style="font-size:11px;letter-spacing:0.28em;color:#5a6e40;font-weight:700;margin-bottom:12px;">03 / 06</div>
+          <h2 style="font-size:22px;font-weight:700;color:#f0f2e6;margin-bottom:16px;">Touch Rule</h2>
+          <p style="font-size:15px;color:#a8b890;line-height:1.8;">After the first move, <strong style="color:#c8f060;">every piece must touch your opponent's last piece</strong>. No contact — the move is invalid.</p>
+        </div>
+      </div>
+
+      <!-- SLIDE 4/6: 1-UNIT RULE -->
+      <div style="flex-shrink:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:32px;">
+        <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="240" height="200" viewBox="0 0 240 200" fill="none">
+            <rect x="100" y="10"  width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="134" y="10"  width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="100" y="44"  width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="134" y="44"  width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="100" y="78"  width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="134" y="78"  width="30" height="30" rx="3" fill="#141810" stroke="#222a18" stroke-width="0.5"/>
+            <rect x="100" y="44" width="30" height="30" rx="3" fill="#8fc828"/>
+            <line x1="97" y1="4" x2="97" y2="120" stroke="#3a5020" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <text x="70" y="8"  font-family="Courier New" font-size="10" fill="#4a6030" text-anchor="middle">board</text>
+            <text x="70" y="20" font-family="Courier New" font-size="10" fill="#4a6030" text-anchor="middle">edge</text>
+            <g style="animation:htpPop 0.35s ease 0.2s both">
+              <rect x="62" y="44" width="30" height="30" rx="3" fill="#d85a30"/>
+              <text x="47" y="38" font-family="Courier New" font-size="22" fill="#8fc828" text-anchor="middle" font-weight="700">✓</text>
+              <text x="47" y="90" font-family="Courier New" font-size="13" fill="#8fc828" font-weight="700" text-anchor="middle">1 unit</text>
+              <text x="47" y="105" font-family="Courier New" font-size="11" fill="#5a8030" text-anchor="middle">outside = OK</text>
+            </g>
+            <g style="animation:htpPop 0.35s ease 0.6s both">
+              <rect x="168" y="44" width="30" height="30" rx="3" fill="#d85a30" opacity="0.6"/>
+              <rect x="202" y="44" width="30" height="30" rx="3" fill="#c84820" opacity="0.6"/>
+            </g>
+            <g style="animation:htpPop 0.3s ease 0.9s both">
+              <line x1="168" y1="44" x2="232" y2="74" stroke="#d85a30" stroke-width="3" stroke-linecap="round"/>
+              <line x1="232" y1="44" x2="168" y2="74" stroke="#d85a30" stroke-width="3" stroke-linecap="round"/>
+            </g>
+            <text x="200" y="90"  font-family="Courier New" font-size="13" fill="#d85a30" font-weight="700" text-anchor="middle">2 units</text>
+            <text x="200" y="105" font-family="Courier New" font-size="11" fill="#8a3020" text-anchor="middle">outside = invalid</text>
+            <text x="120" y="142" font-family="Courier New" font-size="13" fill="#c8d8a8" text-anchor="middle" font-weight="700">max 1 unit beyond board edge</text>
+          </svg>
+        </div>
+        <div style="max-width:320px;">
+          <div style="font-size:11px;letter-spacing:0.28em;color:#5a6e40;font-weight:700;margin-bottom:12px;">04 / 06</div>
+          <h2 style="font-size:22px;font-weight:700;color:#f0f2e6;margin-bottom:16px;">The 1-Unit Rule</h2>
+          <p style="font-size:15px;color:#a8b890;line-height:1.8;">A piece can extend <strong style="color:#c8f060;">at most 1 unit beyond the board edge</strong>. Two or more units hanging outside is <span style="color:#d85a30;font-weight:700;">invalid</span>.</p>
+        </div>
+      </div>
+
+      <!-- SLIDE 5/6: SCORING -->
+      <div style="flex-shrink:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:32px;">
+        <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="230" height="200" viewBox="0 0 230 200" fill="none">
+            <text x="25" y="18" font-family="Courier New" font-size="10" fill="#8fc828" text-anchor="middle" font-weight="700">YOU</text>
+            <text x="59" y="18" font-family="Courier New" font-size="10" fill="#d85a30" text-anchor="middle" font-weight="700">OPP</text>
+            <rect x="10" y="24" width="30" height="30" rx="3" fill="#8fc828"/>
+            <rect x="10" y="58" width="30" height="30" rx="3" fill="#7ab020"/>
+            <rect x="10" y="92" width="30" height="30" rx="3" fill="#6a9018"/>
+            <rect x="44" y="24" width="30" height="30" rx="3" fill="#d85a30" opacity="0.9"/>
+            <rect x="44" y="92" width="30" height="30" rx="3" fill="#c84820" opacity="0.9"/>
+            <rect x="10" y="58" width="30" height="30" rx="3" fill="none" stroke="#c8f060" stroke-width="2.5" style="animation:htpGlow 1.5s ease-in-out infinite"/>
+            <circle cx="43" cy="39"  r="5" fill="#c8f060"/>
+            <circle cx="43" cy="107" r="5" fill="#c8f060"/>
+            <text x="25" y="76" font-family="Courier New" font-size="9" fill="#c8f060" text-anchor="middle">+5!</text>
+            <rect x="88" y="22" width="136" height="26" rx="4" fill="#1c2412" stroke="#2a3820"/>
+            <text x="156" y="39" font-family="Courier New" font-size="12" fill="#c8c9b8" text-anchor="middle">3 units = +3 pts</text>
+            <rect x="88" y="54" width="136" height="26" rx="4" fill="#1c2412" stroke="#2a3820"/>
+            <text x="156" y="71" font-family="Courier New" font-size="12" fill="#c8f060" text-anchor="middle">2 touch = +2 pts</text>
+            <rect x="88" y="86" width="136" height="26" rx="4" fill="#1c2412" stroke="#c8f060" stroke-width="1.2"/>
+            <text x="156" y="103" font-family="Courier New" font-size="11" fill="#c8f060" text-anchor="middle" font-weight="700">1 cube → 2 opp = +5</text>
+            <line x1="88" y1="124" x2="224" y2="124" stroke="#3a4a28" stroke-width="1"/>
+            <text x="156" y="144" font-family="Courier New" font-size="16" fill="#c8f060" text-anchor="middle" font-weight="700">= +10 pts</text>
+            <text x="115" y="164" font-family="Courier New" font-size="12" fill="#d0e0b0" text-anchor="middle">8 units in a line → +10 bonus</text>
+            <text x="115" y="182" font-family="Courier New" font-size="12" fill="#d0e0b0" text-anchor="middle">unused pieces at end = penalty</text>
+          </svg>
+        </div>
+        <div style="max-width:320px;">
+          <div style="font-size:11px;letter-spacing:0.28em;color:#5a6e40;font-weight:700;margin-bottom:12px;">05 / 06</div>
+          <h2 style="font-size:22px;font-weight:700;color:#f0f2e6;margin-bottom:16px;">Scoring</h2>
+          <p style="font-size:15px;color:#a8b890;line-height:1.8;"><strong style="color:#c8f060;">Base:</strong> 1 pt per unit.<br><strong style="color:#c8f060;">Contact:</strong> +1 per opponent cube touched.<br><strong style="color:#c8f060;">Placement Bonus:</strong> 1 cube touching 2 opponent cubes → +5.<br><strong style="color:#c8f060;">Continuity:</strong> 8 in a line → +10.</p>
+        </div>
+      </div>
+
+      <!-- SLIDE 6/6: WIN CONDITIONS -->
+      <div style="flex-shrink:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:32px;">
+        <div style="display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="240" height="160" viewBox="0 0 240 160" fill="none">
+            <text x="120" y="44" font-family="Courier New" font-size="40" text-anchor="middle">🏆</text>
+            <rect x="6"  y="62" width="70" height="28" rx="5" fill="#1a2010" stroke="#2a3820"/>
+            <text x="41" y="80" font-family="Courier New" font-size="11" fill="#8fc828" text-anchor="middle" font-weight="700">SCORE WIN</text>
+            <rect x="84" y="62" width="70" height="28" rx="5" fill="#1a2010" stroke="#2a3820"/>
+            <text x="119" y="80" font-family="Courier New" font-size="11" fill="#8fc828" text-anchor="middle" font-weight="700">CACTUS 🌵</text>
+            <rect x="162" y="62" width="70" height="28" rx="5" fill="#1a2010" stroke="#2a3820"/>
+            <text x="197" y="80" font-family="Courier New" font-size="11" fill="#8fc828" text-anchor="middle" font-weight="700">LOCK 🔒</text>
+          </svg>
+        </div>
+        <div style="max-width:320px;">
+          <div style="font-size:11px;letter-spacing:0.28em;color:#5a6e40;font-weight:700;margin-bottom:12px;">06 / 06</div>
+          <h2 style="font-size:22px;font-weight:700;color:#f0f2e6;margin-bottom:16px;">How to Win</h2>
+          <p style="font-size:15px;color:#a8b890;line-height:1.8;"><strong style="color:#c8f060;">Score Win:</strong> play all pieces, highest score.<br><br><strong style="color:#c8f060;">Cactus Win:</strong> no moves left — unused pieces penalize score.<br><br><strong style="color:#c8f060;">Lock Win:</strong> surround the board — instant victory.</p>
+        </div>
+      </div>
+
+    </div><!-- /htp-track -->
+  </div><!-- /slides wrap -->
+
+  <!-- Footer nav -->
+  <div style="position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:16px;padding:16px 24px;border-top:1px solid #2a3020;background:#0a0b09;">
+    <button id="htp-back" onclick="htpNav(-1)" disabled style="background:transparent;border:1px solid #2a3020;border-radius:8px;color:#f0f2e6;font-family:'Courier New',monospace;font-size:13px;font-weight:700;letter-spacing:0.12em;padding:11px 22px;cursor:pointer;min-width:90px;transition:all 0.18s;opacity:0.22;pointer-events:none;">← Back</button>
+    <div id="htp-dots" style="display:flex;gap:7px;align-items:center;">
+      <div class="hd" style="width:20px;height:6px;border-radius:3px;background:#c8f060;transition:all 0.25s;"></div>
+      <div class="hd" style="width:6px;height:6px;border-radius:50%;background:#3a4030;transition:all 0.25s;"></div>
+      <div class="hd" style="width:6px;height:6px;border-radius:50%;background:#3a4030;transition:all 0.25s;"></div>
+      <div class="hd" style="width:6px;height:6px;border-radius:50%;background:#3a4030;transition:all 0.25s;"></div>
+      <div class="hd" style="width:6px;height:6px;border-radius:50%;background:#3a4030;transition:all 0.25s;"></div>
+      <div class="hd" style="width:6px;height:6px;border-radius:50%;background:#3a4030;transition:all 0.25s;"></div>
+    </div>
+    <button id="htp-skip" onclick="htpSkip()" style="background:transparent;border:none;color:#5a6e40;font-family:'Courier New',monospace;font-size:12px;letter-spacing:0.14em;cursor:pointer;padding:11px 10px;text-decoration:underline;text-underline-offset:3px;">Skip</button>
+    <button id="htp-next" onclick="htpNav(1)" style="background:#c8f060;border:1px solid #c8f060;border-radius:8px;color:#0a0b09;font-family:'Courier New',monospace;font-size:13px;font-weight:700;letter-spacing:0.12em;padding:11px 22px;cursor:pointer;min-width:90px;transition:all 0.18s;">Next →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     LOBBY (new — with tooltips & nickname flow)
+══════════════════════════════════════ -->
+<div id="lobby" style="display:none;">
   <div class="lobby-logo">CACTUS</div>
-  <div class="lobby-sub" id="lobby-sub-text">Strategy Game</div>
-
-  <div class="lobby-name-row">
-    <input class="lobby-name-input" id="lobby-name" type="text"
-           placeholder="Your name (optional)" maxlength="16"
-           autocomplete="off" spellcheck="false">
-    <div class="lobby-name-label" id="lobby-name-label">Player Name</div>
-  </div>
-
+  <div class="lobby-sub">Strategy Game</div>
   <div class="lobby-btns">
-    <button class="lobby-btn lobby-btn-primary" id="btn-create">
-      <span id="lbl-create">Create Game</span>
-      <span class="btn-arrow">→</span>
-    </button>
-    <button class="lobby-btn lobby-btn-secondary" id="btn-join">
-      <span id="lbl-join">Enter Code</span>
-      <span class="btn-arrow">→</span>
-    </button>
-    <button class="lobby-btn lobby-btn-ghost" id="btn-offline">
-      <span id="lbl-offline">Play on One Screen</span>
-      <span class="btn-arrow">→</span>
-    </button>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="lobby-btn lobby-btn-primary" id="btn-create">
+        <span id="lbl-create">Create Game</span>
+        <span class="btn-arrow">→</span>
+      </button>
+      <button class="info-tip-btn" onclick="showTip('create')" title="Play on separate devices with a friend">i
+        <div class="tip-box">Play on separate devices with a friend — you create the room, they enter your code.</div>
+      </button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="lobby-btn lobby-btn-secondary" id="btn-join">
+        <span id="lbl-join">Enter Code</span>
+        <span class="btn-arrow">→</span>
+      </button>
+      <button class="info-tip-btn" onclick="showTip('enter')" title="Enter the code from your friend">i
+        <div class="tip-box">Your friend created a room — enter the 4-letter code they shared.</div>
+      </button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="lobby-btn lobby-btn-ghost" id="btn-offline">
+        <span id="lbl-offline">Play on One Screen</span>
+        <span class="btn-arrow">→</span>
+      </button>
+      <button class="info-tip-btn" onclick="showTip('offline')" title="Take turns on this device">i
+        <div class="tip-box">Both players take turns on this device.</div>
+      </button>
+    </div>
   </div>
+  <button onclick="htpShow()" style="background:transparent;border:none;color:#5a6e40;font-family:'Courier New',monospace;font-size:13px;letter-spacing:0.16em;cursor:pointer;padding:8px 0;text-decoration:underline;text-underline-offset:4px;margin-top:8px;">How to Play?</button>
+</div>
+
+<!-- NICKNAME — CREATE -->
+<div id="nick-create" style="display:none;position:absolute;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;z-index:90;gap:0;">
+  <button onclick="showLobby()" style="position:absolute;top:20px;left:20px;background:transparent;border:1px solid #2a3020;border-radius:7px;color:#5a6e40;font-family:'Courier New',monospace;font-size:12px;letter-spacing:0.1em;padding:8px 16px;cursor:pointer;">← Back</button>
+  <div style="font-size:12px;letter-spacing:0.28em;color:#5a6e40;font-weight:700;margin-bottom:22px;">PLAYER NICKNAME</div>
+  <input id="nick-create-input" type="text" maxlength="16" placeholder="nickname (optional)" autocomplete="off" spellcheck="false"
+    style="background:rgba(255,255,255,0.06);border:1px solid #2a3020;border-radius:10px;color:#f0f2e6;font-family:'Courier New',monospace;font-size:16px;padding:15px 20px;outline:none;letter-spacing:0.06em;width:100%;max-width:290px;margin-bottom:10px;text-align:center;-webkit-appearance:none;"
+    onkeydown="if(event.key==='Enter') nickNextCreate()">
+  <div style="font-size:12px;letter-spacing:0.1em;color:#5a6e40;margin-bottom:28px;">Leave blank to play as Player 1</div>
+  <button onclick="nickNextCreate()" style="background:#c8f060;border:none;border-radius:10px;color:#0a0b09;font-family:'Courier New',monospace;font-size:14px;font-weight:700;letter-spacing:0.16em;padding:16px 44px;cursor:pointer;">Next →</button>
+</div>
+
+<!-- NICKNAME — ENTER CODE -->
+<div id="nick-enter" style="display:none;position:absolute;inset:0;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;z-index:90;gap:0;">
+  <button onclick="showLobby()" style="position:absolute;top:20px;left:20px;background:transparent;border:1px solid #2a3020;border-radius:7px;color:#5a6e40;font-family:'Courier New',monospace;font-size:12px;letter-spacing:0.1em;padding:8px 16px;cursor:pointer;">← Back</button>
+  <div style="font-size:12px;letter-spacing:0.28em;color:#5a6e40;font-weight:700;margin-bottom:22px;">PLAYER NICKNAME</div>
+  <input id="nick-enter-input" type="text" maxlength="16" placeholder="nickname (optional)" autocomplete="off" spellcheck="false"
+    style="background:rgba(255,255,255,0.06);border:1px solid #2a3020;border-radius:10px;color:#f0f2e6;font-family:'Courier New',monospace;font-size:16px;padding:15px 20px;outline:none;letter-spacing:0.06em;width:100%;max-width:290px;margin-bottom:10px;text-align:center;-webkit-appearance:none;"
+    onkeydown="if(event.key==='Enter') nickNextEnter()">
+  <div style="font-size:12px;letter-spacing:0.1em;color:#5a6e40;margin-bottom:28px;">Leave blank to play as Player 2</div>
+  <button onclick="nickNextEnter()" style="background:#c8f060;border:none;border-radius:10px;color:#0a0b09;font-family:'Courier New',monospace;font-size:14px;font-weight:700;letter-spacing:0.16em;padding:16px 44px;cursor:pointer;">Next →</button>
 </div>
 
 <!-- ── ROOM (kod oluşturuldu, bekleniyor) ── -->
 <div id="room-screen">
   <div class="room-title" id="room-title">Game Code</div>
   <div class="room-code-display" id="room-code-text">——</div>
-  <button class="room-copy-btn" id="room-copy-btn" >Copy</button>
+  <button class="room-copy-btn" id="room-copy-btn">Copy</button>
   <div class="room-desc" id="room-desc">
     Share this code with your friend.<br>
     The game starts automatically when they join.
@@ -1144,37 +1463,42 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
     <div class="room-waiting-dot"></div>
     <span id="room-waiting-text">Waiting for friend...</span>
   </div>
-  <button class="room-cancel-btn"  id="room-cancel-text">Cancel</button>
+  <button class="room-cancel-btn" id="room-cancel-text">Cancel</button>
 </div>
 
 <!-- ── JOIN (kod gir) ── -->
 <div id="join-screen">
   <div class="room-title" id="join-title">Enter Code</div>
-  <div class="room-desc" style="margin-bottom:4px;" id="join-desc">
-    Enter the 4-letter code from your friend
-  </div>
-  <input class="join-code-input" id="join-code-input"
-         type="text" maxlength="4" placeholder="KBMT"
+  <div class="room-desc" style="margin-bottom:4px;" id="join-desc">Enter the 4-letter code from your friend</div>
+  <input class="join-code-input" id="join-code-input" type="text" maxlength="4" placeholder="KBMT"
          autocomplete="off" spellcheck="false"
          oninput="joinInputChanged(this)"
          onkeydown="if(event.key==='Enter') joinSubmit()">
   <div class="join-error" id="join-error"></div>
-  <button class="lobby-btn lobby-btn-primary" style="max-width:280px;margin-top:4px;" >
+  <button class="lobby-btn lobby-btn-primary" style="max-width:280px;margin-top:4px;" id="btn-join-submit">
     <span id="lbl-join-submit">Join Game</span>
     <span class="btn-arrow">→</span>
   </button>
-  <button class="room-cancel-btn"  id="lbl-join-cancel">Cancel</button>
+  <button class="room-cancel-btn" id="lbl-join-cancel">Cancel</button>
 </div>
 
 <!-- ── COUNTDOWN ── -->
 <div id="countdown-screen">
-  <div class="countdown-vs">Oyun Başlıyor</div>
+  <div class="countdown-vs">Game Starting</div>
   <div class="countdown-names">
     <div class="countdown-p1" id="cd-p1">Player 1</div>
     <div class="countdown-sep">VS</div>
     <div class="countdown-p2" id="cd-p2">Player 2</div>
   </div>
   <div class="countdown-number" id="cd-number">3</div>
+</div>
+
+<!-- Tooltip popup (mobile) -->
+<div id="tip-popup" onclick="hideTip()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:200;align-items:center;justify-content:center;padding:32px;">
+  <div onclick="event.stopPropagation()" style="background:#1c2214;border:1px solid #3a4030;border-radius:14px;padding:26px 24px;max-width:290px;text-align:center;">
+    <div id="tip-popup-text" style="font-size:14px;color:#a8b890;line-height:1.7;letter-spacing:0.04em;margin-bottom:20px;"></div>
+    <button onclick="hideTip()" style="background:transparent;border:1px solid #2a3020;border-radius:8px;color:#a8b890;font-family:'Courier New',monospace;font-size:12px;letter-spacing:0.14em;padding:10px 24px;cursor:pointer;">Got it</button>
+  </div>
 </div>
 
 <div id="loading" style="display:none;">
@@ -3329,8 +3653,7 @@ function getLobbyName() {
   return el ? el.value.trim() || null : null;
 }
 function lobbyOffline() {
-  const name = getLobbyName();
-  p1Name = name || 'Player 1'; p2Name = 'Player 2';
+  p1Name = 'Player 1'; p2Name = 'Player 2';
   gameMode = 'offline'; hideLobby(); startGameEngine();
 }
 async function lobbyCreateRoom() {
@@ -3341,8 +3664,7 @@ async function lobbyCreateRoom() {
 
   try {
     if (!window.db) throw new Error('no-db');
-    const name = getLobbyName();
-    p1Name = name || 'Player 1'; localPlayer = 1; gameMode = 'online-host';
+    p1Name = p1Name || 'Player 1'; localPlayer = 1; gameMode = 'online-host';
 
     let code, snap, attempts = 0;
     do {
@@ -3369,7 +3691,6 @@ async function lobbyCreateRoom() {
     btn.disabled = false;
 
     if (e.message === 'no-db' || e.message?.includes('network') || e.message?.includes('fetch')) {
-      p1Name = getLobbyName() || 'Player 1';
       gameMode = 'offline'; hideLobby(); startGameEngine();
     }
   }
@@ -3385,14 +3706,15 @@ async function joinSubmit() {
   const room = snap.val();
   if(room.status!=='waiting'){ document.getElementById('join-error').textContent='Game already started'; return; }
   if(Date.now()>room.expires){ document.getElementById('join-error').textContent='Code expired'; return; }
-  const name=getLobbyName(); p2Name=name||'Player 2'; p1Name=room.host_name||'Player 1';
+  p2Name = p2Name || 'Player 2'; p1Name=room.host_name||'Player 1';
   localPlayer=2; gameMode='online-guest'; roomId=code; roomRef=window.db.ref('rooms/'+code);
   await roomRef.child('guest_name').set(p2Name);
   await roomRef.child('status').set('playing');
   startCountdown();
 }
 function roomCancel() { if(roomRef) roomRef.remove(); roomRef=null; roomId=null; showScreen('lobby'); }
-function joinCancel() { showScreen('lobby'); }
+function joinCancel() { showLobby(); }
+function cancelJoin() { showLobby(); }
 function startCountdown() {
   document.getElementById('cd-p1').textContent = p1Name;
   document.getElementById('cd-p2').textContent = p2Name;
@@ -3406,12 +3728,12 @@ function startCountdown() {
   },1000);
 }
 function showScreen(id) {
-  ['lobby','room-screen','join-screen','countdown-screen'].forEach(s=>{
+  ['lobby','nick-create','nick-enter','room-screen','join-screen','countdown-screen'].forEach(s=>{
     const el=document.getElementById(s); if(el) el.style.display=s===id?'flex':'none';
   });
 }
 function hideLobby() {
-  ['lobby','room-screen','join-screen','countdown-screen'].forEach(id=>{
+  ['lobby','nick-create','nick-enter','room-screen','join-screen','countdown-screen'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
 }
@@ -3590,24 +3912,140 @@ finalizePlacement = function(targets, animMeshes, player, pieceIndex, skipSync) 
 window.addEventListener('resize', updateMobilePanelBottom);
 
 
+// ─── HTP (HOW TO PLAY) ───────────────────────────────────────────────────────
+let htpCur = 0;
+const HTP_TOTAL = 6;
+
+function htpNav(dir) {
+  htpCur = Math.max(0, Math.min(HTP_TOTAL - 1, htpCur + dir));
+  document.getElementById('htp-track').style.transform = 'translateX(-' + (htpCur * 100) + '%)';
+  const back = document.getElementById('htp-back');
+  const next = document.getElementById('htp-next');
+  back.disabled = htpCur === 0;
+  back.style.opacity = htpCur === 0 ? '0.22' : '1';
+  back.style.pointerEvents = htpCur === 0 ? 'none' : 'auto';
+  if (htpCur === HTP_TOTAL - 1) {
+    next.textContent = 'Play →';
+    next.onclick = htpSkip;
+  } else {
+    next.textContent = 'Next →';
+    next.onclick = function(){ htpNav(1); };
+  }
+  document.querySelectorAll('.hd').forEach(function(d, i) {
+    d.style.width = i === htpCur ? '20px' : '6px';
+    d.style.borderRadius = i === htpCur ? '3px' : '50%';
+    d.style.background = i === htpCur ? '#c8f060' : '#3a4030';
+  });
+}
+
+function htpSkip() {
+  try { localStorage.setItem('cactus_played','1'); } catch(e){}
+  document.getElementById('htp').style.display = 'none';
+  showLobby();
+}
+
+function htpShow() {
+  htpCur = 0;
+  document.getElementById('htp-track').style.transform = 'translateX(0)';
+  document.getElementById('htp-back').disabled = true;
+  document.getElementById('htp-back').style.opacity = '0.22';
+  document.getElementById('htp-back').style.pointerEvents = 'none';
+  document.getElementById('htp-next').textContent = 'Next →';
+  document.getElementById('htp-next').onclick = function(){ htpNav(1); };
+  document.querySelectorAll('.hd').forEach(function(d,i){
+    d.style.width = i===0?'20px':'6px';
+    d.style.borderRadius = i===0?'3px':'50%';
+    d.style.background = i===0?'#c8f060':'#3a4030';
+  });
+  document.getElementById('htp').style.display = 'flex';
+  hideLobbyScreens();
+}
+
+function showLobby() {
+  hideLobbyScreens();
+  document.getElementById('lobby').style.display = 'flex';
+}
+
+function hideLobbyScreens() {
+  ['lobby','nick-create','nick-enter','room-screen','join-screen','countdown-screen'].forEach(function(id){
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+
+// ─── TOOLTIP (mobile) ────────────────────────────────────────────────────────
+const TIP_TEXTS = {
+  create: 'Play on separate devices with a friend — you create the room, they enter your code.',
+  enter:  'Your friend created a room. Enter the 4-letter code they shared with you.',
+  offline:'Both players take turns on this same device.',
+};
+function showTip(key) {
+  if (window.matchMedia('(hover: hover)').matches) return;
+  document.getElementById('tip-popup-text').textContent = TIP_TEXTS[key];
+  document.getElementById('tip-popup').style.display = 'flex';
+}
+function hideTip() {
+  document.getElementById('tip-popup').style.display = 'none';
+}
+
+// ─── NICKNAME FLOW ───────────────────────────────────────────────────────────
+function goNickCreate() {
+  hideLobbyScreens();
+  const el = document.getElementById('nick-create');
+  el.style.display = 'flex';
+  setTimeout(function(){ document.getElementById('nick-create-input').focus(); }, 150);
+}
+
+function goNickEnter() {
+  hideLobbyScreens();
+  const el = document.getElementById('nick-enter');
+  el.style.display = 'flex';
+  setTimeout(function(){ document.getElementById('nick-enter-input').focus(); }, 150);
+}
+
+function nickNextCreate() {
+  const val = document.getElementById('nick-create-input').value.trim();
+  p1Name = val || 'Player 1';
+  lobbyCreateRoom();
+}
+
+function nickNextEnter() {
+  const val = document.getElementById('nick-enter-input').value.trim();
+  p2Name = val || 'Player 2';
+  hideLobbyScreens();
+  document.getElementById('join-screen').style.display = 'flex';
+  setTimeout(function(){ document.getElementById('join-code-input').focus(); }, 100);
+}
+
+// Override getLobbyName — no longer needed, names set via nickname screens
+function getLobbyName() { return null; }
+
 document.addEventListener('DOMContentLoaded', () => {
+  // LocalStorage check — skip HTP if already played
+  let hasPlayed = false;
+  try { hasPlayed = !!localStorage.getItem('cactus_played'); } catch(e){}
+  if (hasPlayed) {
+    document.getElementById('htp').style.display = 'none';
+    showLobby();
+  }
+
+  // Lobby buttons → nickname screens
   const btnCreate  = document.getElementById('btn-create');
   const btnJoin    = document.getElementById('btn-join');
   const btnOffline = document.getElementById('btn-offline');
   const btnCopy    = document.getElementById('room-copy-btn');
   const btnRoomCancel = document.getElementById('room-cancel-text');
-  const btnJoinSubmitEl = document.getElementById('lbl-join-submit');
-  const btnJoinSubmit = btnJoinSubmitEl ? btnJoinSubmitEl.closest('button') : null;
+  const btnJoinSubmit = document.getElementById('btn-join-submit');
   const btnJoinCancel = document.getElementById('lbl-join-cancel');
   const joinInput  = document.getElementById('join-code-input');
 
-  if (btnCreate)  btnCreate.addEventListener('click', lobbyCreateRoom);
-  if (btnJoin)    btnJoin.addEventListener('click', lobbyShowJoin);
+  if (btnCreate)  btnCreate.addEventListener('click', goNickCreate);
+  if (btnJoin)    btnJoin.addEventListener('click', goNickEnter);
   if (btnOffline) btnOffline.addEventListener('click', lobbyOffline);
   if (btnCopy)    btnCopy.addEventListener('click', roomCopyCode);
   if (btnRoomCancel) btnRoomCancel.addEventListener('click', roomCancel);
   if (btnJoinSubmit) btnJoinSubmit.addEventListener('click', joinSubmit);
-  if (btnJoinCancel) btnJoinCancel.addEventListener('click', joinCancel);
+  if (btnJoinCancel) btnJoinCancel.addEventListener('click', cancelJoin);
   if (joinInput) {
     joinInput.addEventListener('input', () => joinInputChanged(joinInput));
     joinInput.addEventListener('keydown', (e) => { if(e.key==='Enter') joinSubmit(); });
