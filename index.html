@@ -543,28 +543,31 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
   }
 
   /* Info tip button */
+  /* i butonu — absolute, layout etkilemiyor */
   .info-tip-btn {
-    flex-shrink: 0;
-    width: 28px;
-    height: 28px;
+    position: absolute;
+    right: -32px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
     background: transparent;
     border: none;
-    color: #5a6e40;
+    color: #4a5e38;
     font-family: 'Courier New', monospace;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    position: relative;
     transition: color 0.18s;
     letter-spacing: 0;
   }
-  .info-tip-btn:hover { color: #a8b890; }
+  .info-tip-btn:hover { color: #8a9e6a; }
   .tip-box {
     position: absolute;
-    right: 34px;
+    left: 28px;
     top: 50%;
     transform: translateY(-50%);
     background: #1c2214;
@@ -572,15 +575,16 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
     border-radius: 8px;
     padding: 10px 14px;
     font-size: 12px;
+    font-weight: 400;
     color: #a8b890;
     letter-spacing: 0.04em;
-    line-height: 1.55;
-    white-space: nowrap;
+    line-height: 1.6;
+    width: 190px;
+    white-space: normal;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.18s;
-    z-index: 30;
-    font-weight: 400;
+    z-index: 50;
   }
   @media (hover: hover) {
     .info-tip-btn:hover .tip-box { opacity: 1; }
@@ -1394,38 +1398,40 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
      LOBBY (new — with tooltips & nickname flow)
 ══════════════════════════════════════ -->
 <div id="lobby" style="display:none;">
-  <div class="lobby-logo">CACTUS</div>
-  <div class="lobby-sub">2-Player Strategy Game</div>
-  <div class="lobby-btns">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <button class="lobby-btn lobby-btn-primary" id="btn-create">
-        <span id="lbl-create">Create Game</span>
-        <span class="btn-arrow">→</span>
-      </button>
-      <button class="info-tip-btn" onclick="showTip('create')" title="Play on separate devices with a friend">i
-        <div class="tip-box">Play on separate devices with a friend — you create the room, they enter your code.</div>
-      </button>
+  <div style="width:100%;max-width:320px;display:flex;flex-direction:column;align-items:center;">
+    <div class="lobby-logo">CACTUS</div>
+    <div class="lobby-sub">2-Player Strategy Game</div>
+    <div class="lobby-btns" style="width:100%;">
+      <div style="position:relative;">
+        <button class="lobby-btn lobby-btn-primary" id="btn-create">
+          <span id="lbl-create">Create Game</span>
+          <span class="btn-arrow">→</span>
+        </button>
+        <button class="info-tip-btn" onclick="showTip('create')" title="">i
+          <div class="tip-box">Play on separate devices with a friend — you create the room, they enter your code.</div>
+        </button>
+      </div>
+      <div style="position:relative;">
+        <button class="lobby-btn lobby-btn-secondary" id="btn-join">
+          <span id="lbl-join">Enter Code</span>
+          <span class="btn-arrow">→</span>
+        </button>
+        <button class="info-tip-btn" onclick="showTip('enter')" title="">i
+          <div class="tip-box">Your friend created a room — enter the 4-letter code they shared.</div>
+        </button>
+      </div>
+      <div style="position:relative;">
+        <button class="lobby-btn lobby-btn-ghost" id="btn-offline">
+          <span id="lbl-offline">Play on One Screen</span>
+          <span class="btn-arrow">→</span>
+        </button>
+        <button class="info-tip-btn" onclick="showTip('offline')" title="">i
+          <div class="tip-box">Both players take turns on this device.</div>
+        </button>
+      </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <button class="lobby-btn lobby-btn-secondary" id="btn-join">
-        <span id="lbl-join">Enter Code</span>
-        <span class="btn-arrow">→</span>
-      </button>
-      <button class="info-tip-btn" onclick="showTip('enter')" title="Enter the code from your friend">i
-        <div class="tip-box">Your friend created a room — enter the 4-letter code they shared.</div>
-      </button>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <button class="lobby-btn lobby-btn-ghost" id="btn-offline">
-        <span id="lbl-offline">Play on One Screen</span>
-        <span class="btn-arrow">→</span>
-      </button>
-      <button class="info-tip-btn" onclick="showTip('offline')" title="Take turns on this device">i
-        <div class="tip-box">Both players take turns on this device.</div>
-      </button>
-    </div>
+    <button onclick="htpShow()" style="background:transparent;border:none;color:#5a6e40;font-family:'Courier New',monospace;font-size:13px;letter-spacing:0.16em;cursor:pointer;padding:8px 0;text-decoration:underline;text-underline-offset:4px;margin-top:8px;">How to Play?</button>
   </div>
-  <button onclick="htpShow()" style="background:transparent;border:none;color:#5a6e40;font-family:'Courier New',monospace;font-size:13px;letter-spacing:0.16em;cursor:pointer;padding:8px 0;text-decoration:underline;text-underline-offset:4px;margin-top:8px;">How to Play?</button>
 </div>
 
 <!-- NICKNAME — CREATE -->
