@@ -3678,11 +3678,6 @@ function lobbyOffline() {
   gameMode = 'offline'; hideLobby(); startGameEngine();
 }
 async function lobbyCreateRoom() {
-  const btn = document.getElementById('btn-create');
-  const origText = document.getElementById('lbl-create').textContent;
-  document.getElementById('lbl-create').textContent = '...';
-  btn.disabled = true;
-
   try {
     if (!window.db) throw new Error('no-db');
     p1Name = p1Name || 'Player 1'; localPlayer = 1; gameMode = 'online-host';
@@ -3708,9 +3703,6 @@ async function lobbyCreateRoom() {
     });
   } catch(e) {
     console.error('Create room error:', e);
-    document.getElementById('lbl-create').textContent = origText;
-    btn.disabled = false;
-
     if (e.message === 'no-db' || e.message?.includes('network') || e.message?.includes('fetch')) {
       gameMode = 'offline'; hideLobby(); startGameEngine();
     }
