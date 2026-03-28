@@ -1,3 +1,46 @@
+<!-- ============================================================
+  CACTUS GAME RULES — CONTINUITY BONUS  (AI reference comment)
+  ============================================================
+
+  BOARD GEOMETRİSİ
+  - 2×2×8 dikdörtgen prizma (gx=0-1, gy=0-7, gz=0-1)
+  - Taşlar dışarıya yapışır (board içine giremez)
+  - Kuşbakışı en fazla 1 kademe dışarı çıkabilir (gx=-1/2, gz=-1/2 geçerli; gy=-1/8 geçerli)
+
+  DEVAMLlLIK NEDİR
+  - Board yüzeyindeki kesintisiz DÜZ çizgi
+  - Yüzey boyunca ilerler, köşede döner — ama sapmaz, kıvrılmaz
+  - Yılan gibi gidip gelmez; tek şerit üzerinde ilerler
+
+  ŞERİT TİPLERİ
+  1. Yatay şerit   — sabit gy seviyesinde board çevresini dönen halka
+                     8 ayrı şerit (gy=0..7), her biri 12 pozisyon
+  2. Dikey şerit   — aşağıdan yukarıya gidip tepeden dönen ters-U / düz-U
+                     4 ayrı şerit (gz=0, gz=1, gx=0, gx=1), her biri 20 poz (8+2+8+2)
+  3. Düz dikey sütun — tek sütunda düz gidiş, çıkmalar dahil
+                     12 dış sütun, gy=-1..8 (10 poz)
+
+  TEPE/DİP DÖNÜŞÜ — ÇIKMA ZORUNLULUĞU
+  - Yan yüzey (gy=0..7) ile tepe yüzeyi arasında köşe geçişi vardır
+  - Geçiş için çıkma zorunludur: gy=8 veya gy=-1 konumları hem dönemeç hem çıkma görevi üstlenir
+  - Ters-U: sol yan → çıkma (tepe sol) → tepe → çıkma (tepe sağ) → sağ yan = 2 çıkma
+  - Minimum T8 dağılımı: sol yan 3 + tepe 2 + sağ yan 3 = 8
+
+  BONUS KURALLARI
+  - 8+ ardışık küp  → +10 (o şerit için bir kez)
+  - 16+ ardışık küp → +20 (aynı şerit için, +10'u kapsar)
+  - Her şerit bağımsız; farklı şerit 8'e ulaşırsa tekrar +10
+  - Bir şerit eşiğini geçtikten sonra o şerit için bir daha bonus verilmez
+  - Şeridin yönü önemsiz; her iki yönde aranır
+  - Bir küp birden fazla şeride ait olabilir; her şerit bağımsız değerlendirilir
+
+  KOD REFERANSI
+  - CONTINUITY_H_LOOP   : 12-pozisyonlu yatay halka [gx,gz] çiftleri
+  - CONTINUITY_V_STRIPS : 4 dikey şerit, her biri 20 pozisyon [gx,gy,gz]
+  - OUTER_COLS          : 12 düz dikey sütun [gx,gz] çiftleri
+  - stripMaxLen()       : dairesel + iki yönlü en uzun ardışık segment
+  - checkContinuityWith(): tüm şeritleri kontrol eder, per-strip eşik yönetimi
+  ============================================================ -->
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -206,7 +249,6 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.2em;
-    
     cursor: pointer;
     transition: all 0.2s;
   }
@@ -214,6 +256,83 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
   #phase-btn:hover {
     background: var(--green-glow);
     transform: translateY(-1px);
+  }
+
+  /* PC place/cancel buton grubu */
+  #pc-action-bar {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    pointer-events: all;
+  }
+  #pc-action-bar.visible { display: flex; }
+
+  #pc-place-btn {
+    background: rgba(200,240,96,0.15);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    color: var(--accent);
+    padding: 12px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    cursor: not-allowed;
+    transition: all 0.18s;
+    opacity: 0.4;
+  }
+  #pc-place-btn.enabled {
+    background: var(--accent);
+    color: #0a0b09;
+    cursor: pointer;
+    opacity: 1;
+  }
+  #pc-place-btn.enabled:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(200,240,96,0.3);
+  }
+  #pc-place-btn.enabled:active {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+  /* Kilitli mod: ghost sabitlendi, Place onay bekliyor */
+  #pc-place-btn.locked {
+    background: var(--accent);
+    color: #0a0b09;
+    cursor: pointer;
+    opacity: 1;
+    animation: pcPlacePulse 1.1s ease-in-out infinite;
+  }
+  #pc-place-btn.locked:hover {
+    transform: translateY(-1px);
+    animation: none;
+    box-shadow: 0 4px 20px rgba(200,240,96,0.5);
+  }
+  #pc-place-btn.locked:active {
+    transform: translateY(0);
+    animation: none;
+  }
+  @keyframes pcPlacePulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(200,240,96,0.0); }
+    50%      { box-shadow: 0 0 0 6px rgba(200,240,96,0.35); }
+  }
+
+  #pc-cancel-btn {
+    background: transparent;
+    border: 1px solid #3a4a28;
+    border-radius: 8px;
+    color: #7a8a60;
+    padding: 12px 18px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  #pc-cancel-btn:hover {
+    border-color: #c8504a;
+    color: #e87870;
   }
 
   /* Info panel - left side — MASAÜSTÜ */
@@ -249,7 +368,7 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
   }
 
   /* ── MOBİL GENEL ── */
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     /* Info panel tamamen gizle */
     #info-panel { display: none !important; }
 
@@ -294,7 +413,7 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
     pointer-events: all;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     #mobile-controls { display: block; }
     #bottombar { display: none; }
   }
@@ -985,7 +1104,7 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
   #piece-panel.pinned { transform: translateX(0) !important; }
 
   /* Mobilde panel bottom: JS tarafından dinamik olarak ayarlanır */
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     #piece-panel {
       bottom: 140px; /* JS yüklenene kadar fallback */
     }
@@ -1013,7 +1132,7 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
     color: var(--accent);
   }
   /* Mobilde pin yok */
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
     #panel-pin-btn { display: none !important; }
   }
 
@@ -1151,6 +1270,8 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
 <!-- Firebase SDK — head'de yüklenmeli -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check-compat.js"></script>
 <script>
   try {
     const firebaseConfig = {
@@ -1163,7 +1284,13 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
       appId: "1:718889434445:web:ac20a1888e83a5dc550b04"
     };
     firebase.initializeApp(firebaseConfig);
+    firebase.appCheck().activate('6LelmJssAAAAALksI2c29RRpjA6UczarroiXHC_D', true);
     window.db = firebase.database();
+    window.firebaseAuth = firebase.auth();
+    window.firebaseAuth.signInAnonymously().catch(e => console.warn('Auth failed', e));
+    window.firebaseAuth.onAuthStateChanged(user => {
+      if (user) { try { mixpanel.identify(user.uid); } catch(e){} }
+    });
   } catch(e) {
     console.warn('Firebase init failed — offline mode only', e);
     window.db = null;
@@ -1431,6 +1558,12 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
       </div>
     </div>
     <button onclick="htpShow()" style="background:transparent;border:none;color:#7a8a60;font-family:'Courier New',monospace;font-size:13px;letter-spacing:0.16em;cursor:pointer;padding:8px 0;text-decoration:underline;text-underline-offset:4px;margin-top:8px;">How to Play?</button>
+
+    <button id="cb-toggle-btn" onclick="toggleColorblind()" style="background:transparent;border:none;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.14em;cursor:pointer;padding:4px 0;margin-top:4px;display:flex;align-items:center;gap:6px;color:#5a6e40;transition:color 0.18s;">
+      <span id="cb-icon">◑</span>
+      <span id="cb-label">Colorblind Mode: Off</span>
+    </button>
+
     <button onclick="showCredits()" style="background:transparent;border:none;color:#3a4a28;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.16em;cursor:pointer;padding:4px 0;text-decoration:underline;text-underline-offset:3px;margin-top:2px;transition:color 0.18s;" onmouseover="this.style.color='#5a6e40'" onmouseout="this.style.color='#3a4a28'">Credits</button>
   </div>
 </div>
@@ -1620,6 +1753,12 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
 
     <button id="phase-btn" onclick="openPiecePanel()">Select Piece →</button>
 
+    <!-- PC place/cancel bar — taş seçilince görünür -->
+    <div id="pc-action-bar">
+      <button id="pc-place-btn" disabled onclick="pcPlacePiece()">Place</button>
+      <button id="pc-cancel-btn" onclick="pcCancelAction()">✕ Cancel</button>
+    </div>
+
     <div id="controls-hint">
       <span>Drag</span> rotate &nbsp;
       <span>Scroll</span> zoom<br>
@@ -1648,6 +1787,32 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
+
+// ─── COLORBLIND MODE — en başta tanımlanmalı ─────────────────────────────────
+let colorblindMode = false;
+try { colorblindMode = localStorage.getItem('cactus_cb') === '1'; } catch(e) {}
+
+function toggleColorblind() {
+  colorblindMode = !colorblindMode;
+  try { localStorage.setItem('cactus_cb', colorblindMode ? '1' : '0'); } catch(e) {}
+  updateColorblindUI();
+}
+
+function updateColorblindUI() {
+  const btn   = document.getElementById('cb-toggle-btn');
+  const label = document.getElementById('cb-label');
+  const icon  = document.getElementById('cb-icon');
+  if (!label) return;
+  if (colorblindMode) {
+    label.textContent = 'Colorblind Mode: On';
+    if (icon) icon.textContent = '◕';
+    if (btn)  btn.style.color  = '#c8f060';
+  } else {
+    label.textContent = 'Colorblind Mode: Off';
+    if (icon) icon.textContent = '◑';
+    if (btn)  btn.style.color  = '#5a6e40';
+  }
+}
 
 let currentLang = 'en';
 
@@ -1852,32 +2017,15 @@ const PIECE_DEFS = [
 
 
 
-const P1_COLORS = [
-  0xd4f04a,
-  0xb8dc28,
-  0x8fc820,
-  0x70b018, // 4 birim (kare)
-  0x529a10,
-  0x3d8410, // 5 birim (merdiven)
-  0x2d6c0c,
-  0x205808, // 6 birim (merdiven)
-  0x1a5206,
-  0x163e04,
-];
+// Tüm P1 taşları: 6-unit Stair (4+2) rengi
+const P1_PIECE_COLOR = 0x8fc828;
+const P1_COLORS = Array(10).fill(P1_PIECE_COLOR);
 
-
-const P2_COLORS = [
-  0xffe838,
-  0xffcc20,
-  0xffaa00, // 4 birim - amber
-  0xff8c00, // 4 birim (kare) - koyu amber
-  0xf06800, // 5 birim - turuncu
-  0xe05000, // 5 birim (merdiven)
-  0xcc3800, // 6 birim - koyu turuncu
-  0xb82800, // 6 birim (merdiven)
-  0xa01800,
-  0x8a1208,
-];
+// Tüm P2 taşları: 6-unit Stair (4+2) rengi
+const P2_PIECE_COLOR = 0xd85a30;
+const P2_COLORS = Array(10).fill(P2_PIECE_COLOR);
+const P1_DARK_COLOR = 0x4f6e16;
+const P2_DARK_COLOR = 0x77321a;
 
 // ─── SCENE SETUP ─────────────────────────────────────────────────────────────
 const container = document.getElementById('canvas-container');
@@ -1950,6 +2098,18 @@ const MAT_LIGHT_GREEN = new THREE.MeshStandardMaterial({
 
 
 function getPieceMaterial(player, units) {
+  if (colorblindMode) {
+    // Colorblind mod — Okabe-Ito paleti:
+    // P1: mavi #0077BB  — deuteranopia/protanopia'da sarıdan net ayrışır (6.9:1)
+    // P2: sarı #EE9900  — her renk körlüğü tipinde maviden net ayrışır
+    const color = player === 1 ? 0x0077BB : 0xEE9900;
+    return new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.45,
+      metalness: 0.08,
+      envMapIntensity: 0.5,
+    });
+  }
   const idx = units - 2;
   const colors = player === 1 ? P1_COLORS : P2_COLORS;
   const color = colors[Math.min(idx, colors.length - 1)];
@@ -2403,8 +2563,14 @@ function buildPiecePanel(player) {
         selectPiece(i, player);
         closePiecePanel();
         GameState.phase = 'place';
-        document.getElementById('phase-btn').textContent = t('btn_cancel');
         document.getElementById('game-phase').textContent = 'place';
+        if (!isMobile()) {
+          document.getElementById('phase-btn').style.display = 'none';
+          document.getElementById('pc-action-bar').classList.add('visible');
+          pcUpdatePlaceBtn(false);
+        } else {
+          document.getElementById('phase-btn').textContent = t('btn_cancel');
+        }
       });
     }
 
@@ -2537,9 +2703,12 @@ document.addEventListener('keydown', (e) => {
   if (k==='a') previewRotation.z -= ROT_STEP;
   if (k==='d') previewRotation.z += ROT_STEP;
   if (k==='escape') {
+    ghostLocked = false;
     deselectPiece(); removeGhost();
     GameState.phase = 'inspect';
     document.getElementById('phase-btn').textContent = t('btn_select');
+    document.getElementById('phase-btn').style.display = '';
+    document.getElementById('pc-action-bar').classList.remove('visible');
     document.getElementById('game-phase').textContent = t('phase_inspect');
   }
 });
@@ -2685,10 +2854,10 @@ let replayCount         = 0;
 
 let ghostGroup = null, currentSnapOffset = null, snapValid = false;
 const GHOST_VALID = new THREE.MeshStandardMaterial({
-  color: 0x88ff44, transparent: true, opacity: 0.45, roughness: 0.5, depthWrite: false
+  color: 0xe8f4f8, transparent: true, opacity: 0.55, roughness: 0.3, depthWrite: false
 });
 const GHOST_INVALID = new THREE.MeshStandardMaterial({
-  color: 0xff3322, transparent: true, opacity: 0.35, roughness: 0.5, depthWrite: false
+  color: 0xb06090, transparent: true, opacity: 0.45, roughness: 0.4, depthWrite: false
 });
 
 function showGhost(rotatedCubes, offset, valid) {
@@ -2706,12 +2875,16 @@ function showGhost(rotatedCubes, offset, valid) {
   currentSnapOffset = { ...offset };
 
   if (!valid) invalidAttempts++;
+
+  // PC place butonunu güncelle
+  if (!isMobile()) pcUpdatePlaceBtn(valid);
 }
 
 function removeGhost() {
   if (ghostGroup) { scene.remove(ghostGroup); ghostGroup = null; }
   snapValid = false;
   currentSnapOffset = null;
+  if (!isMobile()) pcUpdatePlaceBtn(false);
 }
 
 
@@ -2766,6 +2939,7 @@ let activePlanePoint = null;
 
 container.addEventListener('mousemove', (e) => {
   if (GameState.selectedPieceIndex < 0 || GameState.phase !== 'place') return;
+  if (ghostLocked) return; // Ghost kilitliyse fare hareketi ghost'u taşımaz
 
   const mx = (e.clientX / W()) * 2 - 1;
   const my = -(e.clientY / H()) * 2 + 1;
@@ -2845,39 +3019,97 @@ container.addEventListener('mousemove', (e) => {
   }
 });
 
-container.addEventListener('click',(e)=>{
-  if(GameState.selectedPieceIndex<0||GameState.phase!=='place')return;
-  if(!snapValid||!currentSnapOffset)return;
-
-  if(gameMode !== 'offline' && !isMyTurn()) return;
-
+// PC place butonunu ghost durumuna göre güncelle
+// valid: false = disabled, true = enabled (ghost geçerli), 'locked' = ghost kilitli
+function pcUpdatePlaceBtn(valid) {
   if (isMobile()) return;
+  const bar = document.getElementById('pc-action-bar');
+  const cancelBtn = document.getElementById('pc-cancel-btn');
+  const placeBtn = document.getElementById('pc-place-btn');
+  if (!bar || !placeBtn || !cancelBtn) return;
 
-  const piece=PIECE_DEFS[GameState.selectedPieceIndex];
-  pendingRotated=getRotatedCubes(piece,previewRotation);
-  GameState.phase='confirm';
-  document.getElementById('confirm-dialog').classList.add('visible');
-  document.getElementById('phase-btn').textContent='...';
+  placeBtn.classList.remove('enabled', 'locked');
+
+  if (valid === 'locked') {
+    // Ghost kilitlendi — Place pulse, Pick Up secondary
+    placeBtn.disabled = false;
+    placeBtn.classList.add('locked');
+    placeBtn.textContent = 'Place ✓';
+    cancelBtn.textContent = '↩ Pick Up';
+  } else if (valid) {
+    // Ghost geçerli konumda — Place enabled
+    placeBtn.disabled = false;
+    placeBtn.classList.add('enabled');
+    placeBtn.textContent = 'Place ✓';
+    cancelBtn.textContent = '↩ Pick Up';
+  } else {
+    // Ghost yok / invalid — Place disabled
+    placeBtn.disabled = true;
+    placeBtn.textContent = 'Place';
+    cancelBtn.textContent = '✕ Cancel';
+  }
+}
+
+// PC: Place butonuna basıldı
+function pcPlacePiece() {
+  if (isMobile()) return;
+  if (!snapValid || !currentSnapOffset) return;
+  if (gameMode !== 'offline' && !isMyTurn()) return;
+  ghostLocked = false;
+  const piece = PIECE_DEFS[GameState.selectedPieceIndex];
+  const rot = getRotatedCubes(piece, previewRotation);
+  placePiece(rot, { ...currentSnapOffset }, GameState.currentPlayer, GameState.selectedPieceIndex);
+}
+
+// PC: Cancel/Pick Up butonuna basıldı
+function pcCancelAction() {
+  if (isMobile()) return;
+  ghostLocked = false;
+  if (snapValid && currentSnapOffset) {
+    // Ghost konumda → Pick Up: ghost'u kaldır, taş elde kalır
+    removeGhost();
+    pcUpdatePlaceBtn(false);
+  } else {
+    // Taş elde / ghost yok → tam iptal
+    deselectPiece();
+    removeGhost();
+    GameState.phase = 'inspect';
+    document.getElementById('phase-btn').style.display = '';
+    document.getElementById('pc-action-bar').classList.remove('visible');
+    document.getElementById('game-phase').textContent = t('phase_inspect');
+  }
+}
+
+// PC click: ghost geçerliyse anında yerleştir (opsiyonel — buton tercih edilir)
+// Ghost kilitli mi? (click sonrası fare hareket etse bile ghost sabit kalır)
+let ghostLocked = false;
+
+container.addEventListener('click', (e) => {
+  if (isMobile()) return;
+  if (GameState.selectedPieceIndex < 0 || GameState.phase !== 'place') return;
+  if (gameMode !== 'offline' && !isMyTurn()) return;
+
+  if (ghostLocked) {
+    // İkinci tıklama → zaten kilitli, Place butonuna yönlendir (bir şey yapma)
+    return;
+  }
+
+  if (!snapValid || !currentSnapOffset) return;
+
+  // Ghost'u kilitle — mousemove artık ghost'u hareket ettirmez
+  ghostLocked = true;
+  pcUpdatePlaceBtn('locked'); // Place pulse, Pick Up secondary
 });
 
-let pendingRotated=null;
-function confirmPlacement(){
-  document.getElementById('confirm-dialog').classList.remove('visible');
-  if(!pendingRotated||!currentSnapOffset)return;
-
-  if(gameMode !== 'offline' && !isMyTurn()) return;
-  const snap={...currentSnapOffset};
-  const rot=[...pendingRotated];
-  placePiece(rot,snap,GameState.currentPlayer,GameState.selectedPieceIndex);
-}
-function cancelPlacement(){
-  document.getElementById('confirm-dialog').classList.remove('visible');
-  GameState.phase='place';
-  document.getElementById('phase-btn').textContent=t('btn_cancel');
-}
+let pendingRotated = null;
+function confirmPlacement() {} // eski referanslar için boş bırak
+function cancelPlacement() {}
 
 function placePiece(rotated,offset,player,pieceIndex){
   const piece=PIECE_DEFS[pieceIndex];
+  // Animasyon süresince (400ms) mousemove ghost oluşturmasın
+  GameState.phase = 'inspect';
+  GameState.selectedPieceIndex = -1;
   removeGhost();
   const targets=rotated.map(c=>({gx:c.x+offset.x,gy:c.y+offset.y,gz:c.z+offset.z}));
   const group=new THREE.Group();
@@ -2929,14 +3161,15 @@ function finalizePlacement(targets,animMeshes,player,pieceIndex){
   const notation = buildMoveNotation(pieceIndex, targets.map(t=>({x:t.gx,y:t.gy,z:t.gz})), {x:0,y:0,z:0}, lastFaceNormal);
   gameNotation.push(notation);
 
-  try { mixpanel.track('piece_placed', {
+  try { if (gameMode === 'offline' || player === localPlayer) { mixpanel.track('piece_placed', {
     player,
     piece_name: piece.name,
     piece_units: piece.units,
     move_number: GameState.round - 1,
     notation,
     platform: isMobile() ? 'mobile' : 'desktop',
-  }); } catch(e){}
+    game_mode: gameMode,
+  }); } } catch(e){}
   document.getElementById('turn-round').textContent=GameState.round;
   const np=GameState.currentPlayer;
   const npName = np === 1 ? p1Name : p2Name;
@@ -2948,6 +3181,8 @@ function finalizePlacement(targets,animMeshes,player,pieceIndex){
   document.getElementById('preview-label').classList.remove('visible');
   document.getElementById('rotation-hint').classList.remove('visible');
   document.getElementById('phase-btn').textContent = t('btn_select');
+  document.getElementById('phase-btn').style.display = '';
+  document.getElementById('pc-action-bar').classList.remove('visible');
   document.getElementById('game-phase').textContent = t('phase_inspect');
   checkWinCondition();
   if (lastMoveHighlightEnabled) drawLastMoveHighlight();
@@ -2983,7 +3218,7 @@ function calculateScore(targets, player, pieceIndex) {
   let contactBonus = 0;
   if (maxContactSingle >= 2) {
     contactBonus = 5;
-    showBonusToast('Yerleşim Bonusu +5 ⚡');
+    showBonusToast('Placement Bonus +5 ⚡');
   }
 
   const tempAdded = targets.map(t => ({ gx: t.gx, gy: t.gy, gz: t.gz, player }));
@@ -3037,43 +3272,106 @@ function showMoveScore(targets, player, basePoints, contactCount, contactBonus, 
   chip.style.display = 'block';
 }
 
+// Yatay halka: board çevresini saat yönünde sıralı 12 pozisyon (gy sabit)
+// Tum yuzey pozisyonlari seti (yan yuzeyler + ust/alt kare yuzeyler)
+// ─── CONTINUITY BONUS ────────────────────────────────────────────────────────
+// Kural: yuzey uzerinde DUZ CIZGI — yatayda halka, dikeyde serit.
+// Kivrilan, geri donen yilan sekli SAYILMAZ.
+//
+// YATAY: sabit gy katmaninda, 12 pozisyonluk halka uzerinde ardisik segment
+// DIKEY: 4 serit (gz=0, gz=1, gx=0, gx=1), her biri 20 pozisyon
+//        Sol/On yan (gy 0..7) + Ust kare (2 poz) + Sag/Arka yan (gy 7..0) + Alt kare (2 poz)
+//        Lock win halkasinin tam ayni guzergahi — esik 8/16, kapali olmasi sart degil
+
+// Yatay halka (onceden vardi, dogru calisiyor)
+const CONTINUITY_H_LOOP = [
+  [-1,-1], [-1, 0], [-1, 1], [-1, 2],
+  [ 0, 2], [ 1, 2],
+  [ 2, 2], [ 2, 1], [ 2, 0], [ 2,-1],
+  [ 1,-1], [ 0,-1],
+];
+
+// 4 dikey serit — her biri 24 pozisyon (köşeler dahil)
+// sol yan (8) + tepe köşe-sol + tepe (2) + tepe köşe-sağ + sağ yan (8) + dip köşe-sağ + dip (2) + dip köşe-sol
+const CONTINUITY_V_STRIPS = [
+  // gz=0
+  [[-1,0,0],[-1,1,0],[-1,2,0],[-1,3,0],[-1,4,0],[-1,5,0],[-1,6,0],[-1,7,0],
+   [-1,8,0],[0,8,0],[1,8,0],[2,8,0],
+   [2,7,0],[2,6,0],[2,5,0],[2,4,0],[2,3,0],[2,2,0],[2,1,0],[2,0,0],
+   [2,-1,0],[1,-1,0],[0,-1,0],[-1,-1,0]],
+  // gz=1
+  [[-1,0,1],[-1,1,1],[-1,2,1],[-1,3,1],[-1,4,1],[-1,5,1],[-1,6,1],[-1,7,1],
+   [-1,8,1],[0,8,1],[1,8,1],[2,8,1],
+   [2,7,1],[2,6,1],[2,5,1],[2,4,1],[2,3,1],[2,2,1],[2,1,1],[2,0,1],
+   [2,-1,1],[1,-1,1],[0,-1,1],[-1,-1,1]],
+  // gx=0
+  [[0,0,-1],[0,1,-1],[0,2,-1],[0,3,-1],[0,4,-1],[0,5,-1],[0,6,-1],[0,7,-1],
+   [0,8,-1],[0,8,0],[0,8,1],[0,8,2],
+   [0,7,2],[0,6,2],[0,5,2],[0,4,2],[0,3,2],[0,2,2],[0,1,2],[0,0,2],
+   [0,-1,2],[0,-1,1],[0,-1,0],[0,-1,-1]],
+  // gx=1
+  [[1,0,-1],[1,1,-1],[1,2,-1],[1,3,-1],[1,4,-1],[1,5,-1],[1,6,-1],[1,7,-1],
+   [1,8,-1],[1,8,0],[1,8,1],[1,8,2],
+   [1,7,2],[1,6,2],[1,5,2],[1,4,2],[1,3,2],[1,2,2],[1,1,2],[1,0,2],
+   [1,-1,2],[1,-1,1],[1,-1,0],[1,-1,-1]],
+];
+
+// Her serit icin en uzun ardisik segment (dairesel + her iki yon)
+function stripMaxLen(present, M) {
+  let max = 0;
+  for (const dir of [present, [...present].reverse()]) {
+    let cur = 0;
+    for (let i = 0; i < 2 * M; i++) {
+      if (dir[i % M]) { cur = Math.min(cur + 1, M); if (cur > max) max = cur; }
+      else { cur = 0; }
+    }
+  }
+  return max;
+}
+
 function checkContinuityWith(allCubes, player) {
   const pc = allCubes.filter(c => c.player === player);
-  const key = player === 1 ? 'p1' : 'p2';
-  const thresholds = GameState.continuityThresholds[key];
+  const playerKey = player === 1 ? 'p1' : 'p2';
+  const thresholds = GameState.continuityThresholds[playerKey];
+  const pcSet = new Set(pc.map(c => `${c.gx},${c.gy},${c.gz}`));
+  let bonus = 0;
 
-  // Tüm yönlerde maksimum kesintisiz uzunluğu bul
-  let maxLen = 0;
-  for (const ax of [[1,0,0],[0,1,0],[0,0,1]]) {
-    for (const s of pc) {
-      // Sadece zincirin başından say (soldan/alttan/önden)
-      const hasPrev = pc.some(c =>
-        c.gx === s.gx - ax[0] &&
-        c.gy === s.gy - ax[1] &&
-        c.gz === s.gz - ax[2]
-      );
-      if (hasPrev) continue; // bu zincirin başı değil, atla
-      let len = 1, cx = s.gx, cy = s.gy, cz = s.gz;
-      while (pc.some(c => c.gx===cx+ax[0] && c.gy===cy+ax[1] && c.gz===cz+ax[2])) {
-        len++; cx+=ax[0]; cy+=ax[1]; cz+=ax[2];
-      }
-      if (len > maxLen) maxLen = len;
+  function checkStrip(key, len) {
+    const k8 = key + '_t8', k16 = key + '_t16';
+    if (len >= 16 && !thresholds[k16]) {
+      thresholds[k16] = true; thresholds[k8] = true;
+      bonus += 20; showBonusToast('Continuity Bonus +20 🎉');
+    } else if (len >= 8 && !thresholds[k8]) {
+      thresholds[k8] = true;
+      bonus += 10; showBonusToast('Continuity Bonus +10 ⭐');
     }
   }
 
-  // Eşik kontrolü — sadece ilk kez geçildiğinde bonus ver
-  let bonus = 0;
-
-  if (maxLen >= 16 && !thresholds.t16) {
-    thresholds.t16 = true;
-    thresholds.t8 = true; // 16 geçilince 8 de geçilmiş sayılır
-    bonus = 20;
-    showBonusToast('Continuity Bonus +20 🎉');
-  } else if (maxLen >= 8 && !thresholds.t8) {
-    thresholds.t8 = true;
-    bonus = 10;
-    showBonusToast('Continuity Bonus +10 ⭐');
+  const N = CONTINUITY_H_LOOP.length;
+  for (let gy = 0; gy < 8; gy++) {
+    const present = CONTINUITY_H_LOOP.map(([gx, gz]) =>
+      pcSet.has(`${gx},${gy},${gz}`) ? 1 : 0
+    );
+    checkStrip('h_' + gy, stripMaxLen(present, N));
   }
+
+  CONTINUITY_V_STRIPS.forEach((strip, idx) => {
+    const present = strip.map(([gx,gy,gz]) => pcSet.has(`${gx},${gy},${gz}`) ? 1 : 0);
+    checkStrip('v_' + idx, stripMaxLen(present, strip.length));
+  });
+
+  const OUTER_COLS = [
+    [-1,-1],[-1,2],
+    [2,-1],[2,2],
+  ];
+  OUTER_COLS.forEach(([gx, gz], idx) => {
+    let cur = 0, len = 0;
+    for (let gy = -1; gy <= 8; gy++) {
+      if (pcSet.has(`${gx},${gy},${gz}`)) { cur++; if (cur > len) len = cur; }
+      else { cur = 0; }
+    }
+    checkStrip('c_' + idx, len);
+  });
 
   return bonus;
 }
@@ -3221,100 +3519,149 @@ function checkLockWin(player) {
   const pc = placedCubes.filter(c => c.player === player);
   if (pc.length < 12) return false;
 
-
-
-
-
-
+  // Yatay lock win: aynı y katmanında 12-küp kapalı halka
   for (let y = 0; y <= 7; y++) {
-
-    const layer = pc.filter(c => c.gy === y);
-    if (layer.length < 4) continue;
-
-
-
-    const ring = [
-      {gx:-1,gz:0},{gx:-1,gz:1},
-      {gx:0,gz:2},{gx:1,gz:2},
-      {gx:2,gz:1},{gx:2,gz:0},
-      {gx:1,gz:-1},{gx:0,gz:-1},
-    ];
-    const filled = ring.filter(r => layer.some(c => c.gx===r.gx && c.gz===r.gz));
-
-    if (filled.length === 8) return true;
-
-    if (hasClosedHorizontalLoop(pc, y)) return true;
+    if (checkHorizontalLockAtLayer(pc, y)) return true;
   }
 
-
-
-
-  const vertCols = [
-    {gx:-1,gz:0},{gx:-1,gz:1},{gx:2,gz:0},{gx:2,gz:1},
-    {gx:0,gz:-1},{gx:1,gz:-1},{gx:0,gz:2},{gx:1,gz:2},
-  ];
-  for (const col of vertCols) {
-    let consecutive = 0, maxConsec = 0;
-    for (let y = 0; y <= 7; y++) {
-      if (pc.some(c => c.gx===col.gx && c.gz===col.gz && c.gy===y)) {
-        consecutive++;
-        if (consecutive > maxConsec) maxConsec = consecutive;
-      } else { consecutive = 0; }
-    }
-    if (maxConsec >= 8) return true;
-  }
-
-
-  const axes = [[1,0,0],[0,0,1]];
-  for (const ax of axes) {
-    for (const s of pc) {
-      let len=1,cx=s.gx,cy=s.gy,cz=s.gz;
-      while(pc.some(c=>c.gx===cx+ax[0]&&c.gy===cy&&c.gz===cz+ax[2])){len++;cx+=ax[0];cz+=ax[2];}
-      if(len>=12) return true;
-    }
-  }
-  for (const s of pc) {
-    let len=1,cy=s.gy,cx=s.gx,cz=s.gz;
-    while(pc.some(c=>c.gx===cx&&c.gy===cy+1&&c.gz===cz)){len++;cy++;}
-    if(len>=20) return true;
-  }
+  // Dikey lock win: board'u dikey saran 20-küp kapalı döngü
+  // 4 mümkün döngü: gz=0, gz=1, gx=0, gx=1
+  if (checkVerticalLockWin(pc)) return true;
 
   return false;
 }
 
-function hasClosedHorizontalLoop(pc, y) {
+// Dikey lock win: board'u dikey olarak saran 20-küp kapalı döngü
+// gz=0: sol(-1,gy,0) + üst(0/1,8,0) + sağ(2,gy,0) + alt(0/1,-1,0)
+// gz=1: sol(-1,gy,1) + üst(0/1,8,1) + sağ(2,gy,1) + alt(0/1,-1,1)
+// gx=0: ön(0,gy,-1) + üst(0,8,0/1) + arka(0,gy,2) + alt(0,-1,0/1)
+// gx=1: ön(1,gy,-1) + üst(1,8,0/1) + arka(1,gy,2) + alt(1,-1,0/1)
+function checkVerticalLockWin(pc) {
+  const pcSet = new Set(pc.map(c => `${c.gx},${c.gy},${c.gz}`));
 
+  // 4 dikey döngüyü kontrol et
+  const rings = [
+    buildVerticalRing('gz', 0),
+    buildVerticalRing('gz', 1),
+    buildVerticalRing('gx', 0),
+    buildVerticalRing('gx', 1),
+  ];
 
-  const layer = pc.filter(c => c.gy === y);
-  if (layer.length < 8) return false;
+  for (const ring of rings) {
+    // Tüm 20 pozisyon oyuncuya ait mi?
+    const hasAll = ring.every(([gx,gy,gz]) => pcSet.has(`${gx},${gy},${gz}`));
+    if (!hasAll) continue;
 
-  const key = c => `${c.gx},${c.gz}`;
-  const set = new Set(layer.map(key));
-
-  for (const start of layer) {
-
+    // Flood-fill: 20 küp bağlı tek parça mı?
+    const ringSet = new Set(ring.map(([gx,gy,gz]) => `${gx},${gy},${gz}`));
     const visited = new Set();
-    const stack = [{gx:start.gx, gz:start.gz, steps:0}];
-    while (stack.length) {
-      const {gx, gz, steps} = stack.pop();
-      const k = `${gx},${gz}`;
-      if (visited.has(k)) {
-        if (steps >= 12 && gx===start.gx && gz===start.gz) return true;
-        continue;
-      }
+    const queue = [`${ring[0][0]},${ring[0][1]},${ring[0][2]}`];
+    while (queue.length) {
+      const k = queue.shift();
+      if (visited.has(k)) continue;
       visited.add(k);
-      for (const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]) {
-        const nk = `${gx+dx},${gz+dz}`;
-        if (set.has(nk)) stack.push({gx:gx+dx,gz:gz+dz,steps:steps+1});
+      const [gx, gy, gz] = k.split(',').map(Number);
+      for (const nk of getVerticalRingNeighbors(gx, gy, gz, ringSet)) {
+        if (!visited.has(nk)) queue.push(nk);
       }
     }
+    if (visited.size === ring.length) return true;
   }
   return false;
+}
+
+function buildVerticalRing(axis, val) {
+  const ring = [];
+  if (axis === 'gz') {
+    const gz = val;
+    for (let gy = 0; gy < 8; gy++) ring.push([-1, gy, gz]);
+    ring.push([0, 8, gz]); ring.push([1, 8, gz]);
+    for (let gy = 7; gy >= 0; gy--) ring.push([2, gy, gz]);
+    ring.push([1, -1, gz]); ring.push([0, -1, gz]);
+  } else {
+    const gx = val;
+    for (let gy = 0; gy < 8; gy++) ring.push([gx, gy, -1]);
+    ring.push([gx, 8, 0]); ring.push([gx, 8, 1]);
+    for (let gy = 7; gy >= 0; gy--) ring.push([gx, gy, 2]);
+    ring.push([gx, -1, 1]); ring.push([gx, -1, 0]);
+  }
+  return ring;
+}
+
+function getVerticalRingNeighbors(gx, gy, gz, ringSet) {
+  const candidates = [];
+  for (const [dx,dy,dz] of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]) {
+    candidates.push(`${gx+dx},${gy+dy},${gz+dz}`);
+  }
+  // Köşe arısta bağlantıları
+  if (gy === 8) {
+    if (gx === 0) candidates.push(`-1,7,${gz}`);
+    if (gx === 1) candidates.push(`2,7,${gz}`);
+    if (gz === 0) candidates.push(`${gx},7,-1`);
+    if (gz === 1) candidates.push(`${gx},7,2`);
+  }
+  if (gy === -1) {
+    if (gx === 0) candidates.push(`-1,0,${gz}`);
+    if (gx === 1) candidates.push(`2,0,${gz}`);
+    if (gz === 0) candidates.push(`${gx},0,-1`);
+    if (gz === 1) candidates.push(`${gx},0,2`);
+  }
+  if (gy === 7) {
+    if (gx === -1 && gz >= 0 && gz <= 1) candidates.push(`0,8,${gz}`);
+    if (gx ===  2 && gz >= 0 && gz <= 1) candidates.push(`1,8,${gz}`);
+    if (gz === -1 && gx >= 0 && gx <= 1) candidates.push(`${gx},8,0`);
+    if (gz ===  2 && gx >= 0 && gx <= 1) candidates.push(`${gx},8,1`);
+  }
+  if (gy === 0) {
+    if (gx === -1 && gz >= 0 && gz <= 1) candidates.push(`0,-1,${gz}`);
+    if (gx ===  2 && gz >= 0 && gz <= 1) candidates.push(`1,-1,${gz}`);
+    if (gz === -1 && gx >= 0 && gx <= 1) candidates.push(`${gx},-1,0`);
+    if (gz ===  2 && gx >= 0 && gx <= 1) candidates.push(`${gx},-1,1`);
+  }
+  return candidates.filter(k => ringSet.has(k));
+}
+
+// Yatay (horizontal) lock win — tek y katmanı
+// 12 gerekli pozisyon:
+//   Kenarlar (8): (-1,0),(-1,1),(2,0),(2,1),(0,-1),(1,-1),(0,2),(1,2)
+//   Köşeler  (4): (-1,-1),(2,-1),(-1,2),(2,2)
+// Hepsi oyuncuya ait VE flood-fill ile tek bağlı bileşen olmalı.
+function checkHorizontalLockAtLayer(pc, y) {
+  const RING = [
+    {gx:-1, gz: 0}, {gx:-1, gz: 1},
+    {gx: 2, gz: 0}, {gx: 2, gz: 1},
+    {gx: 0, gz:-1}, {gx: 1, gz:-1},
+    {gx: 0, gz: 2}, {gx: 1, gz: 2},
+    {gx:-1, gz:-1}, {gx: 2, gz:-1},
+    {gx:-1, gz: 2}, {gx: 2, gz: 2},
+  ];
+
+  // 1. Tüm 12 pozisyon bu y'de oyuncuya ait mi?
+  const layer = pc.filter(c => c.gy === y);
+  const hasAll = RING.every(r => layer.some(c => c.gx === r.gx && c.gz === r.gz));
+  if (!hasAll) return false;
+
+  // 2. Flood-fill: 12 küp birbiriyle bağlantılı tek parça mı?
+  const set = new Set(RING.map(r => `${r.gx},${r.gz}`));
+  const visited = new Set();
+  const queue = [`${RING[0].gx},${RING[0].gz}`];
+  while (queue.length) {
+    const k = queue.shift();
+    if (visited.has(k)) continue;
+    visited.add(k);
+    const [gx, gz] = k.split(',').map(Number);
+    for (const [dx, dz] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const nk = `${gx+dx},${gz+dz}`;
+      if (set.has(nk) && !visited.has(nk)) queue.push(nk);
+    }
+  }
+
+  return visited.size === RING.length;
 }
 
 // ─── SON HAMLE VURGULAMA ─────────────────────────────────────────────────────
 let lastMoveHighlightMeshes = [];
-let lastMoveHighlightEnabled = false;
+let lastMoveHighlightEnabled = true;
 
 function toggleLastMoveHighlight(enabled) {
   lastMoveHighlightEnabled = enabled;
@@ -3326,7 +3673,10 @@ function toggleLastMoveHighlight(enabled) {
 }
 
 function clearLastMoveHighlight() {
-  lastMoveHighlightMeshes.forEach(m => scene.remove(m));
+  lastMoveHighlightMeshes.forEach(mesh => {
+    const normalColor = mesh.userData.player === 1 ? P1_PIECE_COLOR : P2_PIECE_COLOR;
+    mesh.material.color.setHex(normalColor);
+  });
   lastMoveHighlightMeshes = [];
 }
 
@@ -3335,34 +3685,23 @@ function drawLastMoveHighlight() {
   if (!lastMoveHighlightEnabled) return;
   if (GameState.lastPlacedCubes.length === 0) return;
 
-
   const prevPlayer = GameState.currentPlayer === 1 ? 2 : 1;
-  const hlColor = prevPlayer === 1 ? 0xffb830 : 0xff6b4a;
-
-  const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(UNIT+0.02, UNIT+0.02, UNIT+0.02));
-  const hlMat = new THREE.LineBasicMaterial({
-    color: hlColor,
-    transparent: true,
-    opacity: 0.9,
-    linewidth: 2,
-  });
+  const darkColor = prevPlayer === 1 ? P1_DARK_COLOR : P2_DARK_COLOR;
 
   GameState.lastPlacedCubes.forEach(c => {
-    const lines = new THREE.LineSegments(edgeGeo, hlMat.clone());
-    lines.position.copy(gridToWorld(c.gx, c.gy, c.gz));
-    lines.userData.isHighlight = true;
-    scene.add(lines);
-    lastMoveHighlightMeshes.push(lines);
+    const mesh = placedMeshes.find(m =>
+      m.userData.gx === c.gx && m.userData.gy === c.gy && m.userData.gz === c.gz
+    );
+    if (mesh) {
+      mesh.material.color.setHex(darkColor);
+      lastMoveHighlightMeshes.push(mesh);
+    }
   });
 }
 
 
 function updateHighlightPulse(t) {
-  if (!lastMoveHighlightEnabled || lastMoveHighlightMeshes.length === 0) return;
-  const pulse = 0.5 + 0.5 * Math.sin(t * 3);
-  lastMoveHighlightMeshes.forEach(m => {
-    if (m.material) m.material.opacity = 0.4 + pulse * 0.55;
-  });
+  // Nefes animasyonu kaldırıldı — highlight artık koyu renk değişimiyle yapılıyor
 }
 
 function showBonusToast(msg){
@@ -3382,14 +3721,17 @@ function calculatePenalties() {
 }
 
 function showWinScreen(player, type) {
-  // Ceza hesapla
-  const penalties = calculatePenalties();
-  const rawScores = [...GameState.scores];
-  const finalScores = [
-    Math.max(0, rawScores[0] - penalties[0]),
-    Math.max(0, rawScores[1] - penalties[1]),
-  ];
+  const isLockWin = (type === 'kilit');
 
+  // Lock Win'de penalty yok — kazanan zaten belli, skor değişmez
+  const penalties = isLockWin ? [0, 0] : calculatePenalties();
+  const rawScores = [...GameState.scores];
+  const finalScores = isLockWin
+    ? [...rawScores]
+    : [
+        Math.max(0, rawScores[0] - penalties[0]),
+        Math.max(0, rawScores[1] - penalties[1]),
+      ];
 
   GameState.scores = finalScores;
   document.getElementById('val-p1').textContent = finalScores[0];
@@ -3404,8 +3746,12 @@ function showWinScreen(player, type) {
 
   const wp = document.getElementById('win-player');
 
-  const winner = finalScores[0] > finalScores[1] ? 1 :
-                 finalScores[1] > finalScores[0] ? 2 : 0;
+  // Lock Win'de winner = Lock Win yapan oyuncu, skor karşılaştırması yok
+  const winner = isLockWin
+    ? player
+    : (finalScores[0] > finalScores[1] ? 1 :
+       finalScores[1] > finalScores[0] ? 2 : 0);
+
   if (winner === 0) {
     wp.textContent = 'Draw!';
     wp.style.color = 'var(--accent)';
@@ -3417,8 +3763,7 @@ function showWinScreen(player, type) {
   document.getElementById('final-p1').textContent = finalScores[0];
   document.getElementById('final-p2').textContent = finalScores[1];
 
-
-  const hasPenalty = penalties[0] > 0 || penalties[1] > 0;
+  const hasPenalty = !isLockWin && (penalties[0] > 0 || penalties[1] > 0);
   const breakdown = document.getElementById('penalty-breakdown');
   const lines = document.getElementById('penalty-lines');
   if (breakdown && lines) {
@@ -3459,23 +3804,26 @@ function showWinScreen(player, type) {
 
   // Mixpanel
   try {
-    const sessionSec = Math.round((Date.now() - gameStartTime) / 1000);
-    mixpanel.track('game_end', {
-      winner,
-      win_type: type,
-      total_moves: GameState.round,
-      score_p1_raw: rawScores[0],
-      score_p2_raw: rawScores[1],
-      score_p1_final: finalScores[0],
-      score_p2_final: finalScores[1],
-      penalty_p1: penalties[0],
-      penalty_p2: penalties[1],
-      session_seconds: sessionSec,
-      invalid_attempts: invalidAttempts,
-      panel_opens: panelOpenCount,
-      platform: isMobile() ? 'mobile' : 'desktop',
-      game_notation: gameNotation.join(' | '),
-    });
+    if (gameMode === 'offline' || localPlayer === 1) {
+      const sessionSec = Math.round((Date.now() - gameStartTime) / 1000);
+      mixpanel.track('game_end', {
+        winner,
+        win_type: type,
+        total_moves: GameState.round,
+        score_p1_raw: rawScores[0],
+        score_p2_raw: rawScores[1],
+        score_p1_final: finalScores[0],
+        score_p2_final: finalScores[1],
+        penalty_p1: penalties[0],
+        penalty_p2: penalties[1],
+        session_seconds: sessionSec,
+        invalid_attempts: invalidAttempts,
+        panel_opens: panelOpenCount,
+        platform: isMobile() ? 'mobile' : 'desktop',
+        game_mode: gameMode,
+        game_notation: gameNotation.join(' | '),
+      });
+    }
   } catch(e){}
 }
 
@@ -3495,12 +3843,19 @@ document.getElementById('phase-btn').addEventListener('click',()=>{
     deselectPiece(); removeGhost(); closePiecePanel();
     GameState.phase='inspect';
     document.getElementById('phase-btn').textContent=t('btn_select');
+    document.getElementById('phase-btn').style.display='';
+    document.getElementById('pc-action-bar').classList.remove('visible');
     document.getElementById('game-phase').textContent=t('phase_inspect');
   }
 });
 
 
-const isMobile = () => window.innerWidth <= 768;
+const isMobile = () => {
+  const hasTouch = navigator.maxTouchPoints > 0 ||
+                   window.matchMedia('(pointer: coarse)').matches;
+  const isNarrow = window.innerWidth <= 1024;
+  return hasTouch || isNarrow;
+};
 let mobileOrbitActive = false;
 let mobileOrbitDir = 'left'; // left|right|up|down
 
@@ -3631,12 +3986,14 @@ finalizePlacement = function(targets, animMeshes, player, pieceIndex) {
   if (isMobile()) {
     setMobilePlaceMode(false);
     updateMobileTurnUI();
+    panelPinned = false;
+    closePiecePanel();
   }
 };
 
 
 function updateMobilePanelBottom() {
-  if (window.innerWidth > 768) return;
+  if (window.innerWidth > 1024) return;
   const mc = document.getElementById('mobile-controls');
   const panel = document.getElementById('piece-panel');
   if (!mc || !panel) return;
@@ -3680,6 +4037,12 @@ function lobbyOffline() {
 async function lobbyCreateRoom() {
   try {
     if (!window.db) throw new Error('no-db');
+    const lastCreate = parseInt(localStorage.getItem('cactus_last_room') || '0');
+    if (Date.now() - lastCreate < 30000) {
+      alert('Lütfen 30 saniye bekleyip tekrar deneyin.');
+      return;
+    }
+    localStorage.setItem('cactus_last_room', String(Date.now()));
     p1Name = p1Name || 'Player 1'; localPlayer = 1; gameMode = 'online-host';
 
     let code, snap, attempts = 0;
@@ -3692,8 +4055,10 @@ async function lobbyCreateRoom() {
 
     roomId = code;
     roomRef = window.db.ref('rooms/'+code);
+    const uid = window.firebaseAuth?.currentUser?.uid || null;
     await roomRef.set({
       host_name: p1Name, guest_name: null, state: null,
+      host_uid: uid, guest_uid: null,
       created: Date.now(), expires: Date.now()+7200000, status: 'waiting'
     });
     document.getElementById('room-code-text').textContent = code;
@@ -3721,7 +4086,9 @@ async function joinSubmit() {
   if(Date.now()>room.expires){ document.getElementById('join-error').textContent='Code expired'; return; }
   p2Name = p2Name || 'Player 2'; p1Name=room.host_name||'Player 1';
   localPlayer=2; gameMode='online-guest'; roomId=code; roomRef=window.db.ref('rooms/'+code);
+  const uid = window.firebaseAuth?.currentUser?.uid || null;
   await roomRef.child('guest_name').set(p2Name);
+  await roomRef.child('guest_uid').set(uid);
   await roomRef.child('status').set('playing');
   startCountdown();
 }
@@ -3798,6 +4165,7 @@ function startGameEngine() {
       platform: isMobile()?'mobile':'desktop',
       replay_number: replayCount,
       game_mode: gameMode,
+      source: window.location.hostname.includes('itch.io') ? 'itch' : 'vercel',
     });
   } catch(e){}
 
@@ -3977,6 +4345,7 @@ function htpShow() {
 function showLobby() {
   hideLobbyScreens();
   document.getElementById('lobby').style.display = 'flex';
+  updateColorblindUI();
 }
 
 function hideLobbyScreens() {
@@ -4082,6 +4451,7 @@ window.addEventListener('beforeunload', () => {
         score_p2: GameState.scores[1],
         session_seconds: Math.round((Date.now() - gameStartTime) / 1000),
         platform: isMobile() ? 'mobile' : 'desktop',
+        game_mode: gameMode,
       });
     }
   } catch(e){}
@@ -4103,31 +4473,7 @@ window.addEventListener('beforeunload', () => {
 <!-- Your turn toast -->
 <div id="your-turn-toast">YOUR TURN</div>
 
-<div id="confirm-dialog" style="
-  display:none;position:absolute;inset:0;background:rgba(0,0,0,0.65);
-  z-index:50;align-items:center;justify-content:center;
-">
-  <div style="
-    background:#131509;border:1px solid #3a3f2a;border-radius:14px;
-    padding:28px 32px;text-align:center;max-width:280px;
-    box-shadow:0 0 40px rgba(0,0,0,0.8);
-  ">
-    <div style="font-size:13px;letter-spacing:0.2em;color:#a8ad94;margin-bottom:10px;">Place here?</div>
-    <div style="font-size:16px;font-weight:700;color:#f0f2e6;margin-bottom:22px;">Place the piece at this position</div>
-    <div style="display:flex;gap:12px;justify-content:center;">
-      <button onclick="cancelPlacement()" style="
-        background:rgba(255,255,255,0.06);border:1px solid #3a3f2a;
-        color:#a8ad94;padding:10px 22px;border-radius:8px;cursor:pointer;
-        font-family:monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;
-      ">Cancel</button>
-      <button onclick="confirmPlacement()" style="
-        background:#c8f060;border:none;color:#0a0b09;
-        padding:10px 22px;border-radius:8px;cursor:pointer;
-        font-family:monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;
-      ">✓ Confirm</button>
-    </div>
-  </div>
-</div>
+<!-- confirm-dialog removed: replaced by pc-action-bar -->
 
 <!-- Bonus Toast -->
 <div id="bonus-toast" style="
@@ -4338,7 +4684,7 @@ window.addEventListener('beforeunload', () => {
       <!-- Son hamle + ipucu satırı -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px;">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-          <input type="checkbox" id="mob-last-move-chk"
+          <input type="checkbox" id="mob-last-move-chk" checked
             onchange="toggleLastMoveHighlight(this.checked);document.getElementById('last-move-chk').checked=this.checked;"
             style="width:13px;height:13px;accent-color:var(--accent);">
           <span style="font-size:10px;color:var(--text-muted);letter-spacing:0.08em;" data-i18n="highlight_last">Highlight last move</span>
@@ -4394,7 +4740,7 @@ window.addEventListener('beforeunload', () => {
 
 <!-- Son hamle vurgulama -->
 <div id="last-move-toggle">
-  <input type="checkbox" id="last-move-chk" onchange="toggleLastMoveHighlight(this.checked)">
+  <input type="checkbox" id="last-move-chk" checked onchange="toggleLastMoveHighlight(this.checked)">
   <label for="last-move-chk" data-i18n="highlight_last">Highlight last move</label>
 </div>
 
