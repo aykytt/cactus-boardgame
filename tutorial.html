@@ -270,7 +270,7 @@ html, body {
   <h1>COMPLETE!</h1>
   <p class="sub">Congratulations!<br>Now let's play a real game.</p>
   <div class="complete-btns">
-    <button class="tbtn pri" onclick="history.back()">▶ START PLAYING</button>
+    <button class="tbtn pri" onclick="try{localStorage.setItem('cactus_played','1')}catch(e){}; window.location.href='index.html'">▶ START PLAYING</button>
     <button class="tbtn sec" onclick="location.reload()">↺ Play Tutorial Again</button>
   </div>
 </div>
