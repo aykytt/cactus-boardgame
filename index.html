@@ -1285,11 +1285,11 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
      LOBBY (new — with tooltips & nickname flow)
 ══════════════════════════════════════ -->
 <!-- New user tutorial overlay -->
-<div id="new-user-overlay" style="display:none;position:fixed;inset:0;background:rgba(10,11,9,0.93);z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px;">
+<div id="new-user-overlay" style="display:none;position:fixed;inset:0;background:rgba(10,11,9,1);z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px;">
+  <button class="lobby-btn lobby-btn-ghost" style="position:absolute;top:20px;left:20px;width:auto;padding:8px 18px;font-size:12px;letter-spacing:0.1em;" onclick="skipTutorial()">Go to Main Menu</button>
   <div style="color:var(--accent);font-family:'Courier New',monospace;font-size:18px;font-weight:700;letter-spacing:0.2em;text-align:center;">NEW HERE?</div>
   <div style="color:#c8c9b8;font-family:'Courier New',monospace;font-size:13px;text-align:center;max-width:260px;line-height:1.7;letter-spacing:0.05em;">CACTUS has unique rules.<br>The tutorial covers everything<br>in ~3 minutes.</div>
   <button class="lobby-btn lobby-btn-primary" style="max-width:260px;width:260px;" onclick="window.location.href='tutorial.html'">▶ Start Tutorial</button>
-  <button class="lobby-btn lobby-btn-ghost" style="max-width:260px;width:260px;" onclick="skipTutorial()">Go to Main Menu</button>
 </div>
 
 <div id="lobby" style="display:none;">
@@ -4141,15 +4141,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // LocalStorage check — first-time users go to tutorial
   let hasPlayed = false;
   try { hasPlayed = !!localStorage.getItem('cactus_played'); } catch(e){}
-  showLobby();
   if (!hasPlayed) {
     document.getElementById('new-user-overlay').style.display = 'flex';
+  } else {
+    showLobby();
   }
 
   // skipTutorial — dismiss new-user overlay
   window.skipTutorial = function() {
     try { localStorage.setItem('cactus_played','1'); } catch(e) {}
     document.getElementById('new-user-overlay').style.display = 'none';
+    showLobby();
   };
 
   // Lobby buttons → nickname screens
