@@ -256,11 +256,10 @@ html, body {
   <div id="piece-list"></div>
 </div>
 
+<button class="tbtn sec" style="position:fixed;top:20px;left:20px;width:auto;padding:3px 9px;font-size:10px;letter-spacing:.1em;z-index:999;" onclick="try{localStorage.setItem('cactus_played','1')}catch(e){};window.location.href='index.html'">Skip Tutorial</button>
+
 <!-- Tutorial Card -->
 <div id="tut-card">
-  <div style="display:flex;justify-content:flex-start;margin-bottom:-2px;">
-    <button class="tbtn sec" style="width:auto;padding:3px 9px;font-size:10px;letter-spacing:.1em;" onclick="try{localStorage.setItem('cactus_played','1')}catch(e){};window.location.href='index.html'">Skip Tutorial</button>
-  </div>
   <div id="tut-progress"></div>
   <div id="tut-label">STEP 1</div>
   <div id="tut-title">Loading...</div>
