@@ -3824,6 +3824,11 @@ function showWinScreen(player, type) {
       });
     }
   } catch(e){}
+
+  // Online modda host 30 saniye sonra odayı siler
+  if (gameMode !== 'offline' && localPlayer === 1 && roomRef) {
+    setTimeout(() => { try { roomRef.remove(); } catch(e){} }, 30000);
+  }
 }
 
 
