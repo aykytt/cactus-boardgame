@@ -4041,7 +4041,6 @@ async function lobbyCreateRoom() {
       alert('Lütfen 30 saniye bekleyip tekrar deneyin.');
       return;
     }
-    localStorage.setItem('cactus_last_room', String(Date.now()));
     p1Name = p1Name || 'Player 1'; localPlayer = 1; gameMode = 'online-host';
 
     let code, snap, attempts = 0;
@@ -4060,6 +4059,7 @@ async function lobbyCreateRoom() {
       host_uid: uid, guest_uid: null,
       created: Date.now(), expires: Date.now()+7200000, status: 'waiting'
     });
+    localStorage.setItem('cactus_last_room', String(Date.now()));
     document.getElementById('room-code-text').textContent = code;
     showScreen('room-screen');
     roomRef.child('guest_name').on('value', s => {
