@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CACTUS — Tutorial</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#0a0b09; --surface:#131509; --border:#3a3f2a;
+  --text:#f0f2e6; --muted:#b8bda8;
+  --p1:#8fc828; --p2:#d85a30; --accent:#c8f060;
+}
+html, body {
+  background:var(--bg); color:var(--text);
+  font-family:'Courier New',monospace;
+  overflow:hidden; height:100%; width:100%;
+}
+
+#canvas-container {
+  position:fixed; inset:0; z-index:0;
+}
+
+/* ── ERROR DISPLAY (debug) ────────────────── */
+#err-debug {
+  display:none;
+  position:fixed; top:0; left:0; right:0;
+  background:#8b0000; color:#fff;
+  padding:10px 14px; font-size:12px;
+  z-index:9999; white-space:pre-wrap;
+  word-break:break-all;
+}
+
+/* ── TUTORIAL CARD — bottom-left ────────── */
+#tut-card {
+  position:fixed;
+  bottom:20px; left:20px;
+  width:290px;
+  background:rgba(10,11,9,0.96);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:16px 18px 14px;
+  z-index:50;
+  display:flex; flex-direction:column; gap:9px;
+}
+@media (max-width:640px) {
+  #tut-card {
+    left:0; right:0; bottom:0;
+    width:100%; border-radius:12px 12px 0 0;
+    max-height:55vh; overflow-y:auto;
+  }
+}
+
+#tut-progress {
+  display:flex; gap:4px; align-items:center; flex-wrap:wrap;
+}
+.tdot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--border); flex-shrink:0; transition:all .3s;
+}
+.tdot.done { background:rgba(200,240,96,.5); }
+.tdot.active { background:var(--accent); box-shadow:0 0 5px var(--accent); }
+
+#tut-label {
+  font-size:10px; letter-spacing:.3em; color:var(--muted);
+  text-transform:uppercase;
+}
+#tut-title {
+  font-size:14px; font-weight:700; color:var(--accent); line-height:1.3;
+}
+#tut-msg {
+  font-size:12px; line-height:1.7; color:var(--text);
+}
+#tut-msg b  { color:var(--accent); font-weight:700; }
+#tut-msg .g { color:var(--p1); font-weight:700; }
+#tut-msg .o { color:var(--p2); font-weight:700; }
+#tut-msg .d { color:var(--muted); }
+
+#tut-actions { display:flex; flex-direction:column; gap:6px; margin-top:2px; }
+.tbtn {
+  display:block; width:100%;
+  background:transparent; border:1px solid var(--accent);
+  color:var(--accent); padding:9px 12px;
+  font-family:'Courier New',monospace; font-size:12px; font-weight:bold;
+  letter-spacing:.12em; border-radius:6px; cursor:pointer;
+  text-align:center; transition:background .2s,color .2s;
+  text-transform:uppercase;
+}
+.tbtn:hover { background:var(--accent); color:var(--bg); }
+.tbtn.pri  { background:var(--accent); color:var(--bg); }
+.tbtn.pri:hover { background:#b8e040; }
+.tbtn.sec  { border-color:var(--muted); color:var(--muted); }
+.tbtn.sec:hover { background:var(--muted); color:var(--bg); }
+.tbtn:disabled { opacity:.35; cursor:not-allowed; pointer-events:none; }
+
+/* ── PIECE PANEL — right side (desktop) ─── */
+#piece-panel {
+  position:fixed; right:0; top:0; bottom:0;
+  width:200px;
+  background:rgba(10,11,9,.97);
+  border-left:1px solid var(--border);
+  display:flex; flex-direction:column;
+  transform:translateX(100%);
+  transition:transform .35s cubic-bezier(.4,0,.2,1);
+  z-index:40;
+}
+#piece-panel.open { transform:translateX(0); }
+
+/* Mobile: bottom sheet */
+@media (max-width:640px) {
+  #piece-panel {
+    top:auto; right:0; left:0; bottom:0;
+    width:100%; height:60vh;
+    border-left:none; border-top:1px solid var(--border);
+    border-radius:16px 16px 0 0;
+    transform:translateY(100%);
+  }
+  #piece-panel.open { transform:translateY(0); }
+}
+
+.ppanel-head {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:11px 14px; border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.ppanel-title { font-size:10px; letter-spacing:.25em; color:var(--p1); font-weight:700; }
+#ppanel-close {
+  background:none; border:none; color:var(--muted);
+  cursor:pointer; font-size:14px; padding:2px 6px; transition:color .15s;
+}
+#ppanel-close:hover { color:var(--text); }
+
+.ppanel-hint {
+  padding:9px 14px; font-size:11px; color:var(--muted);
+  border-bottom:1px solid var(--border); line-height:1.5; flex-shrink:0;
+}
+.ppanel-hint b { color:var(--accent); }
+
+#piece-list {
+  flex:1; overflow-y:auto; padding:8px;
+  display:flex; flex-direction:column; gap:5px; min-height:0;
+  scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+
+/* Mobile: grid layout for piece list */
+@media (max-width:640px) {
+  #piece-list {
+    display:grid; grid-template-columns:1fr 1fr;
+    overflow-y:auto;
+  }
+}
+
+.pitem {
+  display:flex; align-items:center; gap:8px;
+  background:rgba(255,255,255,.03);
+  border:1px solid var(--border);
+  border-radius:8px; padding:7px 9px;
+  transition:all .18s;
+}
+.pitem.locked { opacity:.25; cursor:not-allowed; }
+.pitem.target {
+  cursor:pointer; border-color:var(--p1);
+  background:rgba(143,200,40,.07);
+  animation:ppulse 1.6s ease-in-out infinite;
+}
+.pitem.target:hover { background:rgba(143,200,40,.15); }
+.pitem.chosen { border-color:var(--accent); background:rgba(200,240,96,.1); animation:none; }
+@keyframes ppulse {
+  0%,100%{ box-shadow:0 0 0 0 rgba(143,200,40,.3); }
+  50%    { box-shadow:0 0 0 5px rgba(143,200,40,0); }
+}
+
+.pitem-icon { width:36px; height:36px; flex-shrink:0; border-radius:4px; overflow:hidden; }
+.pitem-info { flex:1; min-width:0; }
+.pitem-name { font-size:11px; font-weight:700; color:var(--text); }
+.pitem-units { font-size:10px; color:var(--muted); letter-spacing:.08em; }
+.pitem-lock { font-size:10px; color:var(--border); }
+
+
+/* ── OVERLAYS ────────────────────────────── */
+#pc-tag {
+  position:fixed; top:14px; left:50%; transform:translateX(-50%);
+  background:rgba(10,11,9,.9); border:1px solid var(--border);
+  border-radius:8px; padding:6px 16px;
+  font-size:10px; letter-spacing:.2em; color:var(--p2);
+  display:none; z-index:60; pointer-events:none;
+  animation:blink 1s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+#flash {
+  position:fixed; top:42%; left:50%; transform:translate(-50%,-50%);
+  background:rgba(10,11,9,.92); border:2px solid var(--accent);
+  border-radius:12px; padding:12px 26px;
+  font-size:17px; font-weight:700; letter-spacing:.12em; color:var(--accent);
+  pointer-events:none; opacity:0; z-index:100;
+  transition:opacity .25s; white-space:nowrap; text-align:center;
+}
+#flash.show { opacity:1; }
+#flash.win  { border-color:#ffb830; color:#ffb830; }
+
+#toast {
+  position:fixed; bottom:250px; left:50%; transform:translateX(-50%);
+  background:rgba(216,90,48,.92); color:#fff;
+  padding:8px 16px; border-radius:8px; font-size:12px;
+  pointer-events:none; opacity:0; z-index:80; white-space:nowrap;
+  transition:opacity .2s;
+}
+#toast.show { opacity:1; }
+
+/* ── COMPLETE SCREEN ──────────────────────── */
+#complete {
+  position:fixed; inset:0;
+  background:rgba(10,11,9,.96);
+  display:none; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:18px; z-index:200; padding:24px;
+  text-align:center;
+}
+#complete h1 { font-size:30px; letter-spacing:.3em; color:var(--accent); }
+#complete .sub { font-size:13px; color:var(--muted); max-width:300px; line-height:1.8; }
+.score-row { display:flex; gap:16px; }
+.sbox { border:1px solid var(--border); border-radius:10px; padding:12px 20px; }
+.sbox .sv { font-size:26px; font-weight:700; }
+.sbox .sl { font-size:10px; letter-spacing:.2em; color:var(--muted); margin-top:3px; }
+.sbox.p1 .sv { color:var(--p1); }
+.sbox.p2 .sv { color:var(--p2); }
+.complete-btns { display:flex; flex-direction:column; gap:7px; width:240px; }
+</style>
+</head>
+<body>
+
+<!-- Error debug bar -->
+<div id="err-debug"></div>
+
+<!-- 3D canvas -->
+<div id="canvas-container"></div>
+
+
+<!-- PC thinking -->
+<div id="pc-tag">PLAYER 2 IS MOVING...</div>
+
+<!-- Bonus/win flash -->
+<div id="flash"></div>
+
+<!-- Error toast -->
+<div id="toast"></div>
+
+<!-- Piece Panel (right / bottom sheet on mobile) -->
+<div id="piece-panel">
+  <div class="ppanel-head">
+    <span class="ppanel-title">YOUR PIECES</span>
+    <button id="ppanel-close">✕</button>
+  </div>
+  <div class="ppanel-hint">Select the <b>highlighted</b> piece to continue.</div>
+  <div id="piece-list"></div>
+</div>
+
+<!-- Tutorial Card -->
+<div id="tut-card">
+  <div id="tut-progress"></div>
+  <div id="tut-label">STEP 1</div>
+  <div id="tut-title">Loading...</div>
+  <div id="tut-msg"></div>
+  <div id="tut-actions"></div>
+</div>
+
+<!-- Complete screen -->
+<div id="complete">
+  <h1>COMPLETE!</h1>
+  <p class="sub">Congratulations!<br>Now let's play a real game.</p>
+  <div class="complete-btns">
+    <button class="tbtn pri" onclick="history.back()">▶ START PLAYING</button>
+    <button class="tbtn sec" onclick="location.reload()">↺ Play Tutorial Again</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  GLOBAL ERROR CATCHER — shows errors visibly
+// ══════════════════════════════════════════════════════
+window.onerror = function(msg, src, line, col, err) {
+  var d = document.getElementById('err-debug');
+  d.textContent = 'JS ERROR: ' + msg + '\nLine: ' + line + '\n' + (err ? err.stack : '');
+  d.style.display = 'block';
+};
+
+// ══════════════════════════════════════════════════════
+//  GUARD — check Three.js loaded
+// ══════════════════════════════════════════════════════
+if (typeof THREE === 'undefined') {
+  document.getElementById('err-debug').textContent = 'ERROR: Three.js failed to load from CDN. Check your internet connection.';
+  document.getElementById('err-debug').style.display = 'block';
+  document.getElementById('tut-title').textContent = 'Network Error';
+  document.getElementById('tut-msg').textContent = 'Three.js could not be loaded. Please check your connection.';
+  throw new Error('THREE not defined');
+}
+
+// ══════════════════════════════════════════════════════
+//  SCENE SETUP
+// ══════════════════════════════════════════════════════
+var container = document.getElementById('canvas-container');
+function W() { return container.clientWidth || window.innerWidth; }
+function H() { return container.clientHeight || window.innerHeight; }
+
+var renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(W(), H());
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setClearColor(0x0a0b09, 1);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.25;
+container.appendChild(renderer.domElement);
+
+var scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0a0b09, 0.010);
+
+var camera = new THREE.PerspectiveCamera(42, W() / H(), 0.1, 200);
+
+// ── Orbit (identical to main game) ─────────────────────
+var orbit = {
+  isDragging: false, lastX: 0, lastY: 0,
+  rotX: 0.38,
+  rotY: Math.PI + 0.45,   // camera facing the gz=-1 front face
+  distance: 26,
+  minDist: 6, maxDist: 40,
+  tRX: 0.38, tRY: Math.PI + 0.45, tD: 26
+};
+var onOrbitDrag = null;
+var keyTaskEnabled = false, keyTaskNextBtn = null, keyTaskCubes = null;
+
+function updateCam() {
+  var x = orbit.distance * Math.sin(orbit.rotY) * Math.cos(orbit.rotX);
+  var y = orbit.distance * Math.sin(orbit.rotX);
+  var z = orbit.distance * Math.cos(orbit.rotY) * Math.cos(orbit.rotX);
+  camera.position.set(x, y, z);
+  camera.lookAt(0, 0, 0);
+}
+
+container.addEventListener('mousedown', function(e) {
+  orbit.isDragging = true;
+  orbit.lastX = e.clientX; orbit.lastY = e.clientY;
+});
+document.addEventListener('mouseup', function() { orbit.isDragging = false; });
+document.addEventListener('mousemove', function(e) {
+  if (!orbit.isDragging) return;
+  orbit.tRY -= (e.clientX - orbit.lastX) * 0.008;
+  orbit.tRX -= (e.clientY - orbit.lastY) * 0.008;
+  orbit.tRX = Math.max(-1.4, Math.min(1.4, orbit.tRX));
+  orbit.lastX = e.clientX; orbit.lastY = e.clientY;
+  if (onOrbitDrag) { var cb = onOrbitDrag; onOrbitDrag = null; cb(); }
+});
+container.addEventListener('wheel', function(e) {
+  orbit.tD = Math.max(orbit.minDist, Math.min(orbit.maxDist, orbit.tD + e.deltaY * 0.025));
+}, { passive: true });
+
+// Touch orbit
+var ltd = 0, ltx = 0, lty = 0, tdrag = false;
+container.addEventListener('touchstart', function(e) {
+  if (e.touches.length === 1) {
+    tdrag = true;
+    ltx = e.touches[0].clientX; lty = e.touches[0].clientY;
+  } else if (e.touches.length === 2) {
+    tdrag = false;
+    ltd = Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
+                     e.touches[0].clientY - e.touches[1].clientY);
+  }
+}, { passive: true });
+container.addEventListener('touchmove', function(e) {
+  if (e.touches.length === 1 && tdrag) {
+    orbit.tRY -= (e.touches[0].clientX - ltx) * 0.008;
+    orbit.tRX -= (e.touches[0].clientY - lty) * 0.008;
+    orbit.tRX = Math.max(-1.4, Math.min(1.4, orbit.tRX));
+    ltx = e.touches[0].clientX; lty = e.touches[0].clientY;
+    if (onOrbitDrag) { var cb = onOrbitDrag; onOrbitDrag = null; cb(); }
+  } else if (e.touches.length === 2) {
+    var d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
+                       e.touches[0].clientY - e.touches[1].clientY);
+    orbit.tD = Math.max(orbit.minDist, Math.min(orbit.maxDist, orbit.tD - (d - ltd) * 0.04));
+    ltd = d;
+  }
+}, { passive: true });
+container.addEventListener('touchend', function() { tdrag = false; });
+
+// Key rotation task listener
+document.addEventListener('keydown', function(e) {
+  if (!keyTaskEnabled) return;
+  var k = e.key.toLowerCase();
+  if (['w','a','s','d','q','e'].indexOf(k) === -1) return;
+  e.preventDefault();
+  keyTaskCubes = rotateCubes(keyTaskCubes, k);
+  showPreview3D(keyTaskCubes, P1C);
+  var items = document.querySelectorAll('.pitem.chosen');
+  if (items.length > 0) {
+    var cv = items[0].querySelector('canvas');
+    if (cv) drawPreviewCubes(cv, keyTaskCubes, P1C);
+  }
+  if (keyTaskNextBtn) {
+    keyTaskNextBtn.disabled = false;
+  }
+});
+
+// ── Lights ─────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x8899aa, 0.45));
+
+var mainLight = new THREE.DirectionalLight(0xfff8f0, 1.8);
+mainLight.position.set(6, 16, 10);
+mainLight.castShadow = true;
+mainLight.shadow.mapSize.set(2048, 2048);
+mainLight.shadow.camera.near   = 0.5;
+mainLight.shadow.camera.far    = 60;
+mainLight.shadow.camera.left   = -15;
+mainLight.shadow.camera.right  = 15;
+mainLight.shadow.camera.top    = 22;
+mainLight.shadow.camera.bottom = -22;
+mainLight.shadow.bias = -0.001;
+scene.add(mainLight);
+
+var fillLight = new THREE.DirectionalLight(0xaaccff, 0.4);
+fillLight.position.set(-8, 2, -6);
+scene.add(fillLight);
+
+var rimLight = new THREE.DirectionalLight(0xffeebb, 0.35);
+rimLight.position.set(2, -6, -10);
+scene.add(rimLight);
+
+var ptLight = new THREE.PointLight(0xfff0cc, 0.6, 25);
+ptLight.position.set(3, 5, 8);
+scene.add(ptLight);
+
+// ── Particles ───────────────────────────────────────────
+var pGeo = new THREE.BufferGeometry();
+var pPos = new Float32Array(80 * 3);
+var pSpd = [];
+for (var pi = 0; pi < 80; pi++) {
+  pPos[pi*3]   = (Math.random() - 0.5) * 40;
+  pPos[pi*3+1] = (Math.random() - 0.5) * 25;
+  pPos[pi*3+2] = (Math.random() - 0.5) * 40;
+  pSpd.push({ vx:(Math.random()-0.5)*0.003, vy:(Math.random()-0.5)*0.002, vz:(Math.random()-0.5)*0.003 });
+}
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+scene.add(new THREE.Points(pGeo, new THREE.PointsMaterial({ color:0xC8A97A, size:0.06, transparent:true, opacity:0.2 })));
+
+// Resize
+window.addEventListener('resize', function() {
+  renderer.setSize(W(), H());
+  camera.aspect = W() / H();
+  camera.updateProjectionMatrix();
+});
+
+// ══════════════════════════════════════════════════════
+//  BOARD GEOMETRY
+// ══════════════════════════════════════════════════════
+var UNIT = 1.0, GAP = 0.04, BEVEL = 0.06;
+var P1C = 0x8fc828, P2C = 0xd85a30;
+
+function mkBox(size, r) {
+  var geo = new THREE.BoxGeometry(size, size, size, 2, 2, 2);
+  var pos = geo.attributes.position;
+  for (var i = 0; i < pos.count; i++) {
+    var bx = pos.getX(i), by = pos.getY(i), bz = pos.getZ(i);
+    var len = Math.sqrt(bx*bx + by*by + bz*bz) || 0.001;
+    var f = 1 - (r / len) * 0.15;
+    pos.setXYZ(i, bx*f, by*f, bz*f);
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
+var matDark  = new THREE.MeshStandardMaterial({ color:0x7a5c38, roughness:0.7,  metalness:0.04 });
+var matLight = new THREE.MeshStandardMaterial({ color:0xc4a46e, roughness:0.65, metalness:0.02 });
+var bGeo     = mkBox(UNIT - GAP*2, BEVEL);
+var eGeo     = new THREE.EdgesGeometry(new THREE.BoxGeometry(UNIT-GAP*2, UNIT-GAP*2, UNIT-GAP*2));
+var eMat     = new THREE.LineBasicMaterial({ color:0x000000, transparent:true, opacity:0.25 });
+
+var bGroup = new THREE.Group();
+scene.add(bGroup);
+
+for (var by2 = 0; by2 < 8; by2++) {
+  for (var bx2 = 0; bx2 < 2; bx2++) {
+    for (var bz2 = 0; bz2 < 2; bz2++) {
+      var isDark = (by2 === 0 || by2 === 7);
+      var bm = new THREE.Mesh(bGeo, isDark ? matDark.clone() : matLight.clone());
+      bm.position.set((bx2 - 0.5)*UNIT, (by2 - 3.5)*UNIT, (bz2 - 0.5)*UNIT);
+      bm.castShadow = bm.receiveShadow = true;
+      bGroup.add(bm);
+      var be = new THREE.LineSegments(eGeo, eMat.clone());
+      be.position.copy(bm.position);
+      bGroup.add(be);
+    }
+  }
+}
+
+function g2w(gx, gy, gz) {
+  return new THREE.Vector3((gx - 0.5)*UNIT, (gy - 3.5)*UNIT, (gz - 0.5)*UNIT);
+}
+
+// ══════════════════════════════════════════════════════
+//  GAME DATA
+// ══════════════════════════════════════════════════════
+var PIECES = [
+  { id:0, name:'2-Rod',        units:2, cubes:[[0,0,0],[1,0,0]] },
+  { id:1, name:'3-Corner',     units:3, cubes:[[0,0,0],[0,1,0],[1,0,0]] },
+  { id:2, name:'4-L',          units:4, cubes:[[0,0,0],[0,1,0],[0,2,0],[1,0,0]] },
+  { id:3, name:'4-Square',     units:4, cubes:[[0,0,0],[1,0,0],[0,0,1],[1,0,1]] },
+  { id:4, name:'5-Long L',     units:5, cubes:[[0,0,0],[0,1,0],[0,2,0],[0,3,0],[1,0,0]] },
+  { id:5, name:'5-Stair',      units:5, cubes:[[0,0,0],[0,1,0],[0,2,0],[1,0,0],[1,1,0]] },
+  { id:6, name:'6-Wall',       units:6, cubes:[[0,0,0],[1,0,0],[2,0,0],[0,1,0],[1,1,0],[2,1,0]] },
+  { id:7, name:'6-Stair',      units:6, cubes:[[0,0,0],[0,1,0],[0,2,0],[0,3,0],[1,0,0],[1,1,0]] },
+  { id:8, name:'7-Stair',      units:7, cubes:[[0,0,0],[0,1,0],[0,2,0],[0,3,0],[1,0,0],[1,1,0],[1,2,0]] },
+  { id:9, name:'8-Wall',       units:8, cubes:[[0,0,0],[0,1,0],[0,2,0],[0,3,0],[1,0,0],[1,1,0],[1,2,0],[1,3,0]] }
+];
+
+var placed  = [];   // { gx, gy, gz, player }
+var demoMeshes = [];
+var realMeshes = [];  // meshes placed via placeAnimated — for hiding
+var DIRS6   = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+
+function calcScore(cells, player) {
+  var opp = player === 1 ? 2 : 1;
+  var pts = cells.length;
+  for (var ci = 0; ci < cells.length; ci++) {
+    var c = cells[ci], adj = 0;
+    for (var di = 0; di < DIRS6.length; di++) {
+      var d = DIRS6[di];
+      for (var pi2 = 0; pi2 < placed.length; pi2++) {
+        var p = placed[pi2];
+        if (p.player === opp && p.gx === c.gx+d[0] && p.gy === c.gy+d[1] && p.gz === c.gz+d[2]) { adj++; break; }
+      }
+    }
+    pts += adj;
+    if (adj >= 2) pts += 5;
+  }
+  return pts;
+}
+
+function pieceMat(player, alpha) {
+  var m = new THREE.MeshStandardMaterial({
+    color: player === 1 ? P1C : P2C,
+    roughness: 0.45, metalness: 0.08
+  });
+  if (alpha !== undefined) { m.transparent = true; m.opacity = alpha; }
+  return m;
+}
+
+// ── Real animated placement ─────────────────────────────
+function placeAnimated(cells, player, dur, cb) {
+  var mat  = pieceMat(player);
+  var geo  = mkBox(UNIT - GAP*2, BEVEL);
+  var anims = [];
+
+  for (var i = 0; i < cells.length; i++) {
+    var c  = cells[i];
+    var tp = g2w(c.gx, c.gy, c.gz);
+    var sp = new THREE.Vector3(tp.x, tp.y + 5, tp.z);
+    var mesh = new THREE.Mesh(geo, mat.clone());
+    mesh.position.copy(sp);
+    mesh.castShadow = true;
+    scene.add(mesh);
+    var el = new THREE.LineSegments(eGeo, eMat.clone());
+    el.position.copy(sp);
+    scene.add(el);
+    anims.push({ mesh: mesh, el: el, tp: tp });
+    realMeshes.push(mesh, el);
+    placed.push({ gx:c.gx, gy:c.gy, gz:c.gz, player:player });
+  }
+
+  calcScore(cells, player);
+
+  var t0 = performance.now();
+  function step() {
+    var p = Math.min((performance.now() - t0) / dur, 1);
+    var ease = 1 - Math.pow(1 - p, 3);
+    for (var ai = 0; ai < anims.length; ai++) {
+      anims[ai].mesh.position.lerp(anims[ai].tp, ease);
+      anims[ai].el.position.copy(anims[ai].mesh.position);
+    }
+    if (p < 1) { requestAnimationFrame(step); }
+    else if (cb) { cb(); }
+  }
+  requestAnimationFrame(step);
+}
+
+// ── Demo placement (visual only, no game state) ─────────
+function demoPlace(cells, color) {
+  var mat = new THREE.MeshStandardMaterial({ color:color, roughness:0.45, metalness:0.08, transparent:true, opacity:0.72 });
+  var geo = mkBox(UNIT - GAP*2, BEVEL);
+  for (var i = 0; i < cells.length; i++) {
+    var c = cells[i];
+    var mesh = new THREE.Mesh(geo, mat.clone());
+    mesh.position.copy(g2w(c.gx, c.gy, c.gz));
+    mesh.castShadow = true;
+    scene.add(mesh);
+    demoMeshes.push(mesh);
+    var el = new THREE.LineSegments(eGeo, eMat.clone());
+    el.position.copy(mesh.position);
+    scene.add(el);
+    demoMeshes.push(el);
+  }
+}
+
+function demoAnimate(cells, color, dur, cb) {
+  var mat = new THREE.MeshStandardMaterial({ color:color, roughness:0.45, metalness:0.08, transparent:true, opacity:0.85 });
+  var geo = mkBox(UNIT - GAP*2, BEVEL);
+  var anims = [];
+  for (var i = 0; i < cells.length; i++) {
+    var c  = cells[i];
+    var tp = g2w(c.gx, c.gy, c.gz);
+    var mesh = new THREE.Mesh(geo, mat.clone());
+    mesh.position.set(tp.x, tp.y + 5, tp.z);
+    scene.add(mesh);
+    demoMeshes.push(mesh);
+    var el = new THREE.LineSegments(eGeo, eMat.clone());
+    el.position.copy(mesh.position);
+    scene.add(el);
+    demoMeshes.push(el);
+    anims.push({ mesh:mesh, el:el, tp:tp });
+  }
+  var t0 = performance.now();
+  function step() {
+    var p = Math.min((performance.now() - t0) / dur, 1);
+    var ease = 1 - Math.pow(1 - p, 3);
+    for (var ai = 0; ai < anims.length; ai++) {
+      anims[ai].mesh.position.lerp(anims[ai].tp, ease);
+      anims[ai].el.position.copy(anims[ai].mesh.position);
+    }
+    if (p < 1) { requestAnimationFrame(step); }
+    else if (cb) { cb(); }
+  }
+  requestAnimationFrame(step);
+}
+
+function clearDemo() {
+  for (var i = 0; i < demoMeshes.length; i++) scene.remove(demoMeshes[i]);
+  demoMeshes.length = 0;
+}
+
+function hideRealPieces() {
+  for (var i = 0; i < realMeshes.length; i++) realMeshes[i].visible = false;
+}
+
+// ── Piece preview (key_task 3D gösterim) ────────────────
+var previewMeshes = [];
+
+function showPreview3D(cubes, color) {
+  clearPreview3D();
+  var cx=0,cy=0,cz=0;
+  for(var i=0;i<cubes.length;i++){cx+=cubes[i][0];cy+=cubes[i][1];cz+=cubes[i][2];}
+  cx/=cubes.length; cy/=cubes.length; cz/=cubes.length;
+  var mat = new THREE.MeshStandardMaterial({color:color,roughness:0.45,metalness:0.08,transparent:true,opacity:0.92});
+  var geo = mkBox(UNIT-GAP*2,BEVEL);
+  for(var i=0;i<cubes.length;i++){
+    var mesh = new THREE.Mesh(geo,mat.clone());
+    mesh.position.set((cubes[i][0]-cx)*UNIT+3.2,(cubes[i][1]-cy)*UNIT,(cubes[i][2]-cz)*UNIT-1.5);
+    mesh.castShadow=true;
+    scene.add(mesh);
+    previewMeshes.push(mesh);
+    var el=new THREE.LineSegments(eGeo,eMat.clone());
+    el.position.copy(mesh.position);
+    scene.add(el);
+    previewMeshes.push(el);
+  }
+}
+
+function clearPreview3D() {
+  for(var i=0;i<previewMeshes.length;i++) scene.remove(previewMeshes[i]);
+  previewMeshes.length=0;
+}
+
+// ── Hint meshes ─────────────────────────────────────────
+var hints = [], hintT = 0;
+var hGeo = mkBox(UNIT - GAP*2, BEVEL);
+
+function showHints(cells) {
+  clearHints();
+  for (var i = 0; i < cells.length; i++) {
+    var c = cells[i];
+    var mat = new THREE.MeshStandardMaterial({
+      color:0xc8f060, transparent:true, opacity:0.3,
+      emissive:0xc8f060, emissiveIntensity:0.5
+    });
+    var m = new THREE.Mesh(hGeo, mat);
+    m.position.copy(g2w(c.gx, c.gy, c.gz));
+    scene.add(m);
+    hints.push(m);
+  }
+}
+function clearHints() {
+  for (var i = 0; i < hints.length; i++) scene.remove(hints[i]);
+  hints.length = 0;
+}
+function animHints(dt) {
+  hintT += dt;
+  var op  = 0.15 + 0.25 * Math.sin(hintT * 3.5);
+  var em  = 0.3  + 0.35 * Math.sin(hintT * 3.5);
+  var sc  = 1    + 0.07 * Math.sin(hintT * 3.5);
+  for (var i = 0; i < hints.length; i++) {
+    hints[i].material.opacity = op;
+    hints[i].material.emissiveIntensity = em;
+    hints[i].scale.setScalar(sc);
+  }
+}
+
+// ── UI helpers ──────────────────────────────────────────
+var flashTimer = null;
+function showFlash(msg, win, dur) {
+  var el = document.getElementById('flash');
+  el.textContent = msg;
+  el.className = 'show' + (win ? ' win' : '');
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(function() { el.className = ''; }, dur || 2500);
+}
+
+var toastTimer = null;
+function showToast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { el.classList.remove('show'); }, 2000);
+}
+
+// ══════════════════════════════════════════════════════
+//  PIECE PANEL (2D previews)
+// ══════════════════════════════════════════════════════
+function drawPreview(canvas, piece, color) {
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, 36, 36);
+  var cubes = piece.cubes;
+  var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (var i = 0; i < cubes.length; i++) {
+    if (cubes[i][0] < minX) minX = cubes[i][0];
+    if (cubes[i][1] < minY) minY = cubes[i][1];
+    if (cubes[i][0] > maxX) maxX = cubes[i][0];
+    if (cubes[i][1] > maxY) maxY = cubes[i][1];
+  }
+  var spanX = maxX - minX + 1, spanY = maxY - minY + 1;
+  var sz = Math.floor(30 / Math.max(spanX, spanY));
+  var ox = Math.floor((36 - spanX * sz) / 2);
+  var oy = Math.floor((36 - spanY * sz) / 2);
+  var hex = '#' + ('000000' + color.toString(16)).slice(-6);
+  ctx.fillStyle = hex;
+  for (var i = 0; i < cubes.length; i++) {
+    ctx.fillRect(ox + (cubes[i][0] - minX)*sz + 1, oy + (maxY - cubes[i][1])*sz + 1, sz-2, sz-2);
+  }
+}
+
+function drawPreviewCubes(canvas, cubes, color) {
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,36,36);
+  var minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(var i=0;i<cubes.length;i++){
+    if(cubes[i][0]<minX)minX=cubes[i][0]; if(cubes[i][1]<minY)minY=cubes[i][1];
+    if(cubes[i][0]>maxX)maxX=cubes[i][0]; if(cubes[i][1]>maxY)maxY=cubes[i][1];
+  }
+  var spanX=maxX-minX+1,spanY=maxY-minY+1;
+  var sz=Math.floor(30/Math.max(spanX,spanY));
+  var ox=Math.floor((36-spanX*sz)/2),oy=Math.floor((36-spanY*sz)/2);
+  var hex='#'+('000000'+color.toString(16)).slice(-6);
+  ctx.fillStyle=hex;
+  for(var i=0;i<cubes.length;i++){
+    ctx.fillRect(ox+(cubes[i][0]-minX)*sz+1,oy+(maxY-cubes[i][1])*sz+1,sz-2,sz-2);
+  }
+}
+
+function normCubes(c) {
+  var mx=Infinity,my=Infinity,mz=Infinity;
+  c.forEach(function(v){if(v[0]<mx)mx=v[0];if(v[1]<my)my=v[1];if(v[2]<mz)mz=v[2];});
+  return c.map(function(v){return[v[0]-mx,v[1]-my,v[2]-mz];});
+}
+function rotateCubes(cubes, key) {
+  var r;
+  switch(key.toLowerCase()){
+    case 'w': r=cubes.map(function(c){return[ c[0],-c[2], c[1]];}); break;
+    case 's': r=cubes.map(function(c){return[ c[0], c[2],-c[1]];}); break;
+    case 'a': r=cubes.map(function(c){return[ c[2], c[1],-c[0]];}); break;
+    case 'd': r=cubes.map(function(c){return[-c[2], c[1], c[0]];}); break;
+    case 'q': r=cubes.map(function(c){return[-c[1], c[0], c[2]];}); break;
+    case 'e': r=cubes.map(function(c){return[ c[1],-c[0], c[2]];}); break;
+    default:  return cubes;
+  }
+  return normCubes(r);
+}
+
+function buildPanel(requiredId) {
+  var list = document.getElementById('piece-list');
+  list.innerHTML = '';
+  for (var i = 0; i < PIECES.length; i++) {
+    (function(p) {
+      var isTarget = (p.id === requiredId);
+      var item = document.createElement('div');
+      item.className = 'pitem ' + (isTarget ? 'target' : 'locked');
+
+      var cv = document.createElement('canvas');
+      cv.width = 36; cv.height = 36;
+      var icon = document.createElement('div');
+      icon.className = 'pitem-icon';
+      icon.appendChild(cv);
+      drawPreview(cv, p, isTarget ? P1C : 0x2a3020);
+
+      var info = document.createElement('div');
+      info.className = 'pitem-info';
+      info.innerHTML = '<div class="pitem-name">' + p.name + '</div><div class="pitem-units">' + p.units + ' UNITS</div>';
+
+      var lock = document.createElement('div');
+      lock.className = 'pitem-lock';
+      lock.textContent = isTarget ? '★' : '🔒';
+
+      item.appendChild(icon);
+      item.appendChild(info);
+      item.appendChild(lock);
+
+      if (isTarget) {
+        item.addEventListener('click', function() {
+          list.querySelectorAll('.pitem').forEach(function(el) { el.classList.remove('chosen'); });
+          item.classList.add('chosen');
+          TM.onPieceSelect(p.id);
+        });
+      } else {
+        item.addEventListener('click', function() {
+          showToast('Select the highlighted piece!');
+        });
+      }
+      list.appendChild(item);
+    })(PIECES[i]);
+  }
+}
+
+function openPanel(reqId) {
+  buildPanel(reqId);
+  document.getElementById('piece-panel').classList.add('open');
+}
+function closePanel() {
+  document.getElementById('piece-panel').classList.remove('open');
+}
+document.getElementById('ppanel-close').addEventListener('click', closePanel);
+
+// ══════════════════════════════════════════════════════
+//  TUTORIAL STEPS
+// ══════════════════════════════════════════════════════
+var STEPS = [
+  // 0 — WELCOME (no step number)
+  { type:'welcome', title:'Welcome to CACTUS!',
+    msg:'<b>CACTUS</b> is a 2-player 3D strategy game where you place pieces on the outside of a tower board. Each player has <b>10 unique pieces</b> to place.<br><br>This tutorial covers <b>all the rules</b> step by step.' },
+  // 1 — STEP 1 OF 11: drag to rotate
+  { type:'drag_task', stepNum:1, title:'Get to Know the Board',
+    msg:'→ <b>Drag anywhere</b> to rotate the board.' },
+  // 2 — STEP 2 OF 11: two players
+  { type:'explain', stepNum:2, title:'How to Play Together',
+    msg:'Share a code with a friend to play <b>on two separate devices</b> from anywhere.<br><br>You can also play <b>on a single device</b>, taking turns one after the other.' },
+  // 3 — STEP 3 OF 11: start zone + first move action (top)
+  { type:'action', stepNum:3, player:1, pieceId:0,
+    targetCubes:[{gx:0,gy:7,gz:-1},{gx:1,gy:7,gz:-1}],
+    title:'Your First Move',
+    msg:'The <b>dark top and bottom levels</b> are the <b>Start Zones.</b> The first piece in the game must touch one.<br><br>1. Press <b>Select Piece</b> to open your panel.<br>2. Click the highlighted piece.<br>3. Press <b>Place</b> to confirm.' },
+  // 4 — STEP 4 OF 11: Player 2's auto move (button-triggered)
+  { type:'auto_btn', stepNum:4, player:2,
+    cubes:[{gx:1,gy:6,gz:-1},{gx:2,gy:6,gz:-1},{gx:2,gy:5,gz:-1}],
+    title:"Stay Connected",
+    msg:'Every piece must <b>touch the previous player\'s piece.</b><br>A piece can extend at most <b>1 unit</b> beyond the board face.<br><br>Press the button to see Player 2\'s move.',
+    btnLabel:"Watch the Next Move →" },
+  // 5 — STEP 5 OF 11: rotation with WADSQE
+  { type:'key_task', stepNum:5, pieceId:1,
+    title:'Rotate Your Pieces',
+    msg:'Before placing, you can rotate pieces on any axis:<br><br><b>W / S</b> — tilt up / down<br><b>A / D</b> — rotate left / right<br><b>Q / E</b> — spin clockwise / counter<br><br>1. <b>Select the piece</b> from the panel.<br>2. Use these keys to rotate it on screen.' },
+  // 6+7 — STEP 6 OF 11: interactive scoring demo
+  { type:'scoring_demo', stepNum:6, player:1,
+    demoCubes:[{gx:0,gy:5,gz:-1},{gx:0,gy:6,gz:-1},{gx:1,gy:5,gz:-1}],
+    title:'Scoring',
+    msg:'Each piece scores when placed:<br><br><b>+1</b> per cube in the piece<br><b>+1</b> per cube that touches an opponent\'s cube<br><b>+5</b> if one cube touches <b>2 or more</b> opponent cubes <span class="d">(placement bonus)</span><br><br>→ Press the button to see how it works.',
+    resultMsg:'Your <span class="g"><b>3-Corner</b></span> scored <b>11 points:</b><br><br><b>+3</b> base (3 cubes placed)<br><b>+3</b> touching red cubes<br><b style="color:var(--accent)">+5 placement bonus</b> (1 cube next to 2 red cubes)<br><span class="d">────────────</span><br><b>= 11 total</b><br><br><span class="d">Sandwiching your piece between enemy cubes is powerful!</span>' },
+  // 9 — STEP 8 OF 11: continuity bonus + demo birleşik
+  { type:'cont_demo', stepNum:8, title:'Continuity Bonus',
+    msg:'If your cubes form a <b>straight unbroken line</b> along a board strip:<br><br><b>+10</b> for 8+ consecutive cubes on one strip<br><b>+20</b> for 16+ consecutive cubes' },
+  // 12
+  { type:'explain', stepNum:9, title:'How to Win',
+    msg:'Three ways to win:<br><br><b style="font-size:14px">🏆 Score Win</b><br><br>All pieces placed; <b>highest score wins.</b>' },
+  // 13 — DEMO: lock
+  { type:'explain', stepNum:10, title:'How to Win',
+    msg:'Three ways to win:<br><br><b style="font-size:14px">🌵 Cactus Win</b><br><br>If a player can\'t place any piece, the game ends immediately. Each player\'s <b>remaining unplaced pieces are deducted</b> from their score — then the <b>highest score wins.</b>' },
+  { type:'demo_lock', stepNum:11, title:'How to Win',
+    msg:'Three ways to win:<br><br><b style="font-size:14px">🔒 Lock Win</b><br><br>Form a complete ring of <b>12 cubes</b> (horizontal) or <b>20 cubes</b> (vertical) for an <b>instant win!</b><br><br><span class="d">The 12th cube closes the ring! Instant Lock Win! 🔒</span>' },
+  // 14
+  { type:'complete' }
+];
+
+// ══════════════════════════════════════════════════════
+//  TUTORIAL MANAGER
+// ══════════════════════════════════════════════════════
+var TM = {
+  idx: 0,
+  selPiece: -1,
+  locked: false,
+
+  init: function() {
+    this.buildDots();
+    this.show();
+  },
+
+  buildDots: function() {
+    var el = document.getElementById('tut-progress');
+    el.innerHTML = '';
+    for (var i = 0; i < STEPS.length; i++) {
+      if (STEPS[i].type === 'auto') continue;
+      var d = document.createElement('div');
+      d.className = 'tdot';
+      d.id = 'dot' + i;
+      el.appendChild(d);
+    }
+  },
+
+  updateDots: function() {
+    for (var i = 0; i < STEPS.length; i++) {
+      var d = document.getElementById('dot' + i);
+      if (!d) continue;
+      d.className = 'tdot' + (i < this.idx ? ' done' : (i === this.idx ? ' active' : ''));
+    }
+  },
+
+  show: function() {
+    var s = STEPS[this.idx];
+    this.updateDots();
+    clearHints();
+    clearPreview3D();
+    closePanel();
+    onOrbitDrag = null;
+    keyTaskEnabled = false;
+    keyTaskNextBtn = null;
+    keyTaskCubes = null;
+
+    var labelEl = document.getElementById('tut-label');
+    var progEl  = document.getElementById('tut-progress');
+    if (s.type === 'welcome') {
+      labelEl.style.display = 'none';
+      progEl.style.display  = 'none';
+    } else {
+      labelEl.style.display = '';
+      progEl.style.display  = '';
+      labelEl.textContent   = s.stepNum ? 'STEP ' + s.stepNum + ' OF 11' : 'STEP ' + this.idx + ' OF ' + (STEPS.length - 2);
+    }
+
+    document.getElementById('tut-title').textContent  = s.title || '';
+    document.getElementById('tut-msg').innerHTML      = s.msg   || '';
+    var acts = document.getElementById('tut-actions');
+    acts.innerHTML = '';
+
+    var self = this;
+
+    if (s.type === 'welcome') {
+      acts.appendChild(self.btn("LET'S START", 'pri', function() { self.next(); }));
+    }
+    else if (s.type === 'drag_task') {
+      var nextBtn = self.btn('NEXT →', 'pri', function() { self.next(); });
+      nextBtn.disabled = true;
+      acts.appendChild(nextBtn);
+      onOrbitDrag = function() { nextBtn.disabled = false; };
+    }
+    else if (s.type === 'explain') {
+      acts.appendChild(self.btn('NEXT →', 'pri', function() { self.next(); }));
+    }
+    else if (s.type === 'auto_btn') {
+      (function() {
+        var goBtn = self.btn(s.btnLabel || "Place Player 2's Piece", 'pri', function() {
+          goBtn.disabled = true;
+          document.getElementById('pc-tag').style.display = 'block';
+          setTimeout(function() {
+            document.getElementById('pc-tag').style.display = 'none';
+            placeAnimated(s.cubes, s.player, 1400, function() {
+              acts.innerHTML = '';
+              acts.appendChild(self.btn('NEXT →', 'pri', function() { self.next(); }));
+            });
+          }, 800);
+        });
+        acts.appendChild(goBtn);
+      })();
+    }
+    else if (s.type === 'key_task') {
+      keyTaskCubes = PIECES[s.pieceId].cubes.map(function(c) { return c.slice(); });
+      keyTaskEnabled = false;
+      document.querySelector('.ppanel-hint').textContent = 'Select the highlighted piece to see it on screen.';
+      openPanel(s.pieceId);
+      var kNextBtn = self.btn('NEXT →', 'pri', function() {
+        clearPreview3D();
+        self.next();
+      });
+      kNextBtn.disabled = true;
+      keyTaskNextBtn = kNextBtn;
+      acts.appendChild(kNextBtn);
+    }
+    else if (s.type === 'scoring_demo') {
+      (function() {
+        var goBtn = self.btn('CALCULATE SCORE →', 'pri', function() {
+          goBtn.disabled = true;
+          placeAnimated(s.demoCubes, s.player, 1600, function() {
+            document.getElementById('tut-label').textContent = 'STEP 7 OF 11';
+            document.getElementById('tut-title').textContent = 'Score Breakdown';
+            document.getElementById('tut-msg').innerHTML = s.resultMsg;
+            var acts2 = document.getElementById('tut-actions');
+            acts2.innerHTML = '';
+            acts2.appendChild(self.btn('NEXT →', 'pri', function() {
+              self.next();
+            }));
+          });
+        });
+        acts.appendChild(goBtn);
+      })();
+    }
+    else if (s.type === 'action') {
+      showHints(s.targetCubes);
+      self.selPiece = -1;
+      acts.appendChild(self.btn('Select Piece →', 'pri', function() { openPanel(s.pieceId); }));
+    }
+    else if (s.type === 'auto') {
+      self.locked = true;
+      document.getElementById('pc-tag').style.display = 'block';
+      var wb = self.btn('...', '');
+      wb.disabled = true;
+      acts.appendChild(wb);
+      setTimeout(function() {
+        document.getElementById('pc-tag').style.display = 'none';
+        placeAnimated(s.cubes, s.player, 1400, function() {
+          self.locked = false;
+          acts.innerHTML = '';
+          acts.appendChild(self.btn('Continue →', 'pri', function() { self.next(); }));
+        });
+      }, 1000);
+    }
+    else if (s.type === 'cont_demo') {
+      clearDemo();
+      hideRealPieces();
+      var pre = [];
+      for (var y = 0; y <= 6; y++) pre.push({ gx:-1, gy:y, gz:0 });
+      demoPlace(pre, P1C);
+      acts.appendChild(self.btn('NEXT →', 'pri', function() {
+        clearDemo();
+        self.next();
+      }));
+      setTimeout(function() {
+        demoAnimate([{ gx:-1, gy:7, gz:0 }], P1C, 1800, function() {
+          showFlash('+10 CONTINUITY BONUS!', false, 2800);
+        });
+      }, 1200);
+    }
+    else if (s.type === 'demo_lock') {
+      clearDemo();
+      var ring = [
+        {gx:-1,gy:6,gz:-1},{gx:0,gy:6,gz:-1},{gx:1,gy:6,gz:-1},
+        {gx:2,gy:6,gz:-1},{gx:2,gy:6,gz:0},{gx:2,gy:6,gz:1},
+        {gx:2,gy:6,gz:2},{gx:1,gy:6,gz:2},{gx:0,gy:6,gz:2},
+        {gx:-1,gy:6,gz:2},{gx:-1,gy:6,gz:1}
+      ];
+      demoPlace(ring, 0xffb830);
+      acts.appendChild(self.btn('FINISH', 'pri', function() {
+        clearDemo();
+        self.next();
+      }));
+      setTimeout(function() {
+        demoAnimate([{gx:-1,gy:6,gz:0}], 0xffb830, 1800, function() {
+          showFlash('🔒 LOCK WIN!', true, 3000);
+        });
+      }, 1200);
+    }
+    else if (s.type === 'complete') {
+      document.getElementById('tut-card').style.display = 'none';
+      document.getElementById('complete').style.display = 'flex';
+    }
+  },
+
+  next: function() {
+    if (this.locked) return;
+    this.idx++;
+    if (this.idx >= STEPS.length) return;
+    this.show();
+  },
+
+  onPieceSelect: function(id) {
+    var s = STEPS[this.idx];
+    if (s.type === 'key_task') {
+      closePanel();
+      showPreview3D(keyTaskCubes, P1C);
+      keyTaskEnabled = true;
+      return;
+    }
+    if (s.type !== 'action') return;
+    if (id !== s.pieceId) { showToast('Select the highlighted piece!'); return; }
+    this.selPiece = id;
+    closePanel();
+    var acts = document.getElementById('tut-actions');
+    acts.innerHTML = '';
+    var self = this;
+    acts.appendChild(self.btn('Place →', 'pri', function() { self.confirmPlace(); }));
+    acts.appendChild(self.btn('↩ Re-select', 'sec', function() {
+      self.selPiece = -1;
+      acts.innerHTML = '';
+      acts.appendChild(self.btn('Select Piece →', 'pri', function() { openPanel(s.pieceId); }));
+    }));
+  },
+
+  confirmPlace: function() {
+    var s = STEPS[this.idx];
+    if (s.type !== 'action' || this.selPiece < 0) return;
+    clearHints();
+    this.locked = true;
+    var acts = document.getElementById('tut-actions');
+    acts.innerHTML = '';
+    var wb = this.btn('Placing...', '');
+    wb.disabled = true;
+    acts.appendChild(wb);
+    var self = this;
+    placeAnimated(s.targetCubes, s.player, 1600, function() {
+      self.locked = false;
+      self.selPiece = -1;
+      self.next();
+    });
+  },
+
+  btn: function(label, cls, onClick) {
+    var b = document.createElement('button');
+    b.className = 'tbtn ' + (cls || '');
+    b.textContent = label;
+    if (onClick) b.addEventListener('click', onClick);
+    return b;
+  }
+};
+
+// ══════════════════════════════════════════════════════
+//  RENDER LOOP
+// ══════════════════════════════════════════════════════
+var lastT = 0;
+function animate(ts) {
+  requestAnimationFrame(animate);
+  var dt = Math.min((ts - lastT) / 1000, 0.05);
+  lastT = ts;
+
+  // Smooth orbit
+  orbit.rotX    += (orbit.tRX - orbit.rotX)    * 0.1;
+  orbit.rotY    += (orbit.tRY - orbit.rotY)    * 0.1;
+  orbit.distance += (orbit.tD  - orbit.distance) * 0.1;
+  updateCam();
+
+  // Particles
+  var pp = pGeo.attributes.position;
+  for (var i = 0; i < 80; i++) {
+    pp.setX(i, pp.getX(i) + pSpd[i].vx);
+    pp.setY(i, pp.getY(i) + pSpd[i].vy);
+    pp.setZ(i, pp.getZ(i) + pSpd[i].vz);
+    if (Math.abs(pp.getX(i)) > 20) pSpd[i].vx *= -1;
+    if (Math.abs(pp.getY(i)) > 12) pSpd[i].vy *= -1;
+    if (Math.abs(pp.getZ(i)) > 20) pSpd[i].vz *= -1;
+  }
+  pp.needsUpdate = true;
+
+  animHints(dt);
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(animate);
+
+// ══════════════════════════════════════════════════════
+//  START
+// ══════════════════════════════════════════════════════
+TM.init();
+</script>
+</body>
+</html>
