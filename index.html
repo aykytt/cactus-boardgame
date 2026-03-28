@@ -1284,7 +1284,6 @@ mixpanel.init('1eb5bf0eac8219fa740e14976812d294', {
       appId: "1:718889434445:web:ac20a1888e83a5dc550b04"
     };
     firebase.initializeApp(firebaseConfig);
-    firebase.appCheck().activate('6LelmJssAAAAALksI2c29RRpjA6UczarroiXHC_D', true);
     window.db = firebase.database();
     window.firebaseAuth = firebase.auth();
     window.firebaseAuth.signInAnonymously().catch(e => console.warn('Auth failed', e));
@@ -4410,6 +4409,8 @@ function nickNextEnter() {
 function getLobbyName() { return null; }
 
 document.addEventListener('DOMContentLoaded', () => {
+  try { firebase.appCheck().activate('6LelmJssAAAAALksI2c29RRpjA6UczarroiXHC_D', true); } catch(e) { console.warn('App Check init failed', e); }
+
   // LocalStorage check — skip HTP if already played
   let hasPlayed = false;
   try { hasPlayed = !!localStorage.getItem('cactus_played'); } catch(e){}
