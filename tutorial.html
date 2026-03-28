@@ -258,6 +258,9 @@ html, body {
 
 <!-- Tutorial Card -->
 <div id="tut-card">
+  <div style="display:flex;justify-content:flex-start;margin-bottom:-2px;">
+    <button class="tbtn sec" style="width:auto;padding:3px 9px;font-size:10px;letter-spacing:.1em;" onclick="try{localStorage.setItem('cactus_played','1')}catch(e){};window.location.href='index.html'">Skip Tutorial</button>
+  </div>
   <div id="tut-progress"></div>
   <div id="tut-label">STEP 1</div>
   <div id="tut-title">Loading...</div>
@@ -1032,13 +1035,16 @@ var TM = {
       var pre = [];
       for (var y = 0; y <= 6; y++) pre.push({ gx:-1, gy:y, gz:0 });
       demoPlace(pre, P1C);
-      acts.appendChild(self.btn('NEXT →', 'pri', function() {
+      var contNextBtn = self.btn('NEXT →', 'pri', function() {
         clearDemo();
         self.next();
-      }));
+      });
+      contNextBtn.disabled = true;
+      acts.appendChild(contNextBtn);
       setTimeout(function() {
         demoAnimate([{ gx:-1, gy:7, gz:0 }], P1C, 1800, function() {
           showFlash('+10 CONTINUITY BONUS!', false, 2800);
+          contNextBtn.disabled = false;
         });
       }, 1200);
     }
@@ -1051,13 +1057,16 @@ var TM = {
         {gx:-1,gy:6,gz:2},{gx:-1,gy:6,gz:1}
       ];
       demoPlace(ring, 0xffb830);
-      acts.appendChild(self.btn('FINISH', 'pri', function() {
+      var lockFinishBtn = self.btn('FINISH', 'pri', function() {
         clearDemo();
         self.next();
-      }));
+      });
+      lockFinishBtn.disabled = true;
+      acts.appendChild(lockFinishBtn);
       setTimeout(function() {
         demoAnimate([{gx:-1,gy:6,gz:0}], 0xffb830, 1800, function() {
           showFlash('🔒 LOCK WIN!', true, 3000);
+          lockFinishBtn.disabled = false;
         });
       }, 1200);
     }
